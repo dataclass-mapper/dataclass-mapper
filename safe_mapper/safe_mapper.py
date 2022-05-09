@@ -1,5 +1,6 @@
 from abc import ABCMeta
 from typing import Any
+from dataclasses import fields
 from importlib import import_module
 
 
@@ -22,19 +23,19 @@ def _check_convert(
     target_keys = set(mapping.keys())
     source_keys = set(mapping.values())
 
-    actual_source_keys = set(annotations.keys())
+    actual_target_keys = set(fields(target_cls))
 
-    for key in source_keys:
-        if key not in actual_source_keys:
+    for key in target_keys:
+        if key not in actual_target_keys:
             raise Exception(
                 f"'{key}' of '{cls_name}' is not mapped to '{target_cls.__name__}'"
             )
-    for key in actual_source_keys:
-        if key not in source_keys:
+    for key in actual_target_keys:
+        if key not in target_keys:
             raise Exception(
                 f"'{key}' of '{cls_name}' is not mapped to '{target_cls.__name__}'"
             )
-    assert source_keys == actual_source_keys
+    assert target_keys == actual_target_keys
 
 
 class SafeMapper(ABCMeta):

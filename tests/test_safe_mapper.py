@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from safe_mapper.safe_mapper import SafeMapper, safe_convert
 
+import pytest
+
 
 @dataclass
 class Bar:
@@ -44,3 +46,17 @@ def test_cyclic_mapper():
     foo = FooOtherOrder(of_what="everything", answer=42)
     bar = Bar(x=42, y="everything")
     assert safe_convert(foo) == bar
+
+
+def test_forgotten_target_mapping():
+    with pytest.raises(Exception):
+
+        @dataclass
+        class ForgetMappingTarget(metaclass=SafeMapper):
+            x: int
+
+            class Config:
+                mapping_target_class = Bar
+                mapping = {
+                    "x": "x",
+                }
