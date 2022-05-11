@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any
+from typing import Any, TypeVar, Type
 from dataclasses import fields
 from importlib import import_module
 
@@ -16,40 +16,41 @@ def _make_convert(mapping: dict, target_cls):
     return "\n".join(lines)
 
 
-def _check_convert(
-    target_cls: Any, cls_name: str, annotations: dict, mapping: dict
-) -> None:
+def _check_convert(target_cls: Any, source_cls: Any, mapping: dict) -> None:
     # check if everything is specified
     target_keys = set(mapping.keys())
-    source_keys = set(mapping.values())
 
-    actual_target_keys = set(fields(target_cls))
+    actual_target_keys = {field.name for field in fields(target_cls)}
 
     for key in target_keys:
         if key not in actual_target_keys:
-            raise Exception(
-                f"'{key}' of '{cls_name}' is not mapped to '{target_cls.__name__}'"
+            raise ValueError(
+                f"'{key}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
             )
     for key in actual_target_keys:
         if key not in target_keys:
-            raise Exception(
-                f"'{key}' of '{cls_name}' is not mapped to '{target_cls.__name__}'"
+            raise ValueError(
+                f"'{key}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
             )
     assert target_keys == actual_target_keys
 
 
-class SafeMapper(ABCMeta):
-    def __new__(mcs, name, bases, class_dict):  # type: ignore
-        target_cls = class_dict["Config"].mapping_target_class
-        mapping = class_dict["Config"].mapping
-        annotations = class_dict["__annotations__"]
+T = TypeVar("T")
 
-        _check_convert(target_cls, name, annotations, mapping)
-        convert_code = _make_convert(mapping, target_cls)
-        module = import_module(target_cls.__module__)
-        exec(convert_code, module.__dict__, class_dict)
 
-        return super().__new__(mcs, name, bases, class_dict)
+def safe_mapper(source_cls: Type[T]) -> Type[T]:
+    target_cls = source_cls.Config.mapping_target_class
+    mapping = source_cls.Config.mapping
+
+    _check_convert(target_cls, source_cls, mapping)
+    convert_code = _make_convert(mapping, target_cls)
+    module = import_module(target_cls.__module__)
+
+    d = {}
+    exec(convert_code, module.__dict__, d)
+    source_cls.convert = d["convert"]
+
+    return source_cls
 
 
 def safe_convert(obj):
