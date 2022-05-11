@@ -1,9 +1,9 @@
 from dataclasses import fields
 from importlib import import_module
-from typing import Any, Callable, Optional, TypeVar, cast
+from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 
-def _make_convert(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> str:
+def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> str:
     lines = [
         f"def convert(self):",
         f"    d = {{}}",
@@ -42,17 +42,23 @@ def safe_mapper(target_cls: Any, mapping: Optional[dict[str, str]] = None) -> Ca
     field_mapping = mapping or cast(dict[str, str], {})
 
     def wrapped(source_cls: T) -> T:
-        convert_code = _make_convert(field_mapping, source_cls=source_cls, target_cls=target_cls)
+        map_code = _make_mapper(field_mapping, source_cls=source_cls, target_cls=target_cls)
         module = import_module(target_cls.__module__)
 
         d: dict = {}
-        exec(convert_code, module.__dict__, d)
-        setattr(source_cls, "convert", d["convert"])
+        exec(map_code, module.__dict__, d)
+        map_func = f"_map_to_{target_cls.__name__}"
+        setattr(source_cls, map_func, d["convert"])
 
         return source_cls
 
     return wrapped
 
 
-def safe_convert(obj):
-    return obj.convert()
+def map_to(obj, TargetCls: Type[T]) -> T:
+    map_func = f"_map_to_{TargetCls.__name__}"
+    if not hasattr(obj, map_func):
+        raise NotImplementedError(
+            f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"
+        )
+    return cast(T, getattr(obj, map_func)())
