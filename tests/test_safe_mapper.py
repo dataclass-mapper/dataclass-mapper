@@ -16,27 +16,47 @@ class Name:
     second_name: str
 
 
-@safe_mapper(Bar, {"x": "x", "y": "y"})
-@dataclass
-class Foo:
-    x: int
-    y: str
-
-
 def test_simple_mapper():
+    @safe_mapper(Bar, {"x": "x", "y": "y"})
+    @dataclass
+    class Foo:
+        x: int
+        y: str
+
     foo = Foo(x=42, y="answer")
     bar = Bar(x=42, y="answer")
     assert safe_convert(foo) == bar
 
 
-@safe_mapper(Bar, {"x": "answer", "y": "of_what"})
-@dataclass
-class FooOtherOrder:
-    of_what: str
-    answer: int
+def test_default_arg_mapper():
+    @safe_mapper(Bar, {"x": "x"})
+    @dataclass
+    class Foo:
+        x: int
+        y: str
+
+    foo = Foo(x=42, y="answer")
+    bar = Bar(x=42, y="answer")
+    assert safe_convert(foo) == bar
+
+    @safe_mapper(Bar)
+    @dataclass
+    class Foo2:
+        x: int
+        y: str
+
+    foo2 = Foo2(x=42, y="answer")
+    bar2 = Bar(x=42, y="answer")
+    assert safe_convert(foo2) == bar2
 
 
 def test_cyclic_mapper():
+    @safe_mapper(Bar, {"x": "answer", "y": "of_what"})
+    @dataclass
+    class FooOtherOrder:
+        of_what: str
+        answer: int
+
     foo = FooOtherOrder(of_what="everything", answer=42)
     bar = Bar(x=42, y="everything")
     assert safe_convert(foo) == bar

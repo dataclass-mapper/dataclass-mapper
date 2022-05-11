@@ -1,46 +1,48 @@
-from typing import Any, TypeVar, Type, Protocol, Callable
 from dataclasses import fields
 from importlib import import_module
+from typing import Any, Callable, Optional, TypeVar, cast
 
 
-def _make_convert(mapping: dict, target_cls):
+def _make_convert(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> str:
     lines = [
         f"def convert(self):",
         f"    d = {{}}",
     ]
 
-    for target_key, source_key in mapping.items():
-        lines.append(f'    d["{target_key}"] = self.{source_key}')
+    actual_source_fields = {field.name for field in fields(source_cls)}
+    actual_target_fields = {field.name for field in fields(target_cls)}
+    mapped_target_fields = set(mapping)
+
+    for target_field, source_field in mapping.items():
+        if target_field in actual_target_fields:
+            lines.append(f'    d["{target_field}"] = self.{source_field}')
+        else:
+            raise ValueError(
+                f"'{target_field}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
+            )
+
+    # handle missing fields
+    for field in actual_target_fields - mapped_target_fields:
+        # default mapping: Target(x=source.x)
+        if field in actual_source_fields:
+            lines.append(f'    d["{field}"] = self.{field}')
+        else:
+            raise ValueError(
+                f"'{field}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
+            )
+
     lines.append(f"    return {target_cls.__name__}(**d)")
     return "\n".join(lines)
-
-
-def _check_convert(target_cls: Any, source_cls: Any, mapping: dict) -> None:
-    # check if everything is specified
-    target_keys = set(mapping.keys())
-
-    actual_target_keys = {field.name for field in fields(target_cls)}
-
-    for key in target_keys:
-        if key not in actual_target_keys:
-            raise ValueError(
-                f"'{key}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
-            )
-    for key in actual_target_keys:
-        if key not in target_keys:
-            raise ValueError(
-                f"'{key}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
-            )
-    assert target_keys == actual_target_keys
 
 
 T = TypeVar("T")
 
 
-def safe_mapper(target_cls: Any, mapping: dict[str, str]) -> Callable[[T], T]:
+def safe_mapper(target_cls: Any, mapping: Optional[dict[str, str]] = None) -> Callable[[T], T]:
+    field_mapping = mapping or cast(dict[str, str], {})
+
     def wrapped(source_cls: T) -> T:
-        _check_convert(target_cls, source_cls, mapping)
-        convert_code = _make_convert(mapping, target_cls)
+        convert_code = _make_convert(field_mapping, source_cls=source_cls, target_cls=target_cls)
         module = import_module(target_cls.__module__)
 
         d: dict = {}
