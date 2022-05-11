@@ -1,5 +1,4 @@
-from abc import ABCMeta
-from typing import Any, TypeVar, Type
+from typing import Any, TypeVar, Type, Protocol, Callable
 from dataclasses import fields
 from importlib import import_module
 
@@ -38,19 +37,19 @@ def _check_convert(target_cls: Any, source_cls: Any, mapping: dict) -> None:
 T = TypeVar("T")
 
 
-def safe_mapper(source_cls: Type[T]) -> Type[T]:
-    target_cls = source_cls.Config.mapping_target_class
-    mapping = source_cls.Config.mapping
+def safe_mapper(target_cls: Any, mapping: dict[str, str]) -> Callable[[T], T]:
+    def wrapped(source_cls: T) -> T:
+        _check_convert(target_cls, source_cls, mapping)
+        convert_code = _make_convert(mapping, target_cls)
+        module = import_module(target_cls.__module__)
 
-    _check_convert(target_cls, source_cls, mapping)
-    convert_code = _make_convert(mapping, target_cls)
-    module = import_module(target_cls.__module__)
+        d: dict = {}
+        exec(convert_code, module.__dict__, d)
+        setattr(source_cls, "convert", d["convert"])
 
-    d = {}
-    exec(convert_code, module.__dict__, d)
-    source_cls.convert = d["convert"]
+        return source_cls
 
-    return source_cls
+    return wrapped
 
 
 def safe_convert(obj):

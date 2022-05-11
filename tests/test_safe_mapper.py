@@ -16,18 +16,11 @@ class Name:
     second_name: str
 
 
-@safe_mapper
+@safe_mapper(Bar, {"x": "x", "y": "y"})
 @dataclass
 class Foo:
     x: int
     y: str
-
-    class Config:
-        mapping_target_class = Bar
-        mapping = {
-            "x": "x",
-            "y": "y",
-        }
 
 
 def test_simple_mapper():
@@ -36,18 +29,11 @@ def test_simple_mapper():
     assert safe_convert(foo) == bar
 
 
-@safe_mapper
+@safe_mapper(Bar, {"x": "answer", "y": "of_what"})
 @dataclass
 class FooOtherOrder:
     of_what: str
     answer: int
-
-    class Config:
-        mapping_target_class = Bar
-        mapping = {
-            "x": "answer",
-            "y": "of_what",
-        }
 
 
 def test_cyclic_mapper():
@@ -59,36 +45,22 @@ def test_cyclic_mapper():
 def test_forgotten_target_mapping():
     with pytest.raises(ValueError) as excinfo:
 
-        @safe_mapper
+        @safe_mapper(Name, {"first_name": "x"})
         @dataclass
         class ForgottenMapping:
             x: str
 
-            class Config:
-                mapping_target_class = Name
-                mapping = {
-                    "first_name": "x",
-                }
-
-    assert "'second_name' of 'Name' has no mapping in 'ForgottenMapping'" in str(
-        excinfo.value
-    )
+    assert "'second_name' of 'Name' has no mapping in 'ForgottenMapping'" in str(excinfo.value)
 
 
 def test_additional_key():
     with pytest.raises(ValueError) as excinfo:
 
-        @safe_mapper
+        @safe_mapper(Name, {"first_name": "first", "second_name": "second", "age": "age"})
         @dataclass
         class AdditionalKeyMapping:
             first: str
             second: str
             age: int
 
-            class Config:
-                mapping_target_class = Name
-                mapping = {"first_name": "first", "second_name": "second", "age": "age"}
-
-    assert "'age' of mapping in 'AdditionalKeyMapping' doesn't exist in 'Name" in str(
-        excinfo.value
-    )
+    assert "'age' of mapping in 'AdditionalKeyMapping' doesn't exist in 'Name" in str(excinfo.value)

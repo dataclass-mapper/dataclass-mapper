@@ -10,7 +10,24 @@ python = "^3.9"
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 black = "^22.3.0"
+isort = "^5.10.1"
+mypy = "^0.950"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+warn_return_any = true
+files = ["safe_mapper", "tests"]
+
+[[tool.mypy.overrides]]
+module = "pytest"
+ignore_missing_imports = true
