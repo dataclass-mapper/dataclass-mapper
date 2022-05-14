@@ -6,35 +6,35 @@ from pydantic import BaseModel
 from safe_mapper.safe_mapper import map_to, safe_mapper
 
 
-class Bar(BaseModel):
+class BarPydantic(BaseModel):
     x: Optional[int]
     y: str
 
 
-def test_simple_pydantic_mapper_with_optional_in_pydantic():
-    @safe_mapper(Bar)
+def test_simple_pydantic_mapper_with_optional():
+    @safe_mapper(BarPydantic)
     class Foo(BaseModel):
         x: int
         y: str
 
     foo = Foo(x=42, y="answer")
-    bar = Bar(x=42, y="answer")
-    assert map_to(foo, Bar) == bar
+    bar = BarPydantic(x=42, y="answer")
+    assert map_to(foo, BarPydantic) == bar
 
 
 @dataclass
-class Baz:
+class BarDataclass:
     x: Optional[int]
     y: str
 
 
-def test_simple_dataclass_mapper_with_optional_in_pydantic():
-    @safe_mapper(Bar)
+def test_simple_dataclass_mapper_with_optional():
+    @safe_mapper(BarDataclass)
     @dataclass
     class Foo:
         x: int
         y: str
 
     foo = Foo(x=42, y="answer")
-    bar = Bar(x=42, y="answer")
-    assert map_to(foo, Bar) == bar
+    bar = BarDataclass(x=42, y="answer")
+    assert map_to(foo, BarDataclass) == bar

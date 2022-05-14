@@ -1,12 +1,8 @@
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
-
-@dataclass
-class Field:
-    name: str
-    type: Any
+from safe_mapper.field import Field
 
 
 class MappingFunction:
@@ -60,18 +56,11 @@ class MappingFunction:
 
 def get_class_fields(cls: Any) -> dict[str, Field]:
     if is_dataclass(cls):
-        return {field.name: Field(name=field.name, type=field.type) for field in fields(cls)}
+        return {field.name: Field.from_dataclass(field) for field in fields(cls)}
     try:
         pydantic = __import__("pydantic")
         if issubclass(cls, pydantic.BaseModel):
-            d: dict[str, Field] = {}
-            for field in cls.__fields__.values():
-                name = field.name
-                type_ = field.type_
-                if field.allow_none:
-                    type_ = Optional[type_]
-                d[name] = Field(name=name, type=type_)
-            return d
+            return {field.name: Field.from_pydantic(field) for field in cls.__fields__.values()}
     except ImportError:
         pass
     raise NotImplementedError("only dataclasses and pydantic classes are supported")
