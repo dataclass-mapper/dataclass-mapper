@@ -38,3 +38,41 @@ def test_simple_dataclass_mapper_with_optional():
     foo = Foo(x=42, y="answer")
     bar = BarDataclass(x=42, y="answer")
     assert map_to(foo, BarDataclass) == bar
+
+
+class BazPydantic(BaseModel):
+    bar: Optional[BarPydantic]
+
+
+def test_rec_pydantic_mapper_with_optional():
+    @safe_mapper(BarPydantic)
+    class Bar(BaseModel):
+        x: int
+        y: str
+
+    @safe_mapper(BazPydantic)
+    class Baz(BaseModel):
+        bar: Bar
+
+    baz_before = Baz(bar=Bar(x=42, y="answer"))
+    baz_after = BazPydantic(bar=BarPydantic(x=42, y="answer"))
+    assert repr(map_to(baz_before, BazPydantic)) == repr(baz_after)
+
+
+# class BazPydantic(BaseModel):
+#     bar: Optional[BarPydantic]
+
+
+# def test_rec_pydantic_mapper_with_optional():
+#     @safe_mapper(BarPydantic)
+#     class Bar(BaseModel):
+#         x: int
+#         y: str
+
+#     @safe_mapper(BazPydantic)
+#     class Baz(BaseModel):
+#         bar: Bar
+
+#     baz_before = Baz(bar=Bar(x=42, y="answer"))
+#     baz_after = BazPydantic(bar=BarPydantic(x=42, y="answer"))
+#     assert repr(map_to(baz_before, BazPydantic)) == repr(baz_after)

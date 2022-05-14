@@ -37,16 +37,17 @@ class MappingFunction:
         )
 
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
-        source_type = self.actual_source_fields[source_field_name].type
-        target_type = self.actual_target_fields[target_field_name].type
-        if target_type in (source_type, Optional[source_type]):
+        source_field = self.actual_source_fields[source_field_name]
+        target_field = self.actual_target_fields[target_field_name]
+        if target_field.type == source_field.type and not (
+            source_field.allow_none and target_field.disallow_none
+        ):
             self.add_assignment(target_field_name, source_field_name)
-        elif is_mappable_to(source_type, target_type):
-            self.add_recursive(target_field_name, source_field_name, target_type)
+        elif is_mappable_to(source_field.type, target_field.type):
+            self.add_recursive(target_field_name, source_field_name, target_field.type)
         else:
             raise TypeError(
-                f"'{source_field_name}' of type '{source_type.__name__}' of '{self.source_cls_name}' "
-                f"cannot be converted to '{target_field_name}' of type '{target_type.__name__}'"
+                f"{source_field} of '{self.source_cls_name}' cannot be converted to {target_field}"
             )
 
     def __str__(self) -> str:
