@@ -1,6 +1,6 @@
 from dataclasses import Field as DataclassField
 from dataclasses import dataclass
-from typing import Any, Optional, Union, get_args, get_origin
+from typing import Any, Union, cast, get_args, get_origin
 
 
 def is_optional(type_: Any) -> bool:
@@ -20,7 +20,7 @@ class Field:
 
     @property
     def type_string(self) -> str:
-        type_name = self.type.__name__
+        type_name = cast(str, self.type.__name__)
         if self.allow_none:
             type_name = f"Optional[{type_name}]"
         return type_name
