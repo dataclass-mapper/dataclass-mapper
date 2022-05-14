@@ -6,10 +6,12 @@ from typing import Any, Callable, Optional, Type, TypeVar, cast
 class MappingFunction:
     def __init__(
         self,
+        source_cls: Any,
         target_cls: Any,
         actual_source_fields: dict[str, Field],
         actual_target_fields: dict[str, Field],
     ):
+        self.source_cls_name = source_cls.__name__
         self.target_cls_name = target_cls.__name__
         self.actual_source_fields = actual_source_fields
         self.actual_target_fields = actual_target_fields
@@ -34,10 +36,15 @@ class MappingFunction:
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
         source_type = self.actual_source_fields[source_field_name].type
         target_type = self.actual_target_fields[target_field_name].type
-        if is_mappable_to(source_type, target_type):
+        if source_type == target_type:
+            self.add_assignment(target_field_name, source_field_name)
+        elif is_mappable_to(source_type, target_type):
             self.add_recursive(target_field_name, source_field_name, target_type)
         else:
-            self.add_assignment(target_field_name, source_field_name)
+            raise TypeError(
+                f"'{source_field_name}' of type '{source_type.__name__}' of '{self.source_cls_name}' "
+                f"cannot be converted to '{target_field_name}' of type '{target_type.__name__}'"
+            )
 
     def __str__(self) -> str:
         return_statement = f"    return {self.target_cls_name}(**d)"
@@ -48,7 +55,8 @@ def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> s
     actual_source_fields = {field.name: field for field in fields(source_cls)}
     actual_target_fields = {field.name: field for field in fields(target_cls)}
     mapping_func = MappingFunction(
-        target_cls,
+        source_cls=source_cls,
+        target_cls=target_cls,
         actual_source_fields=actual_source_fields,
         actual_target_fields=actual_target_fields,
     )
