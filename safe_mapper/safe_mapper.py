@@ -29,12 +29,12 @@ class MappingFunction:
         self._add_line(target_field_name, f"self.{source_field_name}")
 
     def add_recursive(
-        self, target_field_name: str, source_field_name: str, target_cls: Any
+        self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
     ) -> None:
-        self._add_line(
-            target_field_name,
-            f"map_to(self.{source_field_name}, {target_cls.__name__})",
-        )
+        right_side = f"map_to(self.{source_field_name}, {target_cls.__name__})"
+        if if_none:
+            right_side = f"None if self.{source_field_name} is None else {right_side}"
+        self._add_line(target_field_name, right_side)
 
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
         source_field = self.actual_source_fields[source_field_name]
@@ -43,8 +43,15 @@ class MappingFunction:
             source_field.allow_none and target_field.disallow_none
         ):
             self.add_assignment(target_field_name, source_field_name)
-        elif is_mappable_to(source_field.type, target_field.type):
-            self.add_recursive(target_field_name, source_field_name, target_field.type)
+        elif is_mappable_to(source_field.type, target_field.type) and not (
+            source_field.allow_none and target_field.disallow_none
+        ):
+            self.add_recursive(
+                target_field_name,
+                source_field_name,
+                target_field.type,
+                if_none=source_field.allow_none,
+            )
         else:
             raise TypeError(
                 f"{source_field} of '{self.source_cls_name}' cannot be converted to {target_field}"

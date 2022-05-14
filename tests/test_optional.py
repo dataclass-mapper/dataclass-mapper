@@ -59,20 +59,49 @@ def test_rec_pydantic_mapper_with_optional():
     assert repr(map_to(baz_before, BazPydantic)) == repr(baz_after)
 
 
-# class BazPydantic(BaseModel):
-#     bar: Optional[BarPydantic]
+class BazPydantic(BaseModel):
+    bar: Optional[BarPydantic]
 
 
-# def test_rec_pydantic_mapper_with_optional():
-#     @safe_mapper(BarPydantic)
-#     class Bar(BaseModel):
-#         x: int
-#         y: str
+def test_rec_pydantic_mapper_with_optional():
+    @safe_mapper(BarPydantic)
+    class Bar(BaseModel):
+        x: int
+        y: str
 
-#     @safe_mapper(BazPydantic)
-#     class Baz(BaseModel):
-#         bar: Bar
+    @safe_mapper(BazPydantic)
+    class Baz(BaseModel):
+        bar: Optional[Bar]
 
-#     baz_before = Baz(bar=Bar(x=42, y="answer"))
-#     baz_after = BazPydantic(bar=BarPydantic(x=42, y="answer"))
-#     assert repr(map_to(baz_before, BazPydantic)) == repr(baz_after)
+    baz_before = Baz(bar=Bar(x=42, y="answer"))
+    baz_after = BazPydantic(bar=BarPydantic(x=42, y="answer"))
+    assert repr(map_to(baz_before, BazPydantic)) == repr(baz_after)
+
+    baz_before2 = Baz(bar=None)
+    baz_after2 = BazPydantic(bar=None)
+    assert repr(map_to(baz_before2, BazPydantic)) == repr(baz_after2)
+
+
+class BazDataclass(BaseModel):
+    bar: Optional[BarDataclass]
+
+
+def test_rec_dataclass_mapper_with_optional():
+    @safe_mapper(BarDataclass)
+    @dataclass
+    class Bar:
+        x: int
+        y: str
+
+    @safe_mapper(BazDataclass)
+    @dataclass
+    class Baz:
+        bar: Optional[Bar]
+
+    baz_before = Baz(bar=Bar(x=42, y="answer"))
+    baz_after = BazDataclass(bar=BarDataclass(x=42, y="answer"))
+    assert map_to(baz_before, BazDataclass) == baz_after
+
+    baz_before2 = Baz(bar=None)
+    baz_after2 = BazDataclass(bar=None)
+    assert map_to(baz_before2, BazDataclass) == baz_after2
