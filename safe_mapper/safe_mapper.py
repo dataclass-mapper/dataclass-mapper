@@ -3,7 +3,7 @@ from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .field import Field
-from .mapping_method import MappingFunction, get_map_to_func_name
+from .mapping_method import MappingMethodSourceCode, get_map_to_func_name
 
 
 def get_class_fields(cls: Any) -> dict[str, Field]:
@@ -21,7 +21,7 @@ def get_class_fields(cls: Any) -> dict[str, Field]:
 def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> str:
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
-    mapping_func = MappingFunction(
+    source_code = MappingMethodSourceCode(
         source_cls=source_cls,
         target_cls=target_cls,
         actual_source_fields=actual_source_fields,
@@ -31,7 +31,7 @@ def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> s
 
     for target_field, source_field in mapping.items():
         if target_field in actual_target_fields:
-            mapping_func.add_mapping(target_field, source_field)
+            source_code.add_mapping(target_field, source_field)
         else:
             raise ValueError(
                 f"'{target_field}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
@@ -40,13 +40,13 @@ def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> s
     # handle missing fields
     for field in actual_target_fields.keys() - mapped_target_fields:
         if field in actual_source_fields:
-            mapping_func.add_mapping(field, field)
+            source_code.add_mapping(field, field)
         else:
             raise ValueError(
                 f"'{field}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
             )
 
-    return str(mapping_func)
+    return str(source_code)
 
 
 T = TypeVar("T")

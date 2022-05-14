@@ -1,8 +1,11 @@
 from typing import Any
+
 from .field import Field
 
 
-class MappingFunction:
+class MappingMethodSourceCode:
+    """Source code of the mapping method"""
+
     def __init__(
         self,
         source_cls: Any,
