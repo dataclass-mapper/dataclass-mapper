@@ -1,6 +1,12 @@
-from dataclasses import Field, fields
+from dataclasses import dataclass, fields, is_dataclass
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
+
+
+@dataclass
+class Field:
+    name: str
+    type: Any
 
 
 class MappingFunction:
@@ -30,7 +36,8 @@ class MappingFunction:
         self, target_field_name: str, source_field_name: str, target_cls: Any
     ) -> None:
         self._add_line(
-            target_field_name, f"map_to(self.{source_field_name}, {target_cls.__name__})"
+            target_field_name,
+            f"map_to(self.{source_field_name}, {target_cls.__name__})",
         )
 
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
@@ -51,9 +58,24 @@ class MappingFunction:
         return "\n".join(self.lines + [return_statement])
 
 
+def get_class_fields(cls: Any) -> dict[str, Field]:
+    if is_dataclass(cls):
+        return {field.name: Field(name=field.name, type=field.type) for field in fields(cls)}
+    try:
+        pydantic = __import__("pydantic")
+        if issubclass(cls, pydantic.BaseModel):
+            return {
+                field.name: Field(name=field.name, type=field.type_)
+                for field in cls.__fields__.values()
+            }
+    except ImportError:
+        pass
+    raise NotImplementedError("only dataclasses and pydantic classes are supported")
+
+
 def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> str:
-    actual_source_fields = {field.name: field for field in fields(source_cls)}
-    actual_target_fields = {field.name: field for field in fields(target_cls)}
+    actual_source_fields = get_class_fields(source_cls)
+    actual_target_fields = get_class_fields(target_cls)
     mapping_func = MappingFunction(
         source_cls=source_cls,
         target_cls=target_cls,

@@ -34,7 +34,7 @@ jobs:
         run: poetry install --no-interaction --no-root
 
       - name: Install library
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction -E pydantic
 
       - name: Run mypy
         run: |
