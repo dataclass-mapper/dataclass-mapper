@@ -43,7 +43,7 @@ class MappingFunction:
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
         source_type = self.actual_source_fields[source_field_name].type
         target_type = self.actual_target_fields[target_field_name].type
-        if source_type == target_type:
+        if target_type in (source_type, Optional[source_type]):
             self.add_assignment(target_field_name, source_field_name)
         elif is_mappable_to(source_type, target_type):
             self.add_recursive(target_field_name, source_field_name, target_type)
@@ -64,10 +64,14 @@ def get_class_fields(cls: Any) -> dict[str, Field]:
     try:
         pydantic = __import__("pydantic")
         if issubclass(cls, pydantic.BaseModel):
-            return {
-                field.name: Field(name=field.name, type=field.type_)
-                for field in cls.__fields__.values()
-            }
+            d: dict[str, Field] = {}
+            for field in cls.__fields__.values():
+                name = field.name
+                type_ = field.type_
+                if field.allow_none:
+                    type_ = Optional[type_]
+                d[name] = Field(name=name, type=type_)
+            return d
     except ImportError:
         pass
     raise NotImplementedError("only dataclasses and pydantic classes are supported")
