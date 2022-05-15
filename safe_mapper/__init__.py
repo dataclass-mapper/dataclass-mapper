@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 from .mapping_method import Default, DefaultFactory
 from .safe_mapper import map_to, safe_mapper, safe_mapper_from

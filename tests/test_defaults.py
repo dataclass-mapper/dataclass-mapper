@@ -83,3 +83,33 @@ def test_pydantic_optional_list_to_defaults():
 
     assert repr(map_to(B(aa=[A(x=42)]), BTo)) == repr(BTo(aa=[ATo(x=42)]))
     assert repr(map_to(B(aa=None), BTo)) == repr(BTo(aa=[]))
+
+
+class OptionalWithNoneDefaultPydantic(BaseModel):
+    x: Optional[int] = None
+
+
+def test_pydantic_optional_with_none_default():
+    @safe_mapper(OptionalWithNoneDefaultPydantic)
+    class Foo(BaseModel):
+        pass
+
+    assert repr(map_to(Foo(), OptionalWithNoneDefaultPydantic)) == repr(
+        OptionalWithNoneDefaultPydantic(x=None)
+    )
+
+
+@dataclass
+class OptionalWithNoneDefaultDataclass:
+    x: Optional[int] = None
+
+
+def test_dataclass_optional_with_none_default():
+    @safe_mapper(OptionalWithNoneDefaultDataclass)
+    @dataclass
+    class Foo:
+        pass
+
+    assert map_to(Foo(), OptionalWithNoneDefaultDataclass) == OptionalWithNoneDefaultDataclass(
+        x=None
+    )
