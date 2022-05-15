@@ -84,6 +84,7 @@ def test_additional_key():
         class AdditionalKeyMapping:
             first: str
             second: str
+            age: int
 
     assert "'height' of mapping in 'AdditionalKeyMapping' doesn't exist in 'Person" in str(
         excinfo.value

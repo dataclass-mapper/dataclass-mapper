@@ -1,3 +1,4 @@
+from dataclasses import MISSING
 from dataclasses import Field as DataclassField
 from dataclasses import dataclass
 from typing import Any, Union, cast, get_args, get_origin
@@ -13,6 +14,7 @@ class Field:
     name: str
     type: Any
     allow_none: bool
+    has_default: bool
 
     @property
     def disallow_none(self) -> bool:
@@ -30,13 +32,30 @@ class Field:
 
     @classmethod
     def from_dataclass(cls, field: DataclassField) -> "Field":
+        has_default = field.default is not None or field.default_factory is not MISSING
         if is_optional(field.type):
             real_types = [t for t in get_args(field.type) if t is not type(None)]
             assert len(real_types) == 1
-            return cls(name=field.name, type=real_types[0], allow_none=True)
+            return cls(
+                name=field.name,
+                type=real_types[0],
+                allow_none=True,
+                has_default=has_default,
+            )
         else:
-            return cls(name=field.name, type=field.type, allow_none=False)
+            return cls(
+                name=field.name,
+                type=field.type,
+                allow_none=False,
+                has_default=has_default,
+            )
 
     @classmethod
     def from_pydantic(cls, field: Any) -> "Field":
-        return cls(name=field.name, type=field.outer_type_, allow_none=field.allow_none)
+        has_default = field.default is not None or field.default_factory is not None
+        return cls(
+            name=field.name,
+            type=field.outer_type_,
+            allow_none=field.allow_none,
+            has_default=has_default,
+        )

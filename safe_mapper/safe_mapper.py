@@ -27,24 +27,33 @@ def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> s
         actual_source_fields=actual_source_fields,
         actual_target_fields=actual_target_fields,
     )
-    mapped_target_fields = set(mapping)
 
-    for target_field, source_field in mapping.items():
-        if target_field in actual_target_fields:
-            source_code.add_mapping(target_field, source_field)
+    for target_field_name in actual_target_fields.keys():
+        # mapping exists
+        if target_field_name in mapping:
+            source_code.add_mapping(
+                target_field_name=target_field_name,
+                source_field_name=mapping[target_field_name],
+            )
+        # there's a variable with the same name in the source
+        elif target_field_name in actual_source_fields:
+            source_code.add_mapping(
+                target_field_name=target_field_name,
+                source_field_name=target_field_name,
+            )
+        # target has some defaults, so a mapping is not necessary
+        elif actual_target_fields[target_field_name].has_default:
+            pass
+        # not possible to map
         else:
             raise ValueError(
-                f"'{target_field}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
+                f"'{target_field_name}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
             )
 
-    # handle missing fields
-    for field in actual_target_fields.keys() - mapped_target_fields:
-        if field in actual_source_fields:
-            source_code.add_mapping(field, field)
-        else:
-            raise ValueError(
-                f"'{field}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
-            )
+    for target_field_name in mapping.keys() - actual_target_fields.keys():
+        raise ValueError(
+            f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
+        )
 
     return str(source_code)
 
