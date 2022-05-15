@@ -62,7 +62,7 @@ def _make_mapper(
             f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
         )
 
-    return str(source_code), source_code.factories, {target_cls_alias: target_cls}
+    return str(source_code), source_code.methods, {target_cls_alias: target_cls}
 
 
 T = TypeVar("T")

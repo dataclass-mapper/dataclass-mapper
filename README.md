@@ -22,6 +22,7 @@ from dataclasses import dataclass
 class Person:
     first_name: str
     second_name: str
+    full_name: str
     age: int
 
 @dataclass
@@ -29,6 +30,7 @@ class WorkContract:
     worker: Person
     manager: Optional[Person]
     salary: int
+    signable: bool
 ```
 
 We want to have a safe mapper from the source data structure - `SoftwareDeveloperContract` with the attribute `ContactInfo`.
@@ -45,24 +47,30 @@ class ContactInfo:
     age: int
 
     def to_Person(self) -> Person:
-        return Person(first_name=self.first_name, second_name=self.surname, age=self.age)
+        return Person(
+            first_name=self.first_name,
+            second_name=self.surname,
+            full_name=f"{self.first_name} {self.surname}",
+            age=self.age,
+        )
       
 @dataclass
-def SoftwareDeveloperContract:
+class SoftwareDeveloperContract:
     worker: ContactInfo
-    manager: Optional[Person]
+    manager: Optional[ContactInfo]
     salary: int
 
     def to_WorkContract(self) -> WorkContract:
         return WorkContract(
             worker=self.worker.to_Person(),
             manager=(None if self.manager is None else self.manager.to_Person()),
-            salary=self.salary
+            salary=self.salary,
+            signable=True,
         )
 
 
-software_developer_contract: SoftwareDeveloperContract: 
-work_contract = software_developer_contract.to_WorkContract
+software_developer_contract: SoftwareDeveloperContract
+work_contract = software_developer_contract.to_WorkContract()
 ```
 
 you can write:
@@ -70,21 +78,24 @@ you can write:
 ```python
 from safe_mapper.safe_mapper import map_to, safe_mapper
 
-@safe_mapper(Person, {"second_name": "surname"})
+@safe_mapper(Person, {
+  "second_name": "surname",
+  "full_name": lambda self: f"{self.first_name} {self.surname}"
+})
 @dataclass
 class ContactInfo:
     first_name: str
     surname: str
     age: int
       
-@safe_mapper(WorkContract)
+@safe_mapper(WorkContract, {"signable": lambda: True})
 @dataclass
-def SoftwareDeveloperContract:
+class SoftwareDeveloperContract:
     worker: ContactInfo
-    manager: Optional[Person]
+    manager: Optional[ContactInfo]
     salary: int
 
-software_developer_contract: SoftwareDeveloperContract: 
+software_developer_contract: SoftwareDeveloperContract
 work_contract = map_to(software_developer_contract, WorkContract)
 ```
 
@@ -111,8 +122,8 @@ The current version has support for:
 - :heavy_check_mark: `List` types
 - :heavy_check_mark: Default values for simple types
 - :heavy_check_mark: Mapper in the other direction. Use the `safe_mapper_from` decorator and the same `map_to` method.
-- :heavy_check_mark: Assign Values (with `{"x": Default(42)}`)
-- :heavy_check_mark: Assign Functions Calls (with `{"x": DefaultFactory(lambda self: 42)}`)
+- :heavy_check_mark: Assign Values with lambdas (with `{"x": lambda: 42}`)
+- :heavy_check_mark: Assign Functions Calls with lambdas and `self` (with `{"x": lambda self: self.x}`)
 
 Still missing features:
 

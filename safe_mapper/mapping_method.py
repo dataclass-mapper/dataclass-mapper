@@ -1,21 +1,10 @@
-from dataclasses import dataclass
-from typing import Any, Callable, Union, get_args, get_origin
+from inspect import isfunction, signature
+from typing import Any, Callable, Union, cast, get_args, get_origin
 from uuid import uuid4
 
 from .field import Field
 
-
-@dataclass
-class Default:
-    value: Any
-
-
-@dataclass
-class DefaultFactory:
-    factory: Callable[[Any], Any]
-
-
-Origin = Union[str, Default, DefaultFactory]
+Origin = Union[str, Callable]
 
 
 class MappingMethodSourceCode:
@@ -38,7 +27,7 @@ class MappingMethodSourceCode:
             f'def convert(self) -> "{self.target_cls_name}":',
             f"    d = {{}}",
         ]
-        self.factories: dict[str, Callable] = {}
+        self.methods: dict[str, Callable] = {}
 
     def get_source(self, name: str) -> str:
         return f"self.{name}"
@@ -98,21 +87,22 @@ class MappingMethodSourceCode:
             indent = 8
         self._add_line(target_field_name, right_side, indent)
 
-    def add_default(self, target_field_name: str, default: Default) -> None:
-        self._add_line(target_field_name, default.value)
-
-    def add_default_factory(self, target_field_name: str, default_factory: DefaultFactory) -> None:
+    def add_function_call(self, target_field_name: str, function: Callable) -> None:
         name = f"_{uuid4().hex}"
-        self.factories[name] = default_factory.factory
+        if len(signature(function).parameters) == 0:
+            self.methods[name] = cast(Callable, staticmethod(function))
+        else:
+            # already a method
+            # TODO assert that there is only one parameter and that it is `self`
+            self.methods[name] = function
         source = self.get_source(name)
         self._add_line(target_field_name, f"{source}()")
 
     def add_mapping(self, target_field_name: str, source_origin: Origin) -> None:
-        if isinstance(source_origin, Default):
-            self.add_default(target_field_name, source_origin)
-        elif isinstance(source_origin, DefaultFactory):
-            self.add_default_factory(target_field_name, source_origin)
+        if isfunction(source_origin):
+            self.add_function_call(target_field_name, source_origin)
         else:
+            assert isinstance(source_origin, str)
             source_field_name: str = source_origin
 
             source_field = self.actual_source_fields[source_field_name]
