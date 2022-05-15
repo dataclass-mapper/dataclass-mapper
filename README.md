@@ -108,11 +108,11 @@ The current version has support for:
 - :heavy_check_mark: `Optional` types.
   Raises a `TypeError` at class definition time when an optional type is mapped to a non-optional type.
 - :heavy_check_mark: Recursive models
+- :heavy_check_mark: `List` types
 
 Still missing features:
 
 - :heavy_multiplication_x: `Union` types
-- :heavy_multiplication_x: `List` types
 - :heavy_multiplication_x: `Dict` types
 - :heavy_multiplication_x: Aliases in `pydantic` classes
 - :heavy_multiplication_x: Default values

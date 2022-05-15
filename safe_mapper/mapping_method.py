@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, get_args, get_origin
 
 from .field import Field
 
@@ -36,13 +36,26 @@ class MappingMethodSourceCode:
             right_side = f"None if self.{source_field_name} is None else {right_side}"
         self._add_line(target_field_name, right_side)
 
+    def add_recursive_list(
+        self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
+    ) -> None:
+        right_side = f"[map_to(x, {target_cls.__name__}) for x in self.{source_field_name}]"
+        if if_none:
+            right_side = f"None if self.{source_field_name} is None else {right_side}"
+        self._add_line(target_field_name, right_side)
+
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
         source_field = self.actual_source_fields[source_field_name]
         target_field = self.actual_target_fields[target_field_name]
+
+        # same type, just assign it
         if target_field.type == source_field.type and not (
             source_field.allow_none and target_field.disallow_none
         ):
             self.add_assignment(target_field_name, source_field_name)
+
+        # different type, buty also safe mappable
+        # with optional
         elif is_mappable_to(source_field.type, target_field.type) and not (
             source_field.allow_none and target_field.disallow_none
         ):
@@ -50,6 +63,21 @@ class MappingMethodSourceCode:
                 target_field_name,
                 source_field_name,
                 target_field.type,
+                if_none=source_field.allow_none,
+            )
+
+        # both are lists of safe mappable types
+        # with optional
+        elif (
+            get_origin(source_field.type) is list
+            and get_origin(target_field.type) is list
+            and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
+            and not (source_field.allow_none and target_field.disallow_none)
+        ):
+            self.add_recursive_list(
+                target_field_name,
+                source_field_name,
+                get_args(target_field.type)[0],
                 if_none=source_field.allow_none,
             )
         else:

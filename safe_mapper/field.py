@@ -39,4 +39,4 @@ class Field:
 
     @classmethod
     def from_pydantic(cls, field: Any) -> "Field":
-        return cls(name=field.name, type=field.type_, allow_none=field.allow_none)
+        return cls(name=field.name, type=field.outer_type_, allow_none=field.allow_none)
