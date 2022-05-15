@@ -1,6 +1,20 @@
-from typing import Any, get_args, get_origin
+from dataclasses import dataclass
+from typing import Any, Callable, Union, get_args, get_origin
 
 from .field import Field
+
+
+@dataclass
+class Default:
+    value: Any
+
+
+@dataclass
+class DefaultFactory:
+    factory: Callable[[], Any]
+
+
+Origin = Union[str, Default, DefaultFactory]
 
 
 class MappingMethodSourceCode:
@@ -78,74 +92,87 @@ class MappingMethodSourceCode:
             indent = 8
         self._add_line(target_field_name, right_side, indent)
 
-    def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
-        source_field = self.actual_source_fields[source_field_name]
-        target_field = self.actual_target_fields[target_field_name]
+    def add_default(self, target_field_name: str, default: Default) -> None:
+        self._add_line(target_field_name, default.value)
 
-        # same type, just assign it
-        if target_field.type == source_field.type and not (
-            source_field.allow_none and target_field.disallow_none
-        ):
-            self.add_assignment(target_field_name, source_field_name)
+    def add_default_factory(self, target_field_name: str, default_factory: DefaultFactory) -> None:
+        self._add_line(target_field_name, str(default_factory.factory))
 
-        # allow optional to non-optional if target has default
-        elif (
-            target_field.type == source_field.type
-            and source_field.allow_none
-            and target_field.disallow_none
-            and target_field.has_default
-        ):
-            self.add_assignment(target_field_name, source_field_name, only_if_not_None=True)
-
-        # different type, buty also safe mappable
-        # with optional
-        elif is_mappable_to(source_field.type, target_field.type) and not (
-            source_field.allow_none and target_field.disallow_none
-        ):
-            self.add_recursive(
-                target_field_name,
-                source_field_name,
-                target_field.type,
-                if_none=source_field.allow_none,
-            )
-
-        # both are lists of safe mappable types
-        # with optional
-        elif (
-            get_origin(source_field.type) is list
-            and get_origin(target_field.type) is list
-            and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
-            and not (source_field.allow_none and target_field.disallow_none)
-        ):
-            self.add_recursive_list(
-                target_field_name,
-                source_field_name,
-                get_args(target_field.type)[0],
-                if_none=source_field.allow_none,
-            )
-
-        # allow optional to non-optional if target has default
-        elif (
-            get_origin(source_field.type) is list
-            and get_origin(target_field.type) is list
-            and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
-            and source_field.allow_none
-            and target_field.disallow_none
-            and target_field.has_default
-        ):
-            self.add_recursive_list(
-                target_field_name,
-                source_field_name,
-                get_args(target_field.type)[0],
-                if_none=source_field.allow_none,
-                only_if_not_None=True,
-            )
-
-        # impossible
+    def add_mapping(self, target_field_name: str, source_origin: Origin) -> None:
+        if isinstance(source_origin, Default):
+            self.add_default(target_field_name, source_origin)
+        elif isinstance(source_origin, DefaultFactory):
+            self.add_default_factory(target_field_name, source_origin)
         else:
-            raise TypeError(
-                f"{source_field} of '{self.source_cls_name}' cannot be converted to {target_field}"
-            )
+            source_field_name: str = source_origin
+
+            source_field = self.actual_source_fields[source_field_name]
+            target_field = self.actual_target_fields[target_field_name]
+
+            # same type, just assign it
+            if target_field.type == source_field.type and not (
+                source_field.allow_none and target_field.disallow_none
+            ):
+                self.add_assignment(target_field_name, source_field_name)
+
+            # allow optional to non-optional if target has default
+            elif (
+                target_field.type == source_field.type
+                and source_field.allow_none
+                and target_field.disallow_none
+                and target_field.has_default
+            ):
+                self.add_assignment(target_field_name, source_field_name, only_if_not_None=True)
+
+            # different type, buty also safe mappable
+            # with optional
+            elif is_mappable_to(source_field.type, target_field.type) and not (
+                source_field.allow_none and target_field.disallow_none
+            ):
+                self.add_recursive(
+                    target_field_name,
+                    source_field_name,
+                    target_field.type,
+                    if_none=source_field.allow_none,
+                )
+
+            # both are lists of safe mappable types
+            # with optional
+            elif (
+                get_origin(source_field.type) is list
+                and get_origin(target_field.type) is list
+                and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
+                and not (source_field.allow_none and target_field.disallow_none)
+            ):
+                self.add_recursive_list(
+                    target_field_name,
+                    source_field_name,
+                    get_args(target_field.type)[0],
+                    if_none=source_field.allow_none,
+                )
+
+            # allow optional to non-optional if target has default
+            elif (
+                get_origin(source_field.type) is list
+                and get_origin(target_field.type) is list
+                and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
+                and source_field.allow_none
+                and target_field.disallow_none
+                and target_field.has_default
+            ):
+                self.add_recursive_list(
+                    target_field_name,
+                    source_field_name,
+                    get_args(target_field.type)[0],
+                    if_none=source_field.allow_none,
+                    only_if_not_None=True,
+                )
+
+            # impossible
+            else:
+                raise TypeError(
+                    f"{source_field} of '{self.source_cls_name}' cannot be converted to {target_field}"
+                )
 
     def __str__(self) -> str:
         if self.from_classmethod:

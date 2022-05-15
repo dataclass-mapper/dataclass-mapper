@@ -72,7 +72,7 @@ class BTo(BaseModel):
     aa: list[ATo] = Field(default_factory=list)
 
 
-def test_pydantic_optional_to_defaults():
+def test_pydantic_optional_list_to_defaults():
     @safe_mapper(ATo)
     class A(BaseModel):
         x: int

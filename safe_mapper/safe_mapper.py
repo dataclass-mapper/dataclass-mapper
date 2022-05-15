@@ -3,7 +3,12 @@ from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .field import Field
-from .mapping_method import MappingMethodSourceCode, get_map_from_func_name, get_map_to_func_name
+from .mapping_method import (
+    MappingMethodSourceCode,
+    Origin,
+    get_map_from_func_name,
+    get_map_to_func_name,
+)
 
 
 def get_class_fields(cls: Any) -> dict[str, Field]:
@@ -19,7 +24,7 @@ def get_class_fields(cls: Any) -> dict[str, Field]:
 
 
 def _make_mapper(
-    mapping: dict[str, str],
+    mapping: dict[str, Origin],
     source_cls: Any,
     target_cls: Any,
     from_classmethod: bool = False,
@@ -39,13 +44,13 @@ def _make_mapper(
         if target_field_name in mapping:
             source_code.add_mapping(
                 target_field_name=target_field_name,
-                source_field_name=mapping[target_field_name],
+                source_origin=mapping[target_field_name],
             )
         # there's a variable with the same name in the source
         elif target_field_name in actual_source_fields:
             source_code.add_mapping(
                 target_field_name=target_field_name,
-                source_field_name=target_field_name,
+                source_origin=target_field_name,
             )
         # target has some defaults, so a mapping is not necessary
         elif actual_target_fields[target_field_name].has_default:
@@ -67,13 +72,13 @@ def _make_mapper(
 T = TypeVar("T")
 
 
-def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, str]] = None) -> Callable[[T], T]:
+def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, Origin]] = None) -> Callable[[T], T]:
     """Adds a private mapper method to the class, that maps the current class to the `TargetCls`.
     The mapper method can be called using the `map_to` function.
 
     With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
     """
-    field_mapping = mapping or cast(dict[str, str], {})
+    field_mapping = mapping or cast(dict[str, Origin], {})
 
     def wrapped(source_cls: T) -> T:
         map_code = _make_mapper(field_mapping, source_cls=source_cls, target_cls=TargetCls)
@@ -88,13 +93,15 @@ def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, str]] = None) -> Cal
     return wrapped
 
 
-def safe_mapper_from(SourceCls: Any, mapping: Optional[dict[str, str]] = None) -> Callable[[T], T]:
+def safe_mapper_from(
+    SourceCls: Any, mapping: Optional[dict[str, Origin]] = None
+) -> Callable[[T], T]:
     """Adds a private mapper method to the class, that maps an object of `SourceCls` to the current class.
     The mapper method can be called using the `map_to` function.
 
     With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
     """
-    field_mapping = mapping or cast(dict[str, str], {})
+    field_mapping = mapping or cast(dict[str, Origin], {})
 
     def wrapped(target_cls: T) -> T:
         map_code = _make_mapper(
@@ -123,7 +130,7 @@ def map_to(obj, TargetCls: Type[T]) -> T:
 
     func_name_from = get_map_from_func_name(type(obj))
     if hasattr(TargetCls, func_name_from):
-        return getattr(TargetCls, func_name_from)(obj)
+        return cast(T, getattr(TargetCls, func_name_from)(obj))
 
     raise NotImplementedError(
         f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"
