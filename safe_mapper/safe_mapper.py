@@ -1,6 +1,7 @@
 from dataclasses import fields, is_dataclass
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
+from uuid import uuid4
 
 from .field import Field
 from .mapping_method import MappingMethodSourceCode, Origin, get_map_to_func_name
@@ -22,14 +23,16 @@ def _make_mapper(
     mapping: dict[str, Origin],
     source_cls: Any,
     target_cls: Any,
-) -> tuple[str, dict[str, Callable]]:
+) -> tuple[str, dict[str, Callable], dict[str, Any]]:
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
+    target_cls_alias = f"_{uuid4().hex}"
     source_code = MappingMethodSourceCode(
         source_cls=source_cls,
         target_cls=target_cls,
         actual_source_fields=actual_source_fields,
         actual_target_fields=actual_target_fields,
+        target_cls_alias=target_cls_alias,
     )
 
     for target_field_name in actual_target_fields.keys():
@@ -59,7 +62,7 @@ def _make_mapper(
             f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
         )
 
-    return str(source_code), source_code.factories
+    return str(source_code), source_code.factories, {target_cls_alias: target_cls}
 
 
 T = TypeVar("T")
@@ -74,13 +77,16 @@ def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, Origin]] = None) -> 
     field_mapping = mapping or cast(dict[str, Origin], {})
 
     def wrapped(source_cls: T) -> T:
-        map_code, factories = _make_mapper(
+        map_code, factories, context = _make_mapper(
             field_mapping, source_cls=source_cls, target_cls=TargetCls
         )
         module = import_module(TargetCls.__module__)
 
         d: dict = {}
-        exec(map_code, module.__dict__, d)
+        # print(f"mapper from {source_cls} to {TargetCls}")
+        # print(map_code)
+        # print()
+        exec(map_code, module.__dict__ | context, d)
         setattr(source_cls, get_map_to_func_name(TargetCls), d["convert"])
         for name, factory in factories.items():
             setattr(source_cls, name, factory)
@@ -101,7 +107,7 @@ def safe_mapper_from(
     field_mapping = mapping or cast(dict[str, Origin], {})
 
     def wrapped(target_cls: T) -> T:
-        map_code, factories = _make_mapper(
+        map_code, factories, context = _make_mapper(
             field_mapping,
             source_cls=SourceCls,
             target_cls=target_cls,
@@ -109,8 +115,10 @@ def safe_mapper_from(
         module = import_module(SourceCls.__module__)
 
         d: dict = {}
+        # print(f"mapper from {SourceCls} to {target_cls}")
         # print(map_code)
-        exec(map_code, module.__dict__, d)
+        # print()
+        exec(map_code, module.__dict__ | context, d)
         setattr(SourceCls, get_map_to_func_name(target_cls), d["convert"])
         for name, factory in factories.items():
             setattr(SourceCls, name, factory)

@@ -27,11 +27,13 @@ class MappingMethodSourceCode:
         target_cls: Any,
         actual_source_fields: dict[str, Field],
         actual_target_fields: dict[str, Field],
+        target_cls_alias: str,
     ):
         self.source_cls_name = source_cls.__name__
         self.target_cls_name = target_cls.__name__
         self.actual_source_fields = actual_source_fields
         self.actual_target_fields = actual_target_fields
+        self.target_cls_alias = target_cls_alias
         self.lines = [
             f'def convert(self) -> "{self.target_cls_name}":',
             f"    d = {{}}",
@@ -187,7 +189,8 @@ class MappingMethodSourceCode:
                 )
 
     def __str__(self) -> str:
-        return_statement = f"    return {self.target_cls_name}(**d)"
+        uuid4
+        return_statement = f"    return {self.target_cls_alias}(**d)"
         return "\n".join(self.lines + [return_statement])
 
 
