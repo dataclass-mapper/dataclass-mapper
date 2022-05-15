@@ -66,11 +66,20 @@ class MappingMethodSourceCode:
             indent = 8
         self._add_line(target_field_name, source, indent)
 
+    def _get_map_func(self, name: str, target_cls: Any) -> str:
+        if self.from_classmethod:
+            func_name = get_map_from_func_name(target_cls)
+            return f"{target_cls.__name__}.{func_name}({name})"
+        else:
+            func_name = get_map_to_func_name(target_cls)
+            return f"{name}.{func_name}()"
+
     def add_recursive(
         self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
     ) -> None:
         source = self.get_source(source_field_name)
-        right_side = f"map_to({source}, {target_cls.__name__})"
+
+        right_side = self._get_map_func(source, target_cls)
         if if_none:
             right_side = f"None if {source} is None else {right_side}"
         self._add_line(target_field_name, right_side)
@@ -84,7 +93,7 @@ class MappingMethodSourceCode:
         only_if_not_None: bool = False,
     ) -> None:
         source = self.get_source(source_field_name)
-        right_side = f"[map_to(x, {target_cls.__name__}) for x in {source}]"
+        right_side = f'[{self._get_map_func("x", target_cls)} for x in {source}]'
         if if_none:
             right_side = f"None if {source} is None else {right_side}"
         indent = 4
