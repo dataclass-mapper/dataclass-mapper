@@ -62,3 +62,24 @@ def test_dataclass_optional_to_defaults():
 
     assert repr(map_to(Foo(x=5), FooDataclass)) == repr(FooDataclass(x=5))
     assert repr(map_to(Foo(x=None), FooDataclass)) == repr(FooDataclass(x=42))
+
+
+class ATo(BaseModel):
+    x: int
+
+
+class BTo(BaseModel):
+    aa: list[ATo] = Field(default_factory=list)
+
+
+def test_pydantic_optional_to_defaults():
+    @safe_mapper(ATo)
+    class A(BaseModel):
+        x: int
+
+    @safe_mapper(BTo)
+    class B(BaseModel):
+        aa: Optional[list[A]]
+
+    assert repr(map_to(B(aa=[A(x=42)]), BTo)) == repr(BTo(aa=[ATo(x=42)]))
+    assert repr(map_to(B(aa=None), BTo)) == repr(BTo(aa=[]))
