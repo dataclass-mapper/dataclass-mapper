@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -35,4 +36,29 @@ def test_dataclass_defaults():
     assert map_to(Bar(), BarDataclass) == BarDataclass(x=5, y="some_default", z=1)
 
 
-# TODO: if source is optional, and target is non-optional and has a default, use the default
+class FooPydantic(BaseModel):
+    x: int = 42
+
+
+def test_pydantic_optional_to_defaults():
+    @safe_mapper(FooPydantic)
+    class Foo(BaseModel):
+        x: Optional[int]
+
+    assert repr(map_to(Foo(x=5), FooPydantic)) == repr(FooPydantic(x=5))
+    assert repr(map_to(Foo(x=None), FooPydantic)) == repr(FooPydantic(x=42))
+
+
+@dataclass
+class FooDataclass:
+    x: int = 42
+
+
+def test_dataclass_optional_to_defaults():
+    @safe_mapper(FooDataclass)
+    @dataclass
+    class Foo:
+        x: Optional[int]
+
+    assert repr(map_to(Foo(x=5), FooDataclass)) == repr(FooDataclass(x=5))
+    assert repr(map_to(Foo(x=None), FooDataclass)) == repr(FooDataclass(x=42))

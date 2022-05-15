@@ -22,11 +22,17 @@ class MappingMethodSourceCode:
             f"    d = {{}}",
         ]
 
-    def _add_line(self, left_side: str, right_side: str) -> None:
-        self.lines.append(f'    d["{left_side}"] = {right_side}')
+    def _add_line(self, left_side: str, right_side: str, indent=4) -> None:
+        self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
 
-    def add_assignment(self, target_field_name: str, source_field_name: str) -> None:
-        self._add_line(target_field_name, f"self.{source_field_name}")
+    def add_assignment(
+        self, target_field_name: str, source_field_name: str, only_if_not_None: bool = False
+    ) -> None:
+        indent = 4
+        if only_if_not_None:
+            self.lines.append(f"    if self.{source_field_name} is not None:")
+            indent = 8
+        self._add_line(target_field_name, f"self.{source_field_name}", indent)
 
     def add_recursive(
         self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
@@ -53,6 +59,15 @@ class MappingMethodSourceCode:
             source_field.allow_none and target_field.disallow_none
         ):
             self.add_assignment(target_field_name, source_field_name)
+
+        # allow optional to non-optional if target has default
+        elif (
+            target_field.type == source_field.type
+            and source_field.allow_none
+            and target_field.disallow_none
+            and target_field.has_default
+        ):
+            self.add_assignment(target_field_name, source_field_name, only_if_not_None=True)
 
         # different type, buty also safe mappable
         # with optional

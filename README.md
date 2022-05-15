@@ -109,13 +109,14 @@ The current version has support for:
   Raises a `TypeError` at class definition time when an optional type is mapped to a non-optional type.
 - :heavy_check_mark: Recursive models
 - :heavy_check_mark: `List` types
+- :heavy_check_mark: Default values for simple types
 
 Still missing features:
 
 - :heavy_multiplication_x: `Union` types
 - :heavy_multiplication_x: `Dict` types
+- :heavy_multiplication_x: Default values for complicated types (for a mappable type)
 - :heavy_multiplication_x: Aliases in `pydantic` classes
-- :heavy_multiplication_x: Default values
 - :heavy_multiplication_x: Checking if all source attributes were used
 - :heavy_multiplication_x: SQLAlchemy ORM
 - :heavy_multiplication_x: Mapper in the other direction

@@ -32,7 +32,7 @@ class Field:
 
     @classmethod
     def from_dataclass(cls, field: DataclassField) -> "Field":
-        has_default = field.default is not None or field.default_factory is not MISSING
+        has_default = field.default is not MISSING or field.default_factory is not MISSING
         if is_optional(field.type):
             real_types = [t for t in get_args(field.type) if t is not type(None)]
             assert len(real_types) == 1
