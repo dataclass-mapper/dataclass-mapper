@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Union, get_args, get_origin
+from uuid import uuid4
 
 from .field import Field
 
@@ -11,7 +12,7 @@ class Default:
 
 @dataclass
 class DefaultFactory:
-    factory: Callable[[], Any]
+    factory: Callable[[Any], Any]
 
 
 Origin = Union[str, Default, DefaultFactory]
@@ -44,6 +45,7 @@ class MappingMethodSourceCode:
                 f'def convert(self) -> "{self.target_cls_name}":',
                 f"    d = {{}}",
             ]
+        self.factories: dict[str, Callable] = {}
 
     def get_source(self, name: str) -> str:
         if self.from_classmethod:
@@ -96,7 +98,10 @@ class MappingMethodSourceCode:
         self._add_line(target_field_name, default.value)
 
     def add_default_factory(self, target_field_name: str, default_factory: DefaultFactory) -> None:
-        self._add_line(target_field_name, str(default_factory.factory))
+        name = f"_{uuid4().hex}"
+        self.factories[name] = default_factory.factory
+        source = self.get_source(name)
+        self._add_line(target_field_name, f"{source}()")
 
     def add_mapping(self, target_field_name: str, source_origin: Origin) -> None:
         if isinstance(source_origin, Default):

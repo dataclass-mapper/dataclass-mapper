@@ -28,7 +28,7 @@ def _make_mapper(
     source_cls: Any,
     target_cls: Any,
     from_classmethod: bool = False,
-) -> str:
+) -> tuple[str, dict[str, Callable]]:
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
     source_code = MappingMethodSourceCode(
@@ -66,7 +66,7 @@ def _make_mapper(
             f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
         )
 
-    return str(source_code)
+    return str(source_code), source_code.factories
 
 
 T = TypeVar("T")
@@ -81,12 +81,16 @@ def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, Origin]] = None) -> 
     field_mapping = mapping or cast(dict[str, Origin], {})
 
     def wrapped(source_cls: T) -> T:
-        map_code = _make_mapper(field_mapping, source_cls=source_cls, target_cls=TargetCls)
+        map_code, factories = _make_mapper(
+            field_mapping, source_cls=source_cls, target_cls=TargetCls
+        )
         module = import_module(TargetCls.__module__)
 
         d: dict = {}
         exec(map_code, module.__dict__, d)
         setattr(source_cls, get_map_to_func_name(TargetCls), d["convert"])
+        for name, factory in factories.items():
+            setattr(source_cls, name, factory)
 
         return source_cls
 
@@ -104,7 +108,7 @@ def safe_mapper_from(
     field_mapping = mapping or cast(dict[str, Origin], {})
 
     def wrapped(target_cls: T) -> T:
-        map_code = _make_mapper(
+        map_code, factories = _make_mapper(
             field_mapping,
             source_cls=SourceCls,
             target_cls=target_cls,
@@ -113,9 +117,11 @@ def safe_mapper_from(
         module = import_module(SourceCls.__module__)
 
         d: dict = {}
-        print(map_code)
+        # print(map_code)
         exec(map_code, module.__dict__, d)
         setattr(target_cls, get_map_from_func_name(SourceCls), d["convert"])
+        for name, factory in factories.items():
+            setattr(SourceCls, name, factory)
 
         return target_cls
 
