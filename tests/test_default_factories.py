@@ -22,10 +22,11 @@ class BarEmpty:
     pass
 
 
-def test_default_values_in_mapping_from():
-    @safe_mapper_from(BarEmpty, {"x": DefaultFactory(lambda self: 42)})
-    @dataclass
-    class Foo:
-        x: int
+@safe_mapper_from(BarEmpty, {"x": DefaultFactory(lambda self: 42)})
+@dataclass
+class Foo:
+    x: int
 
+
+def test_default_values_in_mapping_from():
     assert map_to(BarEmpty(), Foo) == Foo(x=42)

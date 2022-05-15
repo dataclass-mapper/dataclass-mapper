@@ -3,12 +3,7 @@ from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .field import Field
-from .mapping_method import (
-    MappingMethodSourceCode,
-    Origin,
-    get_map_from_func_name,
-    get_map_to_func_name,
-)
+from .mapping_method import MappingMethodSourceCode, Origin, get_map_to_func_name
 
 
 def get_class_fields(cls: Any) -> dict[str, Field]:
@@ -27,7 +22,6 @@ def _make_mapper(
     mapping: dict[str, Origin],
     source_cls: Any,
     target_cls: Any,
-    from_classmethod: bool = False,
 ) -> tuple[str, dict[str, Callable]]:
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
@@ -36,7 +30,6 @@ def _make_mapper(
         target_cls=target_cls,
         actual_source_fields=actual_source_fields,
         actual_target_fields=actual_target_fields,
-        from_classmethod=from_classmethod,
     )
 
     for target_field_name in actual_target_fields.keys():
@@ -112,14 +105,13 @@ def safe_mapper_from(
             field_mapping,
             source_cls=SourceCls,
             target_cls=target_cls,
-            from_classmethod=True,
         )
         module = import_module(SourceCls.__module__)
 
         d: dict = {}
         # print(map_code)
         exec(map_code, module.__dict__, d)
-        setattr(target_cls, get_map_from_func_name(SourceCls), d["convert"])
+        setattr(SourceCls, get_map_to_func_name(target_cls), d["convert"])
         for name, factory in factories.items():
             setattr(SourceCls, name, factory)
 
@@ -133,10 +125,6 @@ def map_to(obj, TargetCls: Type[T]) -> T:
     func_name = get_map_to_func_name(TargetCls)
     if hasattr(obj, func_name):
         return cast(T, getattr(obj, func_name)())
-
-    func_name_from = get_map_from_func_name(type(obj))
-    if hasattr(TargetCls, func_name_from):
-        return cast(T, getattr(TargetCls, func_name_from)(obj))
 
     raise NotImplementedError(
         f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"

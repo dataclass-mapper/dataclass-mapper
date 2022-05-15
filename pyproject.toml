@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "safe_mapper"
-version = "0.4.3"
+version = "0.4.4"
 description = ""
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
 
