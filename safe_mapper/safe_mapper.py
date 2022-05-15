@@ -74,24 +74,10 @@ def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, Origin]] = None) -> 
 
     With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
     """
-    field_mapping = mapping or cast(dict[str, Origin], {})
 
-    def wrapped(source_cls: T) -> T:
-        map_code, factories, context = _make_mapper(
-            field_mapping, source_cls=source_cls, target_cls=TargetCls
-        )
-        module = import_module(TargetCls.__module__)
-
-        d: dict = {}
-        # print(f"mapper from {source_cls} to {TargetCls}")
-        # print(map_code)
-        # print()
-        exec(map_code, module.__dict__ | context, d)
-        setattr(source_cls, get_map_to_func_name(TargetCls), d["convert"])
-        for name, factory in factories.items():
-            setattr(source_cls, name, factory)
-
-        return source_cls
+    def wrapped(SourceCls: T) -> T:
+        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping)
+        return SourceCls
 
     return wrapped
 
@@ -104,28 +90,34 @@ def safe_mapper_from(
 
     With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
     """
-    field_mapping = mapping or cast(dict[str, Origin], {})
 
-    def wrapped(target_cls: T) -> T:
-        map_code, factories, context = _make_mapper(
-            field_mapping,
-            source_cls=SourceCls,
-            target_cls=target_cls,
-        )
-        module = import_module(SourceCls.__module__)
-
-        d: dict = {}
-        # print(f"mapper from {SourceCls} to {target_cls}")
-        # print(map_code)
-        # print()
-        exec(map_code, module.__dict__ | context, d)
-        setattr(SourceCls, get_map_to_func_name(target_cls), d["convert"])
-        for name, factory in factories.items():
-            setattr(SourceCls, name, factory)
-
-        return target_cls
+    def wrapped(TargetCls: T) -> T:
+        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping)
+        return TargetCls
 
     return wrapped
+
+
+def add_mapper_function(
+    SourceCls: Any, TargetCls: Any, mapping: Optional[dict[str, Origin]]
+) -> None:
+    field_mapping = mapping or cast(dict[str, Origin], {})
+
+    map_code, factories, context = _make_mapper(
+        field_mapping,
+        source_cls=SourceCls,
+        target_cls=TargetCls,
+    )
+    module = import_module(SourceCls.__module__)
+
+    d: dict = {}
+    # print(f"mapper from {SourceCls} to {target_cls}")
+    # print(map_code)
+    # print()
+    exec(map_code, module.__dict__ | context, d)
+    setattr(SourceCls, get_map_to_func_name(TargetCls), d["convert"])
+    for name, factory in factories.items():
+        setattr(SourceCls, name, factory)
 
 
 def map_to(obj, TargetCls: Type[T]) -> T:
