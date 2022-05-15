@@ -66,20 +66,33 @@ class MappingMethodSourceCode:
             indent = 8
         self._add_line(target_field_name, source, indent)
 
-    def _get_map_func(self, name: str, target_cls: Any) -> str:
+    def _get_map_func(self, name: str, source_cls: Any, target_cls: Any) -> str:
         if self.from_classmethod:
-            func_name = get_map_from_func_name(target_cls)
+            func_name = get_map_from_func_name(source_cls)
             return f"{target_cls.__name__}.{func_name}({name})"
         else:
             func_name = get_map_to_func_name(target_cls)
             return f"{name}.{func_name}()"
 
+    def is_mappable_to(self, SourceCls, TargetCls) -> bool:
+        if self.from_classmethod:
+            func_name = get_map_from_func_name(SourceCls)
+            return hasattr(TargetCls, func_name)
+        else:
+            func_name = get_map_to_func_name(TargetCls)
+            return hasattr(SourceCls, func_name)
+
     def add_recursive(
-        self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
+        self,
+        target_field_name: str,
+        source_field_name: str,
+        source_cls: Any,
+        target_cls: Any,
+        if_none: bool = False,
     ) -> None:
         source = self.get_source(source_field_name)
 
-        right_side = self._get_map_func(source, target_cls)
+        right_side = self._get_map_func(source, source_cls=source_cls, target_cls=target_cls)
         if if_none:
             right_side = f"None if {source} is None else {right_side}"
         self._add_line(target_field_name, right_side)
@@ -88,12 +101,13 @@ class MappingMethodSourceCode:
         self,
         target_field_name: str,
         source_field_name: str,
+        source_cls: Any,
         target_cls: Any,
         if_none: bool = False,
         only_if_not_None: bool = False,
     ) -> None:
         source = self.get_source(source_field_name)
-        right_side = f'[{self._get_map_func("x", target_cls)} for x in {source}]'
+        right_side = f'[{self._get_map_func("x", source_cls=source_cls, target_cls=target_cls)} for x in {source}]'
         if if_none:
             right_side = f"None if {source} is None else {right_side}"
         indent = 4
@@ -140,13 +154,14 @@ class MappingMethodSourceCode:
 
             # different type, buty also safe mappable
             # with optional
-            elif is_mappable_to(source_field.type, target_field.type) and not (
+            elif self.is_mappable_to(source_field.type, target_field.type) and not (
                 source_field.allow_none and target_field.disallow_none
             ):
                 self.add_recursive(
-                    target_field_name,
-                    source_field_name,
-                    target_field.type,
+                    target_field_name=target_field_name,
+                    source_field_name=source_field_name,
+                    source_cls=source_field.type,
+                    target_cls=target_field.type,
                     if_none=source_field.allow_none,
                 )
 
@@ -155,13 +170,16 @@ class MappingMethodSourceCode:
             elif (
                 get_origin(source_field.type) is list
                 and get_origin(target_field.type) is list
-                and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
+                and self.is_mappable_to(
+                    get_args(source_field.type)[0], get_args(target_field.type)[0]
+                )
                 and not (source_field.allow_none and target_field.disallow_none)
             ):
                 self.add_recursive_list(
-                    target_field_name,
-                    source_field_name,
-                    get_args(target_field.type)[0],
+                    target_field_name=target_field_name,
+                    source_field_name=source_field_name,
+                    source_cls=get_args(source_field.type)[0],
+                    target_cls=get_args(target_field.type)[0],
                     if_none=source_field.allow_none,
                 )
 
@@ -169,15 +187,18 @@ class MappingMethodSourceCode:
             elif (
                 get_origin(source_field.type) is list
                 and get_origin(target_field.type) is list
-                and is_mappable_to(get_args(source_field.type)[0], get_args(target_field.type)[0])
+                and self.is_mappable_to(
+                    get_args(source_field.type)[0], get_args(target_field.type)[0]
+                )
                 and source_field.allow_none
                 and target_field.disallow_none
                 and target_field.has_default
             ):
                 self.add_recursive_list(
-                    target_field_name,
-                    source_field_name,
-                    get_args(target_field.type)[0],
+                    target_field_name=target_field_name,
+                    source_field_name=source_field_name,
+                    source_cls=get_args(source_field.type)[0],
+                    target_cls=get_args(target_field.type)[0],
                     if_none=source_field.allow_none,
                     only_if_not_None=True,
                 )
@@ -202,8 +223,3 @@ def get_map_to_func_name(cls: Any) -> str:
 
 def get_map_from_func_name(cls: Any) -> str:
     return f"_map_from_{cls.__name__}"
-
-
-def is_mappable_to(SourceCls, TargetCls) -> bool:
-    func_name = get_map_to_func_name(TargetCls)
-    return hasattr(SourceCls, func_name)
