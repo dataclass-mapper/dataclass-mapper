@@ -110,6 +110,7 @@ The current version has support for:
 - :heavy_check_mark: Recursive models
 - :heavy_check_mark: `List` types
 - :heavy_check_mark: Default values for simple types
+- :heavy_check_mark: Mapper in the other direction. Use the `safe_mapper_from` decorator and the same `map_to` method.
 
 Still missing features:
 
@@ -119,4 +120,3 @@ Still missing features:
 - :heavy_multiplication_x: Aliases in `pydantic` classes
 - :heavy_multiplication_x: Checking if all source attributes were used
 - :heavy_multiplication_x: SQLAlchemy ORM
-- :heavy_multiplication_x: Mapper in the other direction

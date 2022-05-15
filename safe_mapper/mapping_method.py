@@ -12,15 +12,30 @@ class MappingMethodSourceCode:
         target_cls: Any,
         actual_source_fields: dict[str, Field],
         actual_target_fields: dict[str, Field],
+        from_classmethod: bool,
     ):
         self.source_cls_name = source_cls.__name__
         self.target_cls_name = target_cls.__name__
         self.actual_source_fields = actual_source_fields
         self.actual_target_fields = actual_target_fields
-        self.lines = [
-            f"def convert(self):",
-            f"    d = {{}}",
-        ]
+        self.from_classmethod = from_classmethod
+        if self.from_classmethod:
+            self.lines = [
+                f"@classmethod",
+                f'def convert(cls, obj: {self.source_cls_name}) -> "{self.target_cls_name}":',
+                f"    d = {{}}",
+            ]
+        else:
+            self.lines = [
+                f'def convert(self) -> "{self.target_cls_name}":',
+                f"    d = {{}}",
+            ]
+
+    def get_source(self, name: str) -> str:
+        if self.from_classmethod:
+            return f"obj.{name}"
+        else:
+            return f"self.{name}"
 
     def _add_line(self, left_side: str, right_side: str, indent=4) -> None:
         self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
@@ -28,26 +43,29 @@ class MappingMethodSourceCode:
     def add_assignment(
         self, target_field_name: str, source_field_name: str, only_if_not_None: bool = False
     ) -> None:
+        source = self.get_source(source_field_name)
         indent = 4
         if only_if_not_None:
-            self.lines.append(f"    if self.{source_field_name} is not None:")
+            self.lines.append(f"    if {source} is not None:")
             indent = 8
-        self._add_line(target_field_name, f"self.{source_field_name}", indent)
+        self._add_line(target_field_name, source, indent)
 
     def add_recursive(
         self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
     ) -> None:
-        right_side = f"map_to(self.{source_field_name}, {target_cls.__name__})"
+        source = self.get_source(source_field_name)
+        right_side = f"map_to({source}, {target_cls.__name__})"
         if if_none:
-            right_side = f"None if self.{source_field_name} is None else {right_side}"
+            right_side = f"None if {source} is None else {right_side}"
         self._add_line(target_field_name, right_side)
 
     def add_recursive_list(
         self, target_field_name: str, source_field_name: str, target_cls: Any, if_none: bool = False
     ) -> None:
-        right_side = f"[map_to(x, {target_cls.__name__}) for x in self.{source_field_name}]"
+        source = self.get_source(source_field_name)
+        right_side = f"[map_to(x, {target_cls.__name__}) for x in {source}]"
         if if_none:
-            right_side = f"None if self.{source_field_name} is None else {right_side}"
+            right_side = f"None if {source} is None else {right_side}"
         self._add_line(target_field_name, right_side)
 
     def add_mapping(self, target_field_name: str, source_field_name: str) -> None:
@@ -101,12 +119,19 @@ class MappingMethodSourceCode:
             )
 
     def __str__(self) -> str:
-        return_statement = f"    return {self.target_cls_name}(**d)"
+        if self.from_classmethod:
+            return_statement = f"    return cls(**d)"
+        else:
+            return_statement = f"    return {self.target_cls_name}(**d)"
         return "\n".join(self.lines + [return_statement])
 
 
 def get_map_to_func_name(cls: Any) -> str:
     return f"_map_to_{cls.__name__}"
+
+
+def get_map_from_func_name(cls: Any) -> str:
+    return f"_map_from_{cls.__name__}"
 
 
 def is_mappable_to(SourceCls, TargetCls) -> bool:

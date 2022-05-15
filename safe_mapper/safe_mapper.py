@@ -3,7 +3,7 @@ from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .field import Field
-from .mapping_method import MappingMethodSourceCode, get_map_to_func_name
+from .mapping_method import MappingMethodSourceCode, get_map_from_func_name, get_map_to_func_name
 
 
 def get_class_fields(cls: Any) -> dict[str, Field]:
@@ -18,7 +18,12 @@ def get_class_fields(cls: Any) -> dict[str, Field]:
     raise NotImplementedError("only dataclasses and pydantic classes are supported")
 
 
-def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> str:
+def _make_mapper(
+    mapping: dict[str, str],
+    source_cls: Any,
+    target_cls: Any,
+    from_classmethod: bool = False,
+) -> str:
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
     source_code = MappingMethodSourceCode(
@@ -26,6 +31,7 @@ def _make_mapper(mapping: dict[str, str], source_cls: Any, target_cls: Any) -> s
         target_cls=target_cls,
         actual_source_fields=actual_source_fields,
         actual_target_fields=actual_target_fields,
+        from_classmethod=from_classmethod,
     )
 
     for target_field_name in actual_target_fields.keys():
@@ -82,11 +88,43 @@ def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, str]] = None) -> Cal
     return wrapped
 
 
+def safe_mapper_from(SourceCls: Any, mapping: Optional[dict[str, str]] = None) -> Callable[[T], T]:
+    """Adds a private mapper method to the class, that maps an object of `SourceCls` to the current class.
+    The mapper method can be called using the `map_to` function.
+
+    With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
+    """
+    field_mapping = mapping or cast(dict[str, str], {})
+
+    def wrapped(target_cls: T) -> T:
+        map_code = _make_mapper(
+            field_mapping,
+            source_cls=SourceCls,
+            target_cls=target_cls,
+            from_classmethod=True,
+        )
+        module = import_module(SourceCls.__module__)
+
+        d: dict = {}
+        print(map_code)
+        exec(map_code, module.__dict__, d)
+        setattr(target_cls, get_map_from_func_name(SourceCls), d["convert"])
+
+        return target_cls
+
+    return wrapped
+
+
 def map_to(obj, TargetCls: Type[T]) -> T:
     """Maps the given object to an object of type `TargetCls`, if such a safe mapping was defined for the type of the given object."""
     func_name = get_map_to_func_name(TargetCls)
-    if not hasattr(obj, func_name):
-        raise NotImplementedError(
-            f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"
-        )
-    return cast(T, getattr(obj, func_name)())
+    if hasattr(obj, func_name):
+        return cast(T, getattr(obj, func_name)())
+
+    func_name_from = get_map_from_func_name(type(obj))
+    if hasattr(TargetCls, func_name_from):
+        return getattr(TargetCls, func_name_from)(obj)
+
+    raise NotImplementedError(
+        f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"
+    )
