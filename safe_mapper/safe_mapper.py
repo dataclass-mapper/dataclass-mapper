@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Type, TypeVar, cast
 from uuid import uuid4
 
 from .field import MetaField
-from .mapping_method import MappingMethodSourceCode, Origin, get_map_to_func_name
+from .mapping_method import MappingMethodSourceCode, StringFieldMapping, get_map_to_func_name
 
 
 def get_class_fields(cls: Any) -> dict[str, MetaField]:
@@ -20,7 +20,7 @@ def get_class_fields(cls: Any) -> dict[str, MetaField]:
 
 
 def _make_mapper(
-    mapping: dict[str, Origin],
+    mapping: StringFieldMapping,
     source_cls: Any,
     target_cls: Any,
 ) -> tuple[str, dict[str, Callable], dict[str, Any]]:
@@ -28,26 +28,23 @@ def _make_mapper(
     actual_target_fields = get_class_fields(target_cls)
     target_cls_alias = f"_{uuid4().hex}"
     source_code = MappingMethodSourceCode(
-        source_cls=source_cls,
-        target_cls=target_cls,
-        actual_source_fields=actual_source_fields,
-        actual_target_fields=actual_target_fields,
-        target_cls_alias=target_cls_alias,
+        source_cls_name=source_cls.__name__,
+        target_cls_name=target_cls.__name__,
+        target_cls_alias_name=target_cls_alias,
     )
 
     for target_field_name in actual_target_fields.keys():
+        target = actual_target_fields[target_field_name]
         # mapping exists
         if target_field_name in mapping:
-            source_code.add_mapping(
-                target_field_name=target_field_name,
-                source_origin=mapping[target_field_name],
-            )
+            raw_source = mapping[target_field_name]
+            if isinstance(raw_source, str):
+                source_code.add_mapping(target=target, source=actual_source_fields[raw_source])
+            else:
+                source_code.add_mapping(target=target, source=raw_source)
         # there's a variable with the same name in the source
         elif target_field_name in actual_source_fields:
-            source_code.add_mapping(
-                target_field_name=target_field_name,
-                source_origin=target_field_name,
-            )
+            source_code.add_mapping(target=target, source=actual_source_fields[target_field_name])
         # setting the target is not required (because it has some default value), so a mapping is not necessary
         elif not actual_target_fields[target_field_name].required:
             pass
@@ -68,7 +65,7 @@ def _make_mapper(
 T = TypeVar("T")
 
 
-def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, Origin]] = None) -> Callable[[T], T]:
+def safe_mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
     """Adds a private mapper method to the class, that maps the current class to the `TargetCls`.
     The mapper method can be called using the `map_to` function.
 
@@ -83,7 +80,7 @@ def safe_mapper(TargetCls: Any, mapping: Optional[dict[str, Origin]] = None) -> 
 
 
 def safe_mapper_from(
-    SourceCls: Any, mapping: Optional[dict[str, Origin]] = None
+    SourceCls: Any, mapping: Optional[StringFieldMapping] = None
 ) -> Callable[[T], T]:
     """Adds a private mapper method to the class, that maps an object of `SourceCls` to the current class.
     The mapper method can be called using the `map_to` function.
@@ -99,9 +96,9 @@ def safe_mapper_from(
 
 
 def add_mapper_function(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[dict[str, Origin]]
+    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping]
 ) -> None:
-    field_mapping = mapping or cast(dict[str, Origin], {})
+    field_mapping = mapping or cast(StringFieldMapping, {})
 
     map_code, factories, context = _make_mapper(
         field_mapping,
@@ -111,9 +108,6 @@ def add_mapper_function(
     module = import_module(SourceCls.__module__)
 
     d: dict = {}
-    # print(f"mapper from {SourceCls} to {target_cls}")
-    # print(map_code)
-    # print()
     exec(map_code, module.__dict__ | context, d)
     setattr(SourceCls, get_map_to_func_name(TargetCls), d["convert"])
     for name, factory in factories.items():
