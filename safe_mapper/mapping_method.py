@@ -2,7 +2,7 @@ from inspect import isfunction, signature
 from typing import Any, Callable, Union, cast, get_args, get_origin
 from uuid import uuid4
 
-from .field import Field
+from .field import MetaField
 
 Origin = Union[str, Callable]
 
@@ -14,8 +14,8 @@ class MappingMethodSourceCode:
         self,
         source_cls: Any,
         target_cls: Any,
-        actual_source_fields: dict[str, Field],
-        actual_target_fields: dict[str, Field],
+        actual_source_fields: dict[str, MetaField],
+        actual_target_fields: dict[str, MetaField],
         target_cls_alias: str,
     ):
         self.source_cls_name = source_cls.__name__
@@ -114,12 +114,12 @@ class MappingMethodSourceCode:
             ):
                 self.add_assignment(target_field_name, source_field_name)
 
-            # allow optional to non-optional if target has default
+            # allow optional to non-optional if setting the target is not required (because of an default value)
             elif (
                 target_field.type == source_field.type
                 and source_field.allow_none
                 and target_field.disallow_none
-                and target_field.has_default
+                and not target_field.required
             ):
                 self.add_assignment(target_field_name, source_field_name, only_if_not_None=True)
 
@@ -153,7 +153,7 @@ class MappingMethodSourceCode:
                     if_none=source_field.allow_none,
                 )
 
-            # allow optional to non-optional if target has default
+            # allow optional to non-optional if setting the target is not required (because of an default value)
             elif (
                 get_origin(source_field.type) is list
                 and get_origin(target_field.type) is list
@@ -162,7 +162,7 @@ class MappingMethodSourceCode:
                 )
                 and source_field.allow_none
                 and target_field.disallow_none
-                and target_field.has_default
+                and not target_field.required
             ):
                 self.add_recursive_list(
                     target_field_name=target_field_name,

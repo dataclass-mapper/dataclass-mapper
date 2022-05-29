@@ -3,17 +3,17 @@ from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 from uuid import uuid4
 
-from .field import Field
+from .field import MetaField
 from .mapping_method import MappingMethodSourceCode, Origin, get_map_to_func_name
 
 
-def get_class_fields(cls: Any) -> dict[str, Field]:
+def get_class_fields(cls: Any) -> dict[str, MetaField]:
     if is_dataclass(cls):
-        return {field.name: Field.from_dataclass(field) for field in fields(cls)}
+        return {field.name: MetaField.from_dataclass(field) for field in fields(cls)}
     try:
         pydantic = __import__("pydantic")
         if issubclass(cls, pydantic.BaseModel):
-            return {field.name: Field.from_pydantic(field) for field in cls.__fields__.values()}
+            return {field.name: MetaField.from_pydantic(field) for field in cls.__fields__.values()}
     except ImportError:
         pass
     raise NotImplementedError("only dataclasses and pydantic classes are supported")
@@ -48,8 +48,8 @@ def _make_mapper(
                 target_field_name=target_field_name,
                 source_origin=target_field_name,
             )
-        # target has some defaults, so a mapping is not necessary
-        elif actual_target_fields[target_field_name].has_default:
+        # setting the target is not required (because it has some default value), so a mapping is not necessary
+        elif not actual_target_fields[target_field_name].required:
             pass
         # not possible to map
         else:

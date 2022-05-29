@@ -10,11 +10,20 @@ def is_optional(type_: Any) -> bool:
 
 
 @dataclass
-class Field:
+class MetaField:
+    """Dataclass containing meta information about fields in dataclasses or pydantic classes.
+    Information like the name and type of the field, and if it is required to set it.
+
+    The type will contain the exact type of the field.
+    However for optional fields, the Optional quantifier is removed, and `allow_none` is set accordingly.
+    - int           => type = int, allow_none = False
+    - Optional[int] => type = int, allow_none = True
+    """
+
     name: str
     type: Any
     allow_none: bool
-    has_default: bool
+    required: bool
 
     @property
     def disallow_none(self) -> bool:
@@ -31,7 +40,7 @@ class Field:
         return f"'{self.name}' of type '{self.type_string}'"
 
     @classmethod
-    def from_dataclass(cls, field: DataclassField) -> "Field":
+    def from_dataclass(cls, field: DataclassField) -> "MetaField":
         has_default = field.default is not MISSING or field.default_factory is not MISSING
         if is_optional(field.type):
             real_types = [t for t in get_args(field.type) if t is not type(None)]
@@ -40,21 +49,21 @@ class Field:
                 name=field.name,
                 type=real_types[0],
                 allow_none=True,
-                has_default=has_default,
+                required=not has_default,
             )
         else:
             return cls(
                 name=field.name,
                 type=field.type,
                 allow_none=False,
-                has_default=has_default,
+                required=not has_default,
             )
 
     @classmethod
-    def from_pydantic(cls, field: Any) -> "Field":
+    def from_pydantic(cls, field: Any) -> "MetaField":
         return cls(
             name=field.name,
             type=field.outer_type_,
             allow_none=field.allow_none,
-            has_default=not field.required,
+            required=field.required,
         )

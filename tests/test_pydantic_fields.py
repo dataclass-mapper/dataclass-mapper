@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from safe_mapper.field import Field as MetaField
+from safe_mapper.field import MetaField
 from safe_mapper.safe_mapper import get_class_fields
 
 
@@ -14,9 +14,9 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_fields(Foo)
     assert fields == {
-        "x": MetaField(name="x", type=int, allow_none=False, has_default=False),
-        "y": MetaField(name="y", type=str, allow_none=False, has_default=False),
-        "z": MetaField(name="z", type=list[int], allow_none=False, has_default=False),
+        "x": MetaField(name="x", type=int, allow_none=False, required=True),
+        "y": MetaField(name="y", type=str, allow_none=False, required=True),
+        "z": MetaField(name="z", type=list[int], allow_none=False, required=True),
     }
 
 
@@ -46,12 +46,12 @@ def test_pydantic_defaults_field() -> None:
         g: Optional[str] = Field(default_factory=lambda: "hello")
 
     fields = get_class_fields(Foo)
-    assert not fields["a"].has_default
-    assert fields["b1"].has_default  # pydantic fills optionals fields automatically with None
-    assert not fields["b2"].has_default  # however not for elipsis defaults
-    assert not fields["b3"].has_default
-    assert fields["c"].has_default
-    assert fields["d"].has_default
-    assert fields["e"].has_default
-    assert fields["f"].has_default
-    assert fields["g"].has_default
+    assert fields["a"].required
+    assert not fields["b1"].required  # pydantic fills optionals fields automatically with None
+    assert fields["b2"].required  # however not for elipsis defaults
+    assert fields["b3"].required
+    assert not fields["c"].required
+    assert not fields["d"].required
+    assert not fields["e"].required
+    assert not fields["f"].required
+    assert not fields["g"].required
