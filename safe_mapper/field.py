@@ -52,12 +52,9 @@ class Field:
 
     @classmethod
     def from_pydantic(cls, field: Any) -> "Field":
-        has_default = field.default is not None or field.default_factory is not None
-        if field.allow_none and field.default is None:
-            has_default = True
         return cls(
             name=field.name,
             type=field.outer_type_,
             allow_none=field.allow_none,
-            has_default=has_default,
+            has_default=not field.required,
         )
