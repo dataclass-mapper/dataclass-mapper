@@ -16,7 +16,18 @@ def get_class_fields(cls: Any) -> dict[str, MetaField]:
             return {field.name: MetaField.from_pydantic(field) for field in cls.__fields__.values()}
     except ImportError:
         pass
-    raise NotImplementedError("only dataclasses and pydantic classes are supported")
+
+    try:
+        sqlalchemy = __import__("sqlalchemy")
+        if isinstance(cls, sqlalchemy.orm.decl_api.DeclarativeMeta):
+
+            return {
+                column.name: MetaField.from_sqlalchemy(column) for column in cls.__table__.columns
+            }
+    except ImportError:
+        pass
+
+    raise NotImplementedError("only dataclasses, pydantic, and sqlalchemy classes are supported")
 
 
 def _make_mapper(
