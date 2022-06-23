@@ -124,6 +124,7 @@ The current version has support for:
 - :heavy_check_mark: Mapper in the other direction. Use the `safe_mapper_from` decorator and the same `map_to` method.
 - :heavy_check_mark: Assign Values with lambdas (with `{"x": lambda: 42}`)
 - :heavy_check_mark: Assign Functions Calls with lambdas and `self` (with `{"x": lambda self: self.x}`)
+- :heavy_check_mark: `USE_DEFAULT` for values that you don't wanna set but have a default value/factory
 
 Still missing features:
 

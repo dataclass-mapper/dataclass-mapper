@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Type, TypeVar, cast
 from uuid import uuid4
 
 from .field import MetaField
-from .mapping_method import MappingMethodSourceCode, StringFieldMapping, get_map_to_func_name
+from .mapping_method import MappingMethodSourceCode, Other, StringFieldMapping, get_map_to_func_name
 
 
 def get_class_fields(cls: Any) -> dict[str, MetaField]:
@@ -40,14 +40,21 @@ def _make_mapper(
             raw_source = mapping[target_field_name]
             if isinstance(raw_source, str):
                 source_code.add_mapping(target=target, source=actual_source_fields[raw_source])
+            elif isinstance(raw_source, Other):
+                if raw_source == Other.USE_DEFAULT:
+                    if actual_target_fields[target_field_name].required:
+                        # leaving the target empty and using the default value/factory is not possible,
+                        # as the target doesn't have a default value/factory
+                        raise ValueError(
+                            f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to USE_DEFAULT, as it has no default"
+                        )
+                else:
+                    raise NotImplemented
             else:
                 source_code.add_mapping(target=target, source=raw_source)
         # there's a variable with the same name in the source
         elif target_field_name in actual_source_fields:
             source_code.add_mapping(target=target, source=actual_source_fields[target_field_name])
-        # setting the target is not required (because it has some default value), so a mapping is not necessary
-        elif not actual_target_fields[target_field_name].required:
-            pass
         # not possible to map
         else:
             raise ValueError(

@@ -1,13 +1,20 @@
-from dataclasses import dataclass
+from enum import Enum, auto
 from inspect import isfunction, signature
 from typing import Any, Callable, Union, cast, get_args, get_origin
 from uuid import uuid4
 
 from .field import MetaField
 
-Origin = Union[str, Callable]
+
+class Other(Enum):
+    USE_DEFAULT = auto()
 
 
+# the different types that can be used as origin (source) for mapping to a member
+# - str: the name of a different variable in the original class
+# - Callable: a function that produces the value (can use `self` as parameter)
+# - Other.USE_DEFAULT: Don't map to this variable (only allowed if there is a default value/factory for it)
+Origin = Union[str, Callable, Other]
 StringFieldMapping = dict[str, Origin]
 
 
