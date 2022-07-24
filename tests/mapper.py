@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from safe_mapper.safe_mapper import map_to, safe_mapper
+from dataclass_mapper.mapper import map_to, mapper
 
 
 @dataclass
@@ -19,7 +19,7 @@ class Person:
 
 
 def test_simple_mapper():
-    @safe_mapper(Bar, {"x": "x", "y": "y"})
+    @mapper(Bar, {"x": "x", "y": "y"})
     @dataclass
     class Foo:
         x: int
@@ -31,7 +31,7 @@ def test_simple_mapper():
 
 
 def test_default_arg_mapper():
-    @safe_mapper(Bar, {"x": "x"})
+    @mapper(Bar, {"x": "x"})
     @dataclass
     class Foo:
         x: int
@@ -41,7 +41,7 @@ def test_default_arg_mapper():
     bar = Bar(x=42, y="answer")
     assert map_to(foo, Bar) == bar
 
-    @safe_mapper(Bar)
+    @mapper(Bar)
     @dataclass
     class Foo2:
         x: int
@@ -53,7 +53,7 @@ def test_default_arg_mapper():
 
 
 def test_cyclic_mapper():
-    @safe_mapper(Bar, {"x": "answer", "y": "of_what"})
+    @mapper(Bar, {"x": "answer", "y": "of_what"})
     @dataclass
     class FooOtherOrder:
         of_what: str
@@ -67,7 +67,7 @@ def test_cyclic_mapper():
 def test_forgotten_target_mapping():
     with pytest.raises(ValueError) as excinfo:
 
-        @safe_mapper(Person, {"first_name": "x"})
+        @mapper(Person, {"first_name": "x"})
         @dataclass
         class ForgottenMapping:
             x: str
@@ -79,7 +79,7 @@ def test_forgotten_target_mapping():
 def test_additional_key():
     with pytest.raises(ValueError) as excinfo:
 
-        @safe_mapper(Person, {"first_name": "first", "second_name": "second", "height": ""})
+        @mapper(Person, {"first_name": "first", "second_name": "second", "height": ""})
         @dataclass
         class AdditionalKeyMapping:
             first: str
@@ -92,7 +92,7 @@ def test_additional_key():
 
 
 def test_Readme_example():
-    @safe_mapper(Person, {"second_name": "surname"})
+    @mapper(Person, {"second_name": "surname"})
     @dataclass
     class Contact:
         first_name: str

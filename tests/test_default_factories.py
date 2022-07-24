@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from safe_mapper import map_to, safe_mapper, safe_mapper_from
+from dataclass_mapper import map_to, mapper, mapper_from
 
 
 @dataclass
@@ -10,7 +10,7 @@ class Bar:
 
 
 def test_default_values_in_mapping():
-    @safe_mapper(Bar, {"x": lambda: 42, "y": lambda self: self.name})
+    @mapper(Bar, {"x": lambda: 42, "y": lambda self: self.name})
     @dataclass
     class FooEmpty:
         name: str
@@ -23,7 +23,7 @@ class BarEmpty:
     pass
 
 
-@safe_mapper_from(BarEmpty, {"x": lambda: 42})
+@mapper_from(BarEmpty, {"x": lambda: 42})
 @dataclass
 class Foo:
     x: int

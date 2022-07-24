@@ -2,8 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from safe_mapper.field import MetaField
-from safe_mapper.safe_mapper import get_class_fields
+from dataclass_mapper.field import MetaField
+from dataclass_mapper.mapper import get_class_fields
 
 
 def test_pydantic_normal_field() -> None:

@@ -72,7 +72,7 @@ def _make_mapper(
 T = TypeVar("T")
 
 
-def safe_mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
+def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
     """Adds a private mapper method to the class, that maps the current class to the `TargetCls`.
     The mapper method can be called using the `map_to` function.
 
@@ -86,9 +86,7 @@ def safe_mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) ->
     return wrapped
 
 
-def safe_mapper_from(
-    SourceCls: Any, mapping: Optional[StringFieldMapping] = None
-) -> Callable[[T], T]:
+def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
     """Adds a private mapper method to the class, that maps an object of `SourceCls` to the current class.
     The mapper method can be called using the `map_to` function.
 

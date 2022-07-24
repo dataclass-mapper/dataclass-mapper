@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from safe_mapper.safe_mapper import map_to, safe_mapper
+from dataclass_mapper.mapper import map_to, mapper
 
 
 class Bar(BaseModel):
@@ -9,7 +9,7 @@ class Bar(BaseModel):
 
 
 def test_simple_pydantic_mapper():
-    @safe_mapper(Bar)
+    @mapper(Bar)
     class Foo(BaseModel):
         x: int
         y: str
@@ -24,12 +24,12 @@ class Baz(BaseModel):
 
 
 def test_recursive_pydantic_mapper():
-    @safe_mapper(Bar)
+    @mapper(Bar)
     class Bar2(BaseModel):
         x: int
         y: str
 
-    @safe_mapper(Baz)
+    @mapper(Baz)
     class Baz2(BaseModel):
         bar: Bar2
 

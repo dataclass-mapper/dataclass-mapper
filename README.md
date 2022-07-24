@@ -1,14 +1,15 @@
-# safe-mapper
+# dataclass-mapper
 
-Writing mapper methods between two similar data structures is boring and error-prone.
+Writing mapper methods between two similar dataclasses is boring and error-prone.
 Much better to let a library auto-generate them for you.
 
-This library makes sure that all fields of the target class are actually mapped to (already at the class definition time), and also provides helper mappers for variables that don't change their names.
+This library makes sure that all fields of the target class are actually mapped to (already at the module import time), and also provides helper mappers for variables that don't change their names.
+It supports Python's dataclasses and also Pydantic models.
 
 ## Installation
 
 ```
-pip install safe-mapper
+pip install dataclass-mapper
 ```
 
 ## Example
@@ -76,9 +77,9 @@ work_contract = software_developer_contract.to_WorkContract()
 you can write:
 
 ```python
-from safe_mapper.safe_mapper import map_to, safe_mapper
+from dataclass_mapper import map_to, mapper
 
-@safe_mapper(Person, {
+@mapper(Person, {
   "second_name": "surname",
   "full_name": lambda self: f"{self.first_name} {self.surname}"
 })
@@ -88,7 +89,7 @@ class ContactInfo:
     surname: str
     age: int
       
-@safe_mapper(WorkContract, {"signable": lambda: True})
+@mapper(WorkContract, {"signable": lambda: True})
 @dataclass
 class SoftwareDeveloperContract:
     worker: ContactInfo
@@ -99,19 +100,12 @@ software_developer_contract: SoftwareDeveloperContract
 work_contract = map_to(software_developer_contract, WorkContract)
 ```
 
-gives
-
-```
-Contact(first_name='Shakil', surname='Casey', age=35)
-Person(first_name='Shakil', second_name='Casey', age=35)
-```
-
 ## Features
 
 The current version has support for:
 
 - :heavy_check_mark: Python's `dataclass`
-- :heavy_check_mark: `pydantic` classes, if installed with `pip install safe-mapper[pydantic]`
+- :heavy_check_mark: `pydantic` classes, if installed with `pip install dataclass-mapper[pydantic]`
 - :heavy_check_mark: Checking if all target fields are actually initialized.
   Raises a `ValueError` at class definition time when the type is different.
 - :heavy_check_mark: Simple types (`str`, `int`, `float`, `datetime`, custom types) if the type on the target is the same.
@@ -121,7 +115,7 @@ The current version has support for:
 - :heavy_check_mark: Recursive models
 - :heavy_check_mark: `List` types
 - :heavy_check_mark: Default values for simple types
-- :heavy_check_mark: Mapper in the other direction. Use the `safe_mapper_from` decorator and the same `map_to` method.
+- :heavy_check_mark: Mapper in the other direction. Use the `mapper_from` decorator and the same `map_to` method.
 - :heavy_check_mark: Assign Values with lambdas (with `{"x": lambda: 42}`)
 - :heavy_check_mark: Assign Functions Calls with lambdas and `self` (with `{"x": lambda self: self.x}`)
 - :heavy_check_mark: `USE_DEFAULT` for values that you don't wanna set but have a default value/factory

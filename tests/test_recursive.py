@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from safe_mapper.safe_mapper import map_to, safe_mapper
+from dataclass_mapper.mapper import map_to, mapper
 
 
 @dataclass
@@ -17,13 +17,13 @@ class Contract:
 
 
 def test_recursive_mapping():
-    @safe_mapper(Person)
+    @mapper(Person)
     @dataclass
     class Contact:
         first_name: str
         second_name: str
 
-    @safe_mapper(Contract, {"person": "contact"})
+    @mapper(Contract, {"person": "contact"})
     @dataclass
     class WorkContract:
         contact: Contact

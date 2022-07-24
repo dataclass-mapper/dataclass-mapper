@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from safe_mapper import USE_DEFAULT, map_to, safe_mapper
+from dataclass_mapper import USE_DEFAULT, map_to, mapper
 
 
 class BarPydantic(BaseModel):
@@ -13,7 +13,7 @@ class BarPydantic(BaseModel):
 
 
 def test_pydantic_defaults():
-    @safe_mapper(BarPydantic, {"x": USE_DEFAULT, "y": USE_DEFAULT, "z": USE_DEFAULT})
+    @mapper(BarPydantic, {"x": USE_DEFAULT, "y": USE_DEFAULT, "z": USE_DEFAULT})
     class Bar(BaseModel):
         pass
 
@@ -28,7 +28,7 @@ class BarDataclass:
 
 
 def test_dataclass_defaults():
-    @safe_mapper(BarDataclass, {"x": USE_DEFAULT, "y": USE_DEFAULT, "z": USE_DEFAULT})
+    @mapper(BarDataclass, {"x": USE_DEFAULT, "y": USE_DEFAULT, "z": USE_DEFAULT})
     @dataclass
     class Bar:
         pass
@@ -41,7 +41,7 @@ class FooPydantic(BaseModel):
 
 
 def test_pydantic_optional_to_defaults():
-    @safe_mapper(FooPydantic)
+    @mapper(FooPydantic)
     class Foo(BaseModel):
         x: Optional[int]
 
@@ -55,7 +55,7 @@ class FooDataclass:
 
 
 def test_dataclass_optional_to_defaults():
-    @safe_mapper(FooDataclass)
+    @mapper(FooDataclass)
     @dataclass
     class Foo:
         x: Optional[int]
@@ -73,11 +73,11 @@ class BTo(BaseModel):
 
 
 def test_pydantic_optional_list_to_defaults():
-    @safe_mapper(ATo)
+    @mapper(ATo)
     class A(BaseModel):
         x: int
 
-    @safe_mapper(BTo)
+    @mapper(BTo)
     class B(BaseModel):
         aa: Optional[list[A]]
 
@@ -90,7 +90,7 @@ class OptionalWithNoneDefaultPydantic(BaseModel):
 
 
 def test_pydantic_optional_with_none_default():
-    @safe_mapper(OptionalWithNoneDefaultPydantic, {"x": USE_DEFAULT})
+    @mapper(OptionalWithNoneDefaultPydantic, {"x": USE_DEFAULT})
     class Foo(BaseModel):
         pass
 
@@ -105,7 +105,7 @@ class OptionalWithNoneDefaultDataclass:
 
 
 def test_dataclass_optional_with_none_default():
-    @safe_mapper(OptionalWithNoneDefaultDataclass, {"x": USE_DEFAULT})
+    @mapper(OptionalWithNoneDefaultDataclass, {"x": USE_DEFAULT})
     @dataclass
     class Foo:
         pass

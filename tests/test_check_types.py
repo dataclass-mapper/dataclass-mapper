@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from safe_mapper.safe_mapper import map_to, safe_mapper
+from dataclass_mapper.mapper import map_to, mapper
 
 
 @dataclass
@@ -14,7 +14,7 @@ class Bar:
 def test_check_normal_types():
     with pytest.raises(TypeError) as excinfo:
 
-        @safe_mapper(Bar, {"x": "y", "y": "x"})
+        @mapper(Bar, {"x": "y", "y": "x"})
         @dataclass
         class Foo:
             x: int

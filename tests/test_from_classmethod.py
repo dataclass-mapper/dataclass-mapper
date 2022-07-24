@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from safe_mapper.safe_mapper import map_to, safe_mapper_from
+from dataclass_mapper.mapper import map_to, mapper_from
 
 
 class BarFrom(BaseModel):
@@ -9,7 +9,7 @@ class BarFrom(BaseModel):
 
 
 def test_pydantic_from():
-    @safe_mapper_from(BarFrom, {"name": "y"})
+    @mapper_from(BarFrom, {"name": "y"})
     class Bar(BaseModel):
         x: int
         name: str
@@ -22,13 +22,13 @@ class RecFrom(BaseModel):
     bar: BarFrom
 
 
-@safe_mapper_from(BarFrom, {"name": "y"})
+@mapper_from(BarFrom, {"name": "y"})
 class Bar(BaseModel):
     x: int
     name: str
 
 
-@safe_mapper_from(RecFrom)
+@mapper_from(RecFrom)
 class Rec(BaseModel):
     bars: list[Bar]
     bar: Bar

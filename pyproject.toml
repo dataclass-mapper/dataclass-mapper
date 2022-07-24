@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "safe_mapper"
+name = "dataclass-mapper"
 version = "0.5.0"
 description = ""
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
@@ -34,7 +34,7 @@ line_length = 100
 
 [tool.mypy]
 warn_return_any = true
-files = ["safe_mapper", "tests"]
+files = ["dataclass_mapper", "tests"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]

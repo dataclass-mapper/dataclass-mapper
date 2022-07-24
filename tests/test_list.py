@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from safe_mapper.safe_mapper import map_to, safe_mapper
+from dataclass_mapper.mapper import map_to, mapper
 
 
 class BarPydantic(BaseModel):
@@ -22,12 +22,12 @@ class BazPydantic(BaseModel):
 
 
 def test_rec_pydantic_mapper_with_optional():
-    @safe_mapper(BarPydantic)
+    @mapper(BarPydantic)
     class Bar(BaseModel):
         x: int
         y: str
 
-    @safe_mapper(BazPydantic)
+    @mapper(BazPydantic)
     class Baz(BaseModel):
         bar: list[Bar]
 
@@ -41,13 +41,13 @@ class BazDataclass(BaseModel):
 
 
 def test_rec_dataclass_mapper_with_optional():
-    @safe_mapper(BarDataclass)
+    @mapper(BarDataclass)
     @dataclass
     class Bar:
         x: int
         y: str
 
-    @safe_mapper(BazDataclass)
+    @mapper(BazDataclass)
     @dataclass
     class Baz:
         bar: list[Bar]

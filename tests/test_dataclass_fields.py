@@ -3,8 +3,8 @@ from typing import Optional
 
 import pytest
 
-from safe_mapper.field import MetaField
-from safe_mapper.safe_mapper import get_class_fields
+from dataclass_mapper.field import MetaField
+from dataclass_mapper.mapper import get_class_fields
 
 
 def test_dataclass_normal_field() -> None:

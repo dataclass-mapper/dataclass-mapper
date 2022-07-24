@@ -2,8 +2,8 @@ from textwrap import dedent
 
 import pytest
 
-from safe_mapper.field import MetaField
-from safe_mapper.mapping_method import MappingMethodSourceCode
+from dataclass_mapper.field import MetaField
+from dataclass_mapper.mapping_method import MappingMethodSourceCode
 
 
 def prepare_expected_code(code: str) -> str:
