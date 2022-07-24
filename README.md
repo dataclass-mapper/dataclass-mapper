@@ -1,5 +1,9 @@
 # dataclass-mapper
 
+[![Stable Version](https://img.shields.io/pypi/v/dataclass-mapper?color=blue)](https://pypi.org/project/dataclass-mapper/)
+[![Build Status](https://github.com/dataclass-mapper/dataclass-mapper/actions/workflows/test.yml/badge.svg)](https://github.com/dataclass-mapper/dataclass-mapper/actions)
+[![Documentation Status](https://readthedocs.org/projects/dataclass-mapper/badge/?version=latest)](https://dataclass-mapper.readthedocs.io/en/latest/?badge=latest)
+
 Writing mapper methods between two similar dataclasses is boring and error-prone.
 Much better to let a library auto-generate them for you.
 
@@ -8,7 +12,7 @@ It supports Python's dataclasses and also Pydantic models.
 
 ## Installation
 
-```
+```bash
 pip install dataclass-mapper
 # or for Pydantic support
 pip install dataclass-mapper[pydantic]
