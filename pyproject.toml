@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dataclass-mapper"
-version = "0.5.0"
+version = "1.0.0"
 description = ""
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
 
