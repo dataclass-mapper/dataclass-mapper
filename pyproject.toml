@@ -1,8 +1,15 @@
 [tool.poetry]
 name = "dataclass-mapper"
 version = "1.0.0"
-description = ""
+description = "Autogenerate mappings between dataclasses"
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
+
+readme = "README.md"
+
+repository = "https://github.com/dataclass-mapper/dataclass-mapper"
+homepage = "https://github.com/dataclass-mapper/dataclass-mapper"
+
+keywords = ['dataclass', 'pydantic', 'python', 'automation']
 
 [tool.poetry.dependencies]
 python = "^3.9"

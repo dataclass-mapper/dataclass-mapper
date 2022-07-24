@@ -10,6 +10,8 @@ It supports Python's dataclasses and also Pydantic models.
 
 ```
 pip install dataclass-mapper
+# or for Pydantic support
+pip install dataclass-mapper[pydantic]
 ```
 
 ## Example
