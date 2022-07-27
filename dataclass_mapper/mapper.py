@@ -73,10 +73,17 @@ T = TypeVar("T")
 
 
 def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
-    """Adds a private mapper method to the class, that maps the current class to the `TargetCls`.
-    The mapper method can be called using the `map_to` function.
+    """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
+    The mapper method can be called using the ``map_to`` function.
 
-    With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
+    :param TargetCls: The class (target class) that you want to map an object of the current (source) class to.
+    :param mapping: An optional dictionary which which it's possible to describe how each field in the target class gets initialized.
+        Fields that are not specified will be mapped automatically.
+
+        - ``{"x": "y"}`` means, that the field ``x`` of the target object will have the value of the ``y`` fields in the target object.
+        - ``{"x": USE_DEFAULT}`` means, that the field ``x`` will be initialized with the default value / factory of that field.
+        - ``{"x": lambda: 42}`` means, that the field ``x`` will be initialized with the value 42.
+        - ``{"x": lambda self: self.x + 1}`` means, that the field ``x`` will be initialized with the incremented value ``x`` of the source object.
     """
 
     def wrapped(SourceCls: T) -> T:
@@ -87,10 +94,11 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
 
 
 def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
-    """Adds a private mapper method to the class, that maps an object of `SourceCls` to the current class.
-    The mapper method can be called using the `map_to` function.
+    """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
+    The mapper method can be called using the ``map_to`` function.
 
-    With the `mapping` parameter you can additionally define attribute name changes, in the format `dict[TargetName, SourceName]`.
+    :param SourceCls: the class (source class) that you want to map an object from to the current (target) class.
+    :param mapping: an optional dictionary which which it's possible to describe how each field in the target class gets initialized.
     """
 
     def wrapped(TargetCls: T) -> T:
@@ -120,7 +128,13 @@ def add_mapper_function(
 
 
 def map_to(obj, TargetCls: Type[T]) -> T:
-    """Maps the given object to an object of type `TargetCls`, if such a safe mapping was defined for the type of the given object."""
+    """Maps the given object to an object of type ``TargetCls``, if such a safe mapping was defined for the type of the given object.
+    Raises an ``NotImplementedError`` if no such mapping is defined.
+
+    :param obj: the source object that you want to map to an object of type ``TargetCls``
+    :param TargetCls: The (target) class that you want to map to.
+    :return: the mapped object
+    """
     func_name = get_map_to_func_name(TargetCls)
     if hasattr(obj, func_name):
         return cast(T, getattr(obj, func_name)())
