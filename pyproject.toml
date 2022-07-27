@@ -5,11 +5,15 @@ description = "Autogenerate mappings between dataclasses"
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
 
 readme = "README.md"
+license = "MIT"
 
 repository = "https://github.com/dataclass-mapper/dataclass-mapper"
 homepage = "https://dataclass-mapper.readthedocs.io"
+documentation = "https://dataclass-mapper.readthedocs.io"
 
 keywords = ['dataclass', 'pydantic', 'python', 'automation']
+
+classifiers = ["Topic :: Software Development :: Code Generators"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -26,6 +30,7 @@ mypy = "^0.950"
 tox = "^3.25.0"
 Sphinx = "^5.0.2"
 sphinx-rtd-theme = "^1.0.0"
+pytest-cov = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
