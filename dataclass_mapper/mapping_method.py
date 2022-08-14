@@ -3,6 +3,7 @@ from inspect import isfunction, signature
 from typing import Any, Callable, Union, cast, get_args, get_origin
 from uuid import uuid4
 
+from .classmeta import ClassMeta, DataclassType
 from .field import MetaField
 
 
@@ -21,17 +22,11 @@ StringFieldMapping = dict[str, Origin]
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
 
-    def __init__(
-        self,
-        source_cls_name: str,
-        target_cls_name: str,
-        target_cls_alias_name: str,
-    ):
-        self.source_cls_name = source_cls_name
-        self.target_cls_name = target_cls_name
-        self.target_cls_alias_name = target_cls_alias_name
+    def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
+        self.source_cls = source_cls
+        self.target_cls = target_cls
         self.lines = [
-            f'def convert(self) -> "{self.target_cls_name}":',
+            f'def convert(self) -> "{self.target_cls.name}":',
             f"    d = {{}}",
         ]
         self.methods: dict[str, Callable] = {}
@@ -108,6 +103,8 @@ class MappingMethodSourceCode:
 
             # same type, just assign it
             if target.type == source.type and not (source.allow_none and target.disallow_none):
+                # if source.allow_none and target.allow_none and not target.required:
+                # maintain the unset property
                 self.add_assignment(target=target, source=source)
 
             # allow optional to non-optional if setting the target is not required (because of an default value)
@@ -152,11 +149,11 @@ class MappingMethodSourceCode:
             # impossible
             else:
                 raise TypeError(
-                    f"{source} of '{self.source_cls_name}' cannot be converted to {target}"
+                    f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
                 )
 
     def __str__(self) -> str:
-        return_statement = f"    return {self.target_cls_alias_name}(**d)"
+        return_statement = f"    return {self.target_cls.alias_name}(**d)"
         return "\n".join(self.lines + [return_statement])
 
 

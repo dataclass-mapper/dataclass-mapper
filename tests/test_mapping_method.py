@@ -3,7 +3,7 @@ from textwrap import dedent
 import pytest
 
 from dataclass_mapper.field import MetaField
-from dataclass_mapper.mapping_method import MappingMethodSourceCode
+from dataclass_mapper.mapping_method import ClassMeta, DataclassType, MappingMethodSourceCode
 
 
 def prepare_expected_code(code: str) -> str:
@@ -14,7 +14,10 @@ def prepare_expected_code(code: str) -> str:
 @pytest.fixture
 def code() -> MappingMethodSourceCode:
     return MappingMethodSourceCode(
-        source_cls_name="Source", target_cls_name="Target", target_cls_alias_name="TargetAlias"
+        source_cls=ClassMeta(name="Source", _type=DataclassType.DATACLASSES, alias_name="Source"),
+        target_cls=ClassMeta(
+            name="Target", _type=DataclassType.DATACLASSES, alias_name="TargetAlias"
+        ),
     )
 
 
