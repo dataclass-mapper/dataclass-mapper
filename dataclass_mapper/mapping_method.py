@@ -135,6 +135,8 @@ class MappingMethodSourceCode:
                 and not target.required
                 and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
             )
+            # TODO: what if the defaults of source/target are not just None?
+            # How to map `x: Optional[int] = Field(42)` to `x: Optional[int] = Field(15)`?
 
             # handle optional to non-optional mappings
             if source.allow_none and target.disallow_none:
@@ -150,7 +152,6 @@ class MappingMethodSourceCode:
                 self.add_assignment(target=target, source=source, options=options)
 
             # different type, but also safe mappable
-            # with optional
             elif self.is_mappable_to(source.type, target.type) and not (
                 source.allow_none and target.disallow_none
             ):
@@ -158,7 +159,6 @@ class MappingMethodSourceCode:
                 self.add_recursive(target=target, source=source, options=options)
 
             # both are lists of safe mappable types
-            # with optional
             elif (
                 get_origin(source.type) is list
                 and get_origin(target.type) is list
