@@ -38,12 +38,19 @@ class MappingMethodSourceCode:
         self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
 
     def add_assignment(
-        self, target: MetaField, source: MetaField, only_if_not_None: bool = False
+        self,
+        target: MetaField,
+        source: MetaField,
+        only_if_not_None: bool = False,
+        only_if_set: bool = False,
     ) -> None:
         source_var_name = f"self.{source.name}"
         indent = 4
         if only_if_not_None:
             self.lines.append(f"    if {source_var_name} is not None:")
+            indent = 8
+        if only_if_set:
+            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
             indent = 8
         self._add_line(target.name, source_var_name, indent)
 
@@ -55,33 +62,52 @@ class MappingMethodSourceCode:
         func_name = get_map_to_func_name(TargetCls)
         return hasattr(SourceCls, func_name)
 
-    def add_recursive(self, target: MetaField, source: MetaField, if_none: bool = False) -> None:
+    def add_recursive(
+        self,
+        target: MetaField,
+        source: MetaField,
+        only_if_set: bool = False,  # both are optional, we should only set them if they have value
+        if_None: bool = False,  # source can be Optional, so add None checker
+    ) -> None:
         source_var_name = f"self.{source.name}"
 
         right_side = self._get_map_func(source_var_name, target_cls=target.type)
-        if if_none:
-            right_side = f"None if {source_var_name} is None else {right_side}"
-        self._add_line(target.name, right_side)
+
+        if only_if_set:
+            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
+            indent = 8
+            if if_None:
+                right_side = f"None if {source_var_name} is None else {right_side}"
+            self._add_line(target.name, right_side, indent)
+        else:
+            if if_None:
+                right_side = f"None if {source_var_name} is None else {right_side}"
+            self._add_line(target.name, right_side)
 
     def add_recursive_list(
         self,
         target: MetaField,
         source: MetaField,
-        if_none: bool = False,
+        if_None: bool = False,
         only_if_not_None: bool = False,
+        only_if_set: bool = False,
     ) -> None:
         source_var_name = f"self.{source.name}"
         list_item_type = get_args(target.type)[0]
         right_side = (
             f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {source_var_name}]'
         )
-        if if_none:
-            right_side = f"None if {source_var_name} is None else {right_side}"
-        indent = 4
 
+        indent = 4
         if only_if_not_None:
             self.lines.append(f"    if {source_var_name} is not None:")
             indent = 8
+        if only_if_set:
+            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
+            indent = 8
+
+        if if_None:
+            right_side = f"None if {source_var_name} is None else {right_side}"
         self._add_line(target.name, right_side, indent)
 
     def add_function_call(self, target: MetaField, function: Callable) -> None:
@@ -103,9 +129,16 @@ class MappingMethodSourceCode:
 
             # same type, just assign it
             if target.type == source.type and not (source.allow_none and target.disallow_none):
-                # if source.allow_none and target.allow_none and not target.required:
-                # maintain the unset property
-                self.add_assignment(target=target, source=source)
+                if (
+                    source.allow_none
+                    and target.allow_none
+                    and not target.required
+                    and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
+                ):
+                    # maintain Pydantic's unset property
+                    self.add_assignment(target=target, source=source, only_if_set=True)
+                else:
+                    self.add_assignment(target=target, source=source)
 
             # allow optional to non-optional if setting the target is not required (because of an default value)
             elif (
@@ -116,12 +149,21 @@ class MappingMethodSourceCode:
             ):
                 self.add_assignment(target=target, source=source, only_if_not_None=True)
 
-            # different type, buty also safe mappable
+            # different type, but also safe mappable
             # with optional
             elif self.is_mappable_to(source.type, target.type) and not (
                 source.allow_none and target.disallow_none
             ):
-                self.add_recursive(target=target, source=source, if_none=source.allow_none)
+                if (
+                    source.allow_none
+                    and target.allow_none
+                    and not target.required
+                    and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
+                ):
+                    # maintain Pydantic's unset property
+                    self.add_recursive(target=target, source=source, if_None=True, only_if_set=True)
+                else:
+                    self.add_recursive(target=target, source=source, if_None=source.allow_none)
 
             # both are lists of safe mappable types
             # with optional
@@ -131,7 +173,20 @@ class MappingMethodSourceCode:
                 and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
                 and not (source.allow_none and target.disallow_none)
             ):
-                self.add_recursive_list(target=target, source=source, if_none=source.allow_none)
+                if (
+                    source.allow_none
+                    and target.allow_none
+                    and not target.required
+                    and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
+                ):
+                    self.add_recursive_list(
+                        target=target,
+                        source=source,
+                        if_None=source.allow_none,
+                        only_if_set=True,
+                    )
+                else:
+                    self.add_recursive_list(target=target, source=source, if_None=source.allow_none)
 
             # allow optional to non-optional if setting the target is not required (because of an default value)
             elif (
@@ -143,7 +198,7 @@ class MappingMethodSourceCode:
                 and not target.required
             ):
                 self.add_recursive_list(
-                    target=target, source=source, if_none=source.allow_none, only_if_not_None=True
+                    target=target, source=source, if_None=source.allow_none, only_if_not_None=True
                 )
 
             # impossible
