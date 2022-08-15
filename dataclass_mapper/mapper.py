@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import fields
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
@@ -8,7 +9,7 @@ from .mapping_method import (
     DataclassType,
     FieldMeta,
     MappingMethodSourceCode,
-    Other,
+    Spezial,
     StringFieldMapping,
     get_map_to_func_name,
 )
@@ -41,13 +42,18 @@ def _make_mapper(
             raw_source = mapping[target_field_name]
             if isinstance(raw_source, str):
                 source_code.add_mapping(target=target, source=actual_source_fields[raw_source])
-            elif isinstance(raw_source, Other):
-                if raw_source == Other.USE_DEFAULT:
+            elif isinstance(raw_source, Spezial):
+                if raw_source in (Spezial.USE_DEFAULT, Spezial.IGNORE_MISSING_MAPPING):
+                    if raw_source is Spezial.USE_DEFAULT:
+                        warnings.warn(
+                            "USE_DEFAULT is deprecated, use xyz instead", DeprecationWarning
+                        )
+
                     if actual_target_fields[target_field_name].required:
                         # leaving the target empty and using the default value/factory is not possible,
                         # as the target doesn't have a default value/factory
                         raise ValueError(
-                            f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to USE_DEFAULT, as it has no default"
+                            f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {raw_source.name}, as it has no default"
                         )
                 else:
                     raise NotImplemented
@@ -80,11 +86,14 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
     :param TargetCls: The class (target class) that you want to map an object of the current (source) class to.
     :param mapping: An optional dictionary which which it's possible to describe how each field in the target class gets initialized.
         Fields that are not specified will be mapped automatically.
+        Every single field in the target class must have some mapping (in order to not forget about a field),
+        either a default mapping (if the variable names match), or an explicit mapping definition with this `mapping` parameter.
 
         - ``{"x": "y"}`` means, that the field ``x`` of the target object will have the value of the ``y`` fields in the target object.
-        - ``{"x": USE_DEFAULT}`` means, that the field ``x`` will be initialized with the default value / factory of that field.
         - ``{"x": lambda: 42}`` means, that the field ``x`` will be initialized with the value 42.
         - ``{"x": lambda self: self.x + 1}`` means, that the field ``x`` will be initialized with the incremented value ``x`` of the source object.
+        - ``{"x": USE_DEFAULT}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
+        - ``{"x": IGNORE_MISSING_MAPPING}`` means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
     """
 
     def wrapped(SourceCls: T) -> T:

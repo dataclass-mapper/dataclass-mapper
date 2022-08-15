@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from dataclass_mapper import USE_DEFAULT, map_to, mapper
+from dataclass_mapper import IGNORE_MISSING_MAPPING, USE_DEFAULT, map_to, mapper
 
 
 class BarPydantic(BaseModel):
@@ -13,7 +13,9 @@ class BarPydantic(BaseModel):
 
 
 def test_pydantic_defaults():
-    @mapper(BarPydantic, {"x": USE_DEFAULT, "y": USE_DEFAULT, "z": USE_DEFAULT})
+    @mapper(
+        BarPydantic, {"x": USE_DEFAULT, "y": IGNORE_MISSING_MAPPING, "z": IGNORE_MISSING_MAPPING}
+    )
     class Bar(BaseModel):
         pass
 
@@ -28,7 +30,9 @@ class BarDataclass:
 
 
 def test_dataclass_defaults():
-    @mapper(BarDataclass, {"x": USE_DEFAULT, "y": USE_DEFAULT, "z": USE_DEFAULT})
+    @mapper(
+        BarDataclass, {"x": USE_DEFAULT, "y": IGNORE_MISSING_MAPPING, "z": IGNORE_MISSING_MAPPING}
+    )
     @dataclass
     class Bar:
         pass
@@ -90,7 +94,7 @@ class OptionalWithNoneDefaultPydantic(BaseModel):
 
 
 def test_pydantic_optional_with_none_default():
-    @mapper(OptionalWithNoneDefaultPydantic, {"x": USE_DEFAULT})
+    @mapper(OptionalWithNoneDefaultPydantic, {"x": IGNORE_MISSING_MAPPING})
     class Foo(BaseModel):
         pass
 
@@ -105,7 +109,7 @@ class OptionalWithNoneDefaultDataclass:
 
 
 def test_dataclass_optional_with_none_default():
-    @mapper(OptionalWithNoneDefaultDataclass, {"x": USE_DEFAULT})
+    @mapper(OptionalWithNoneDefaultDataclass, {"x": IGNORE_MISSING_MAPPING})
     @dataclass
     class Foo:
         pass
