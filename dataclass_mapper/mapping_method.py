@@ -4,7 +4,7 @@ from typing import Any, Callable, Union, cast, get_args, get_origin
 from uuid import uuid4
 
 from .classmeta import ClassMeta, DataclassType
-from .field import MetaField
+from .fieldmeta import FieldMeta
 
 
 class Other(Enum):
@@ -39,8 +39,8 @@ class MappingMethodSourceCode:
 
     def add_assignment(
         self,
-        target: MetaField,
-        source: MetaField,
+        target: FieldMeta,
+        source: FieldMeta,
         only_if_not_None: bool = False,
         only_if_set: bool = False,
     ) -> None:
@@ -64,8 +64,8 @@ class MappingMethodSourceCode:
 
     def add_recursive(
         self,
-        target: MetaField,
-        source: MetaField,
+        target: FieldMeta,
+        source: FieldMeta,
         only_if_set: bool = False,  # both are optional, we should only set them if they have value
         if_None: bool = False,  # source can be Optional, so add None checker
     ) -> None:
@@ -86,8 +86,8 @@ class MappingMethodSourceCode:
 
     def add_recursive_list(
         self,
-        target: MetaField,
-        source: MetaField,
+        target: FieldMeta,
+        source: FieldMeta,
         if_None: bool = False,
         only_if_not_None: bool = False,
         only_if_set: bool = False,
@@ -110,7 +110,7 @@ class MappingMethodSourceCode:
             right_side = f"None if {source_var_name} is None else {right_side}"
         self._add_line(target.name, right_side, indent)
 
-    def add_function_call(self, target: MetaField, function: Callable) -> None:
+    def add_function_call(self, target: FieldMeta, function: Callable) -> None:
         name = f"_{uuid4().hex}"
         if len(signature(function).parameters) == 0:
             self.methods[name] = cast(Callable, staticmethod(function))
@@ -121,11 +121,11 @@ class MappingMethodSourceCode:
         source = self.get_source(name)
         self._add_line(target.name, f"{source}()")
 
-    def add_mapping(self, target: MetaField, source: Union[MetaField, Callable]) -> None:
+    def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
             self.add_function_call(target, source)
         else:
-            assert isinstance(source, MetaField)
+            assert isinstance(source, FieldMeta)
 
             # same type, just assign it
             if target.type == source.type and not (source.allow_none and target.disallow_none):

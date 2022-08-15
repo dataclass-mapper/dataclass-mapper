@@ -3,10 +3,10 @@ from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .classmeta import get_dataclass_type
-from .field import MetaField
 from .mapping_method import (
     ClassMeta,
     DataclassType,
+    FieldMeta,
     MappingMethodSourceCode,
     Other,
     StringFieldMapping,
@@ -14,12 +14,12 @@ from .mapping_method import (
 )
 
 
-def get_class_fields(cls: Any) -> dict[str, MetaField]:
+def get_class_fields(cls: Any) -> dict[str, FieldMeta]:
     dataclass_type = get_dataclass_type(cls)
     if dataclass_type == DataclassType.DATACLASSES:
-        return {field.name: MetaField.from_dataclass(field) for field in fields(cls)}
+        return {field.name: FieldMeta.from_dataclass(field) for field in fields(cls)}
     elif dataclass_type == DataclassType.PYDANTIC:
-        return {field.name: MetaField.from_pydantic(field) for field in cls.__fields__.values()}
+        return {field.name: FieldMeta.from_pydantic(field) for field in cls.__fields__.values()}
     assert False, "unreachable code"
 
 

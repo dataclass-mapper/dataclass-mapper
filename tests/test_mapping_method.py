@@ -2,8 +2,12 @@ from textwrap import dedent
 
 import pytest
 
-from dataclass_mapper.field import MetaField
-from dataclass_mapper.mapping_method import ClassMeta, DataclassType, MappingMethodSourceCode
+from dataclass_mapper.mapping_method import (
+    ClassMeta,
+    DataclassType,
+    FieldMeta,
+    MappingMethodSourceCode,
+)
 
 
 def prepare_expected_code(code: str) -> str:
@@ -23,8 +27,8 @@ def code() -> MappingMethodSourceCode:
 
 def test_code_gen_add_normal_assignment(code: MappingMethodSourceCode) -> None:
     code.add_assignment(
-        target=MetaField(name="target_x", type=int, allow_none=False, required=True),
-        source=MetaField(name="source_x", type=int, allow_none=False, required=True),
+        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True),
+        source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
     )
     expected_code = prepare_expected_code(
         """
@@ -39,8 +43,8 @@ def test_code_gen_add_normal_assignment(code: MappingMethodSourceCode) -> None:
 
 def test_code_gen_add_assignment_only_if_not_None(code: MappingMethodSourceCode) -> None:
     code.add_assignment(
-        target=MetaField(name="target_x", type=int, allow_none=False, required=False),
-        source=MetaField(name="source_x", type=int, allow_none=True, required=True),
+        target=FieldMeta(name="target_x", type=int, allow_none=False, required=False),
+        source=FieldMeta(name="source_x", type=int, allow_none=True, required=True),
         only_if_not_None=True,
     )
     expected_code = prepare_expected_code(
