@@ -118,7 +118,7 @@ The current version has support for:
 * Checks if the type on the target field is the same as the source field.
   Raises a ``TypeError`` at class definition time when the type is different.
 * Recursive dataclasses
-* ``USE_DEFAULT`` for values that you don't wanna set but have a default value/factory.
+* ``IGNORE_MISSING_MAPPING`` for values that you don't wanna set but have a default value/factory.
 * ``Optional`` types (mapping from an non-optional to an optional field, or to an optional field with default values/fields).
   Raises a ``TypeError`` at class definition time when an optional type is mapped to a non-optional type.
 * ``List`` types

@@ -8,15 +8,16 @@ from .classmeta import ClassMeta, DataclassType
 from .fieldmeta import FieldMeta
 
 
-class Other(Enum):
+class Spezial(Enum):
     USE_DEFAULT = auto()
+    IGNORE_MISSING_MAPPING = auto()
 
 
 # the different types that can be used as origin (source) for mapping to a member
 # - str: the name of a different variable in the original class
 # - Callable: a function that produces the value (can use `self` as parameter)
-# - Other.USE_DEFAULT: Don't map to this variable (only allowed if there is a default value/factory for it)
-Origin = Union[str, Callable, Other]
+# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING: Don't map to this variable (only allowed if there is a default value/factory for it)
+Origin = Union[str, Callable, Spezial]
 StringFieldMapping = dict[str, Origin]
 
 
