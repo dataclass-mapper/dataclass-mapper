@@ -151,18 +151,24 @@ class MappingMethodSourceCode:
                 and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
             )
 
-            # same type, just assign it
-            if target.type == source.type and not (source.allow_none and target.disallow_none):
-                self.add_assignment(target=target, source=source, only_if_set=only_if_set)
+            # handle optional to non-optional mappings
+            only_if_not_None = False
+            if source.allow_none and target.disallow_none:
+                if not target.required:
+                    only_if_not_None = True
+                else:
+                    raise TypeError(
+                        f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
+                    )
 
-            # allow optional to non-optional if setting the target is not required (because of an default value)
-            elif (
-                target.type == source.type
-                and source.allow_none
-                and target.disallow_none
-                and not target.required
-            ):
-                self.add_assignment(target=target, source=source, only_if_not_None=True)
+            # same type, just assign it
+            if target.type == source.type:
+                self.add_assignment(
+                    target=target,
+                    source=source,
+                    only_if_set=only_if_set,
+                    only_if_not_None=only_if_not_None,
+                )
 
             # different type, but also safe mappable
             # with optional
@@ -179,26 +185,13 @@ class MappingMethodSourceCode:
                 get_origin(source.type) is list
                 and get_origin(target.type) is list
                 and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
-                and not (source.allow_none and target.disallow_none)
             ):
                 self.add_recursive_list(
                     target=target,
                     source=source,
                     if_None=source.allow_none,
                     only_if_set=only_if_set,
-                )
-
-            # allow optional to non-optional if setting the target is not required (because of an default value)
-            elif (
-                get_origin(source.type) is list
-                and get_origin(target.type) is list
-                and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
-                and source.allow_none
-                and target.disallow_none
-                and not target.required
-            ):
-                self.add_recursive_list(
-                    target=target, source=source, if_None=source.allow_none, only_if_not_None=True
+                    only_if_not_None=only_if_not_None,
                 )
 
             # impossible
