@@ -41,18 +41,16 @@ class MappingMethodSourceCode:
         self,
         target: FieldMeta,
         source: FieldMeta,
-        only_if_not_None: bool = False,
         only_if_set: bool = False,
+        only_if_not_None: bool = False,
     ) -> None:
-        source_var_name = f"self.{source.name}"
-        indent = 4
-        if only_if_not_None:
-            self.lines.append(f"    if {source_var_name} is not None:")
-            indent = 8
-        if only_if_set:
-            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
-            indent = 8
-        self._add_line(target.name, source_var_name, indent)
+        self._add_code(
+            source=source,
+            target=target,
+            right_side=get_var_name(source),
+            only_if_set=only_if_set,
+            only_if_not_None=only_if_not_None,
+        )
 
     def _get_map_func(self, name: str, target_cls: Any) -> str:
         func_name = get_map_to_func_name(target_cls)
@@ -66,23 +64,17 @@ class MappingMethodSourceCode:
         self,
         target: FieldMeta,
         source: FieldMeta,
-        only_if_set: bool = False,  # both are optional, we should only set them if they have value
-        if_None: bool = False,  # source can be Optional, so add None checker
+        only_if_set: bool = False,
+        if_None: bool = False,
     ) -> None:
-        source_var_name = f"self.{source.name}"
-
-        right_side = self._get_map_func(source_var_name, target_cls=target.type)
-
-        if only_if_set:
-            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
-            indent = 8
-            if if_None:
-                right_side = f"None if {source_var_name} is None else {right_side}"
-            self._add_line(target.name, right_side, indent)
-        else:
-            if if_None:
-                right_side = f"None if {source_var_name} is None else {right_side}"
-            self._add_line(target.name, right_side)
+        right_side = self._get_map_func(get_var_name(source), target_cls=target.type)
+        self._add_code(
+            source=source,
+            target=target,
+            right_side=right_side,
+            only_if_set=only_if_set,
+            if_None=if_None,
+        )
 
     def add_recursive_list(
         self,
@@ -92,22 +84,46 @@ class MappingMethodSourceCode:
         only_if_not_None: bool = False,
         only_if_set: bool = False,
     ) -> None:
-        source_var_name = f"self.{source.name}"
         list_item_type = get_args(target.type)[0]
-        right_side = (
-            f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {source_var_name}]'
+        right_side = f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(source)}]'
+        self._add_code(
+            source=source,
+            target=target,
+            right_side=right_side,
+            only_if_not_None=only_if_not_None,
+            only_if_set=only_if_set,
+            if_None=if_None,
         )
 
+    def _add_code(
+        self,
+        source: FieldMeta,
+        target: FieldMeta,
+        right_side: str,
+        only_if_set: bool = False,
+        only_if_not_None: bool = False,
+        if_None: bool = False,
+    ) -> None:
+        """Generate code for setting the target field to the right side.
+        Only do it for a couple of conditions.
+
+        :param source: meta infos about the source field
+        :param target: meta infos about the target field
+        :param right_side: some expression (code) that will be assigned to the target if conditions allow it
+        :param only_if_set: only set the target to the right_side if the source set (for Optional fields in Pydantic classes)
+        :param only_if_not_None: don't assign the right side, if the value is None (for Optional -> non-Optional mappings with defaults in target fields)
+        :param if_None: only assign the right side if it is not None (for Optional, recursive fields), otherwise set it to None
+        """
         indent = 4
         if only_if_not_None:
-            self.lines.append(f"    if {source_var_name} is not None:")
+            self.lines.append(f"    if {get_var_name(source)} is not None:")
             indent = 8
         if only_if_set:
             self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
             indent = 8
 
         if if_None:
-            right_side = f"None if {source_var_name} is None else {right_side}"
+            right_side = f"None if {get_var_name(source)} is None else {right_side}"
         self._add_line(target.name, right_side, indent)
 
     def add_function_call(self, target: FieldMeta, function: Callable) -> None:
@@ -127,18 +143,17 @@ class MappingMethodSourceCode:
         else:
             assert isinstance(source, FieldMeta)
 
+            # maintain Pydantic's unset property
+            only_if_set = (
+                source.allow_none
+                and target.allow_none
+                and not target.required
+                and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
+            )
+
             # same type, just assign it
             if target.type == source.type and not (source.allow_none and target.disallow_none):
-                if (
-                    source.allow_none
-                    and target.allow_none
-                    and not target.required
-                    and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
-                ):
-                    # maintain Pydantic's unset property
-                    self.add_assignment(target=target, source=source, only_if_set=True)
-                else:
-                    self.add_assignment(target=target, source=source)
+                self.add_assignment(target=target, source=source, only_if_set=only_if_set)
 
             # allow optional to non-optional if setting the target is not required (because of an default value)
             elif (
@@ -154,16 +169,9 @@ class MappingMethodSourceCode:
             elif self.is_mappable_to(source.type, target.type) and not (
                 source.allow_none and target.disallow_none
             ):
-                if (
-                    source.allow_none
-                    and target.allow_none
-                    and not target.required
-                    and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
-                ):
-                    # maintain Pydantic's unset property
-                    self.add_recursive(target=target, source=source, if_None=True, only_if_set=True)
-                else:
-                    self.add_recursive(target=target, source=source, if_None=source.allow_none)
+                self.add_recursive(
+                    target=target, source=source, if_None=source.allow_none, only_if_set=only_if_set
+                )
 
             # both are lists of safe mappable types
             # with optional
@@ -173,20 +181,12 @@ class MappingMethodSourceCode:
                 and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
                 and not (source.allow_none and target.disallow_none)
             ):
-                if (
-                    source.allow_none
-                    and target.allow_none
-                    and not target.required
-                    and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
-                ):
-                    self.add_recursive_list(
-                        target=target,
-                        source=source,
-                        if_None=source.allow_none,
-                        only_if_set=True,
-                    )
-                else:
-                    self.add_recursive_list(target=target, source=source, if_None=source.allow_none)
+                self.add_recursive_list(
+                    target=target,
+                    source=source,
+                    if_None=source.allow_none,
+                    only_if_set=only_if_set,
+                )
 
             # allow optional to non-optional if setting the target is not required (because of an default value)
             elif (
@@ -214,3 +214,7 @@ class MappingMethodSourceCode:
 
 def get_map_to_func_name(cls: Any) -> str:
     return f"_map_to_{cls.__name__}"
+
+
+def get_var_name(fieldmeta: FieldMeta) -> str:
+    return f"self.{fieldmeta.name}"
