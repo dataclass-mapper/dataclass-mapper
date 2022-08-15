@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 from inspect import isfunction, signature
 from typing import Any, Callable, Union, cast, get_args, get_origin
@@ -17,6 +18,20 @@ class Other(Enum):
 # - Other.USE_DEFAULT: Don't map to this variable (only allowed if there is a default value/factory for it)
 Origin = Union[str, Callable, Other]
 StringFieldMapping = dict[str, Origin]
+
+
+@dataclass
+class AssignmentOptions:
+    """
+    Options for creating an assignment code (target = right_side).
+    :param only_if_set: only set the target to the right_side if the source set (for Optional fields in Pydantic classes)
+    :param only_if_not_None: don't assign the right side, if the value is None (for Optional -> non-Optional mappings with defaults in target fields)
+    :param if_None: only assign the right side if it is not None (for Optional, recursive fields), otherwise set it to None
+    """
+
+    only_if_set: bool = False
+    only_if_not_None: bool = False
+    if_None: bool = False
 
 
 class MappingMethodSourceCode:
@@ -41,15 +56,10 @@ class MappingMethodSourceCode:
         self,
         target: FieldMeta,
         source: FieldMeta,
-        only_if_set: bool = False,
-        only_if_not_None: bool = False,
+        options: AssignmentOptions,
     ) -> None:
         self._add_code(
-            source=source,
-            target=target,
-            right_side=get_var_name(source),
-            only_if_set=only_if_set,
-            only_if_not_None=only_if_not_None,
+            source=source, target=target, right_side=get_var_name(source), options=options
         )
 
     def _get_map_func(self, name: str, target_cls: Any) -> str:
@@ -61,48 +71,24 @@ class MappingMethodSourceCode:
         return hasattr(SourceCls, func_name)
 
     def add_recursive(
-        self,
-        target: FieldMeta,
-        source: FieldMeta,
-        only_if_set: bool = False,
-        if_None: bool = False,
+        self, target: FieldMeta, source: FieldMeta, options: AssignmentOptions
     ) -> None:
         right_side = self._get_map_func(get_var_name(source), target_cls=target.type)
-        self._add_code(
-            source=source,
-            target=target,
-            right_side=right_side,
-            only_if_set=only_if_set,
-            if_None=if_None,
-        )
+        self._add_code(source=source, target=target, right_side=right_side, options=options)
 
     def add_recursive_list(
-        self,
-        target: FieldMeta,
-        source: FieldMeta,
-        if_None: bool = False,
-        only_if_not_None: bool = False,
-        only_if_set: bool = False,
+        self, target: FieldMeta, source: FieldMeta, options: AssignmentOptions
     ) -> None:
         list_item_type = get_args(target.type)[0]
         right_side = f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(source)}]'
-        self._add_code(
-            source=source,
-            target=target,
-            right_side=right_side,
-            only_if_not_None=only_if_not_None,
-            only_if_set=only_if_set,
-            if_None=if_None,
-        )
+        self._add_code(source=source, target=target, right_side=right_side, options=options)
 
     def _add_code(
         self,
         source: FieldMeta,
         target: FieldMeta,
         right_side: str,
-        only_if_set: bool = False,
-        only_if_not_None: bool = False,
-        if_None: bool = False,
+        options: AssignmentOptions,
     ) -> None:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
@@ -110,19 +96,16 @@ class MappingMethodSourceCode:
         :param source: meta infos about the source field
         :param target: meta infos about the target field
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
-        :param only_if_set: only set the target to the right_side if the source set (for Optional fields in Pydantic classes)
-        :param only_if_not_None: don't assign the right side, if the value is None (for Optional -> non-Optional mappings with defaults in target fields)
-        :param if_None: only assign the right side if it is not None (for Optional, recursive fields), otherwise set it to None
         """
         indent = 4
-        if only_if_not_None:
+        if options.only_if_not_None:
             self.lines.append(f"    if {get_var_name(source)} is not None:")
             indent = 8
-        if only_if_set:
+        if options.only_if_set:
             self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
             indent = 8
 
-        if if_None:
+        if options.if_None:
             right_side = f"None if {get_var_name(source)} is None else {right_side}"
         self._add_line(target.name, right_side, indent)
 
@@ -143,8 +126,10 @@ class MappingMethodSourceCode:
         else:
             assert isinstance(source, FieldMeta)
 
+            options = AssignmentOptions()
+
             # maintain Pydantic's unset property
-            only_if_set = (
+            options.only_if_set = (
                 source.allow_none
                 and target.allow_none
                 and not target.required
@@ -152,10 +137,9 @@ class MappingMethodSourceCode:
             )
 
             # handle optional to non-optional mappings
-            only_if_not_None = False
             if source.allow_none and target.disallow_none:
                 if not target.required:
-                    only_if_not_None = True
+                    options.only_if_not_None = True
                 else:
                     raise TypeError(
                         f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
@@ -163,21 +147,15 @@ class MappingMethodSourceCode:
 
             # same type, just assign it
             if target.type == source.type:
-                self.add_assignment(
-                    target=target,
-                    source=source,
-                    only_if_set=only_if_set,
-                    only_if_not_None=only_if_not_None,
-                )
+                self.add_assignment(target=target, source=source, options=options)
 
             # different type, but also safe mappable
             # with optional
             elif self.is_mappable_to(source.type, target.type) and not (
                 source.allow_none and target.disallow_none
             ):
-                self.add_recursive(
-                    target=target, source=source, if_None=source.allow_none, only_if_set=only_if_set
-                )
+                options.if_None = source.allow_none
+                self.add_recursive(target=target, source=source, options=options)
 
             # both are lists of safe mappable types
             # with optional
@@ -186,13 +164,8 @@ class MappingMethodSourceCode:
                 and get_origin(target.type) is list
                 and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
             ):
-                self.add_recursive_list(
-                    target=target,
-                    source=source,
-                    if_None=source.allow_none,
-                    only_if_set=only_if_set,
-                    only_if_not_None=only_if_not_None,
-                )
+                options.if_None = source.allow_none
+                self.add_recursive_list(target=target, source=source, options=options)
 
             # impossible
             else:

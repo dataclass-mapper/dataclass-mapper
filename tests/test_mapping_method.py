@@ -3,6 +3,7 @@ from textwrap import dedent
 import pytest
 
 from dataclass_mapper.mapping_method import (
+    AssignmentOptions,
     ClassMeta,
     DataclassType,
     FieldMeta,
@@ -29,6 +30,7 @@ def test_code_gen_add_normal_assignment(code: MappingMethodSourceCode) -> None:
     code.add_assignment(
         target=FieldMeta(name="target_x", type=int, allow_none=False, required=True),
         source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
+        options=AssignmentOptions(),
     )
     expected_code = prepare_expected_code(
         """
@@ -45,7 +47,7 @@ def test_code_gen_add_assignment_only_if_not_None(code: MappingMethodSourceCode)
     code.add_assignment(
         target=FieldMeta(name="target_x", type=int, allow_none=False, required=False),
         source=FieldMeta(name="source_x", type=int, allow_none=True, required=True),
-        only_if_not_None=True,
+        options=AssignmentOptions(only_if_not_None=True),
     )
     expected_code = prepare_expected_code(
         """
