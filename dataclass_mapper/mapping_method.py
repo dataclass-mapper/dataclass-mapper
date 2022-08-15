@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 from inspect import isfunction, signature
 from typing import Any, Callable, Union, cast, get_args, get_origin
 from uuid import uuid4
 
-from .field import MetaField
+from .classmeta import ClassMeta, DataclassType
+from .fieldmeta import FieldMeta
 
 
 class Other(Enum):
@@ -18,20 +20,28 @@ Origin = Union[str, Callable, Other]
 StringFieldMapping = dict[str, Origin]
 
 
+@dataclass
+class AssignmentOptions:
+    """
+    Options for creating an assignment code (target = right_side).
+    :param only_if_set: only set the target to the right_side if the source set (for Optional fields in Pydantic classes)
+    :param only_if_not_None: don't assign the right side, if the value is None (for Optional -> non-Optional mappings with defaults in target fields)
+    :param if_None: only assign the right side if it is not None (for Optional, recursive fields), otherwise set it to None
+    """
+
+    only_if_set: bool = False
+    only_if_not_None: bool = False
+    if_None: bool = False
+
+
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
 
-    def __init__(
-        self,
-        source_cls_name: str,
-        target_cls_name: str,
-        target_cls_alias_name: str,
-    ):
-        self.source_cls_name = source_cls_name
-        self.target_cls_name = target_cls_name
-        self.target_cls_alias_name = target_cls_alias_name
+    def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
+        self.source_cls = source_cls
+        self.target_cls = target_cls
         self.lines = [
-            f'def convert(self) -> "{self.target_cls_name}":',
+            f'def convert(self) -> "{self.target_cls.name}":',
             f"    d = {{}}",
         ]
         self.methods: dict[str, Callable] = {}
@@ -43,14 +53,14 @@ class MappingMethodSourceCode:
         self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
 
     def add_assignment(
-        self, target: MetaField, source: MetaField, only_if_not_None: bool = False
+        self,
+        target: FieldMeta,
+        source: FieldMeta,
+        options: AssignmentOptions,
     ) -> None:
-        source_var_name = f"self.{source.name}"
-        indent = 4
-        if only_if_not_None:
-            self.lines.append(f"    if {source_var_name} is not None:")
-            indent = 8
-        self._add_line(target.name, source_var_name, indent)
+        self._add_code(
+            source=source, target=target, right_side=get_var_name(source), options=options
+        )
 
     def _get_map_func(self, name: str, target_cls: Any) -> str:
         func_name = get_map_to_func_name(target_cls)
@@ -60,36 +70,46 @@ class MappingMethodSourceCode:
         func_name = get_map_to_func_name(TargetCls)
         return hasattr(SourceCls, func_name)
 
-    def add_recursive(self, target: MetaField, source: MetaField, if_none: bool = False) -> None:
-        source_var_name = f"self.{source.name}"
-
-        right_side = self._get_map_func(source_var_name, target_cls=target.type)
-        if if_none:
-            right_side = f"None if {source_var_name} is None else {right_side}"
-        self._add_line(target.name, right_side)
+    def add_recursive(
+        self, target: FieldMeta, source: FieldMeta, options: AssignmentOptions
+    ) -> None:
+        right_side = self._get_map_func(get_var_name(source), target_cls=target.type)
+        self._add_code(source=source, target=target, right_side=right_side, options=options)
 
     def add_recursive_list(
-        self,
-        target: MetaField,
-        source: MetaField,
-        if_none: bool = False,
-        only_if_not_None: bool = False,
+        self, target: FieldMeta, source: FieldMeta, options: AssignmentOptions
     ) -> None:
-        source_var_name = f"self.{source.name}"
         list_item_type = get_args(target.type)[0]
-        right_side = (
-            f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {source_var_name}]'
-        )
-        if if_none:
-            right_side = f"None if {source_var_name} is None else {right_side}"
-        indent = 4
+        right_side = f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(source)}]'
+        self._add_code(source=source, target=target, right_side=right_side, options=options)
 
-        if only_if_not_None:
-            self.lines.append(f"    if {source_var_name} is not None:")
+    def _add_code(
+        self,
+        source: FieldMeta,
+        target: FieldMeta,
+        right_side: str,
+        options: AssignmentOptions,
+    ) -> None:
+        """Generate code for setting the target field to the right side.
+        Only do it for a couple of conditions.
+
+        :param source: meta infos about the source field
+        :param target: meta infos about the target field
+        :param right_side: some expression (code) that will be assigned to the target if conditions allow it
+        """
+        indent = 4
+        if options.only_if_not_None:
+            self.lines.append(f"    if {get_var_name(source)} is not None:")
             indent = 8
+        if options.only_if_set:
+            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
+            indent = 8
+
+        if options.if_None:
+            right_side = f"None if {get_var_name(source)} is None else {right_side}"
         self._add_line(target.name, right_side, indent)
 
-    def add_function_call(self, target: MetaField, function: Callable) -> None:
+    def add_function_call(self, target: FieldMeta, function: Callable) -> None:
         name = f"_{uuid4().hex}"
         if len(signature(function).parameters) == 0:
             self.methods[name] = cast(Callable, staticmethod(function))
@@ -100,65 +120,67 @@ class MappingMethodSourceCode:
         source = self.get_source(name)
         self._add_line(target.name, f"{source}()")
 
-    def add_mapping(self, target: MetaField, source: Union[MetaField, Callable]) -> None:
+    def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
             self.add_function_call(target, source)
         else:
-            assert isinstance(source, MetaField)
+            assert isinstance(source, FieldMeta)
+
+            options = AssignmentOptions()
+
+            # maintain Pydantic's unset property
+            options.only_if_set = (
+                source.allow_none
+                and target.allow_none
+                and not target.required
+                and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
+            )
+            # TODO: what if the defaults of source/target are not just None?
+            # How to map `x: Optional[int] = Field(42)` to `x: Optional[int] = Field(15)`?
+
+            # handle optional to non-optional mappings
+            if source.allow_none and target.disallow_none:
+                if not target.required:
+                    options.only_if_not_None = True
+                else:
+                    raise TypeError(
+                        f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
+                    )
 
             # same type, just assign it
-            if target.type == source.type and not (source.allow_none and target.disallow_none):
-                self.add_assignment(target=target, source=source)
+            if target.type == source.type:
+                self.add_assignment(target=target, source=source, options=options)
 
-            # allow optional to non-optional if setting the target is not required (because of an default value)
-            elif (
-                target.type == source.type
-                and source.allow_none
-                and target.disallow_none
-                and not target.required
-            ):
-                self.add_assignment(target=target, source=source, only_if_not_None=True)
-
-            # different type, buty also safe mappable
-            # with optional
+            # different type, but also safe mappable
             elif self.is_mappable_to(source.type, target.type) and not (
                 source.allow_none and target.disallow_none
             ):
-                self.add_recursive(target=target, source=source, if_none=source.allow_none)
+                options.if_None = source.allow_none
+                self.add_recursive(target=target, source=source, options=options)
 
             # both are lists of safe mappable types
-            # with optional
             elif (
                 get_origin(source.type) is list
                 and get_origin(target.type) is list
                 and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
-                and not (source.allow_none and target.disallow_none)
             ):
-                self.add_recursive_list(target=target, source=source, if_none=source.allow_none)
-
-            # allow optional to non-optional if setting the target is not required (because of an default value)
-            elif (
-                get_origin(source.type) is list
-                and get_origin(target.type) is list
-                and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
-                and source.allow_none
-                and target.disallow_none
-                and not target.required
-            ):
-                self.add_recursive_list(
-                    target=target, source=source, if_none=source.allow_none, only_if_not_None=True
-                )
+                options.if_None = source.allow_none
+                self.add_recursive_list(target=target, source=source, options=options)
 
             # impossible
             else:
                 raise TypeError(
-                    f"{source} of '{self.source_cls_name}' cannot be converted to {target}"
+                    f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
                 )
 
     def __str__(self) -> str:
-        return_statement = f"    return {self.target_cls_alias_name}(**d)"
+        return_statement = f"    return {self.target_cls.alias_name}(**d)"
         return "\n".join(self.lines + [return_statement])
 
 
 def get_map_to_func_name(cls: Any) -> str:
     return f"_map_to_{cls.__name__}"
+
+
+def get_var_name(fieldmeta: FieldMeta) -> str:
+    return f"self.{fieldmeta.name}"

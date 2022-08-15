@@ -2,8 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from dataclass_mapper.field import MetaField
-from dataclass_mapper.mapper import get_class_fields
+from dataclass_mapper.mapper import FieldMeta, get_class_fields
 
 
 def test_pydantic_normal_field() -> None:
@@ -14,9 +13,9 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_fields(Foo)
     assert fields == {
-        "x": MetaField(name="x", type=int, allow_none=False, required=True),
-        "y": MetaField(name="y", type=str, allow_none=False, required=True),
-        "z": MetaField(name="z", type=list[int], allow_none=False, required=True),
+        "x": FieldMeta(name="x", type=int, allow_none=False, required=True),
+        "y": FieldMeta(name="y", type=str, allow_none=False, required=True),
+        "z": FieldMeta(name="z", type=list[int], allow_none=False, required=True),
     }
 
 

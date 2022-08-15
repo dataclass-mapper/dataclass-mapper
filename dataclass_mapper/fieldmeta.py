@@ -10,7 +10,7 @@ def is_optional(type_: Any) -> bool:
 
 
 @dataclass
-class MetaField:
+class FieldMeta:
     """Dataclass containing meta information about fields in dataclasses or pydantic classes.
     Information like the name and type of the field, and if it is required to set it.
 
@@ -40,7 +40,7 @@ class MetaField:
         return f"'{self.name}' of type '{self.type_string}'"
 
     @classmethod
-    def from_dataclass(cls, field: DataclassField) -> "MetaField":
+    def from_dataclass(cls, field: DataclassField) -> "FieldMeta":
         has_default = field.default is not MISSING or field.default_factory is not MISSING
         if is_optional(field.type):
             real_types = [t for t in get_args(field.type) if t is not type(None)]
@@ -60,7 +60,7 @@ class MetaField:
             )
 
     @classmethod
-    def from_pydantic(cls, field: Any) -> "MetaField":
+    def from_pydantic(cls, field: Any) -> "FieldMeta":
         return cls(
             name=field.name,
             type=field.outer_type_,

@@ -1,22 +1,26 @@
-from dataclasses import fields, is_dataclass
+from dataclasses import fields
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
-from uuid import uuid4
 
-from .field import MetaField
-from .mapping_method import MappingMethodSourceCode, Other, StringFieldMapping, get_map_to_func_name
+from .classmeta import get_dataclass_type
+from .mapping_method import (
+    ClassMeta,
+    DataclassType,
+    FieldMeta,
+    MappingMethodSourceCode,
+    Other,
+    StringFieldMapping,
+    get_map_to_func_name,
+)
 
 
-def get_class_fields(cls: Any) -> dict[str, MetaField]:
-    if is_dataclass(cls):
-        return {field.name: MetaField.from_dataclass(field) for field in fields(cls)}
-    try:
-        pydantic = __import__("pydantic")
-        if issubclass(cls, pydantic.BaseModel):
-            return {field.name: MetaField.from_pydantic(field) for field in cls.__fields__.values()}
-    except ImportError:
-        pass
-    raise NotImplementedError("only dataclasses and pydantic classes are supported")
+def get_class_fields(cls: Any) -> dict[str, FieldMeta]:
+    dataclass_type = get_dataclass_type(cls)
+    if dataclass_type == DataclassType.DATACLASSES:
+        return {field.name: FieldMeta.from_dataclass(field) for field in fields(cls)}
+    elif dataclass_type == DataclassType.PYDANTIC:
+        return {field.name: FieldMeta.from_pydantic(field) for field in cls.__fields__.values()}
+    assert False, "unreachable code"
 
 
 def _make_mapper(
@@ -24,14 +28,11 @@ def _make_mapper(
     source_cls: Any,
     target_cls: Any,
 ) -> tuple[str, dict[str, Callable], dict[str, Any]]:
+    source_cls_meta = ClassMeta.from_class(source_cls)
+    target_cls_meta = ClassMeta.from_class(target_cls)
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
-    target_cls_alias = f"_{uuid4().hex}"
-    source_code = MappingMethodSourceCode(
-        source_cls_name=source_cls.__name__,
-        target_cls_name=target_cls.__name__,
-        target_cls_alias_name=target_cls_alias,
-    )
+    source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
 
     for target_field_name in actual_target_fields.keys():
         target = actual_target_fields[target_field_name]
@@ -66,7 +67,7 @@ def _make_mapper(
             f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
         )
 
-    return str(source_code), source_code.methods, {target_cls_alias: target_cls}
+    return str(source_code), source_code.methods, {target_cls_meta.alias_name: target_cls}
 
 
 T = TypeVar("T")
