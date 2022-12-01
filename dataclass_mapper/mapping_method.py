@@ -175,7 +175,10 @@ class MappingMethodSourceCode:
                 )
 
     def __str__(self) -> str:
-        return_statement = f"    return {self.target_cls.alias_name}(**d)"
+        if self.target_cls._type == DataclassType.PYDANTIC:
+            return_statement = f"    return {self.target_cls.alias_name}.construct(**d)"
+        else:
+            return_statement = f"    return {self.target_cls.alias_name}(**d)"
         return "\n".join(self.lines + [return_statement])
 
 

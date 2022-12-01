@@ -63,7 +63,8 @@ def test_rec_pydantic_mapper_with_optional():
     assert repr(map_to(baz_before2, BazPydantic)) == repr(baz_after2)
 
 
-class BazDataclass(BaseModel):
+@dataclass
+class BazDataclass:
     bar: Optional[BarDataclass]
 
 
