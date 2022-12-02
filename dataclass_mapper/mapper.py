@@ -28,12 +28,15 @@ def _make_mapper(
     mapping: StringFieldMapping,
     source_cls: Any,
     target_cls: Any,
+    bypass_validators: bool,
 ) -> tuple[str, dict[str, Callable], dict[str, Any]]:
     source_cls_meta = ClassMeta.from_class(source_cls)
     target_cls_meta = ClassMeta.from_class(target_cls)
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
-    source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
+    source_code = MappingMethodSourceCode(
+        source_cls=source_cls_meta, target_cls=target_cls_meta, bypass_validators=bypass_validators
+    )
 
     for target_field_name in actual_target_fields.keys():
         target = actual_target_fields[target_field_name]
@@ -79,7 +82,9 @@ def _make_mapper(
 T = TypeVar("T")
 
 
-def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
+def mapper(
+    TargetCls: Any, mapping: Optional[StringFieldMapping] = None, bypass_validators: bool = False
+) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
     The mapper method can be called using the ``map_to`` function.
 
@@ -94,32 +99,46 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
         - ``{"x": lambda self: self.x + 1}`` means, that the field ``x`` will be initialized with the incremented value ``x`` of the source object.
         - ``{"x": USE_DEFAULT}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
         - ``{"x": IGNORE_MISSING_MAPPING}`` means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
+    :param bypass_validators: disable Pydantic's validators by using the `.construct` method (can give an up to 30x boost)
     """
 
     def wrapped(SourceCls: T) -> T:
-        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping)
+        add_mapper_function(
+            SourceCls=SourceCls,
+            TargetCls=TargetCls,
+            mapping=mapping,
+            bypass_validators=bypass_validators,
+        )
         return SourceCls
 
     return wrapped
 
 
-def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
+def mapper_from(
+    SourceCls: Any, mapping: Optional[StringFieldMapping] = None, bypass_validators: bool = False
+) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
     The mapper method can be called using the ``map_to`` function.
 
     :param SourceCls: the class (source class) that you want to map an object from to the current (target) class.
     :param mapping: an optional dictionary which which it's possible to describe how each field in the target class gets initialized.
+    :param bypass_validators: disable Pydantic's validators by using the `.construct` method (can give an up to 30x boost)
     """
 
     def wrapped(TargetCls: T) -> T:
-        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping)
+        add_mapper_function(
+            SourceCls=SourceCls,
+            TargetCls=TargetCls,
+            mapping=mapping,
+            bypass_validators=bypass_validators,
+        )
         return TargetCls
 
     return wrapped
 
 
 def add_mapper_function(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping]
+    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping], bypass_validators: bool
 ) -> None:
     field_mapping = mapping or cast(StringFieldMapping, {})
 
@@ -127,6 +146,7 @@ def add_mapper_function(
         field_mapping,
         source_cls=SourceCls,
         target_cls=TargetCls,
+        bypass_validators=bypass_validators,
     )
     module = import_module(SourceCls.__module__)
 

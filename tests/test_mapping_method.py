@@ -23,6 +23,7 @@ def code() -> MappingMethodSourceCode:
         target_cls=ClassMeta(
             name="Target", _type=DataclassType.DATACLASSES, alias_name="TargetAlias"
         ),
+        bypass_validators=False,
     )
 
 
@@ -55,6 +56,40 @@ def test_code_gen_add_assignment_only_if_not_None(code: MappingMethodSourceCode)
             d = {}
             if self.source_x is not None:
                 d["target_x"] = self.source_x
+            return TargetAlias(**d)
+        """
+    )
+    assert str(code) == expected_code
+
+
+def test_bypass_validators_option_for_pydantic() -> None:
+    code = MappingMethodSourceCode(
+        source_cls=ClassMeta(name="Source", _type=DataclassType.DATACLASSES, alias_name="Source"),
+        target_cls=ClassMeta(name="Target", _type=DataclassType.PYDANTIC, alias_name="TargetAlias"),
+        bypass_validators=True,
+    )
+    expected_code = prepare_expected_code(
+        """
+        def convert(self) -> "Target":
+            d = {}
+            return TargetAlias.construct(**d)
+        """
+    )
+    assert str(code) == expected_code
+
+
+def test_bypass_validators_option_disabled_for_dataclasses() -> None:
+    code = MappingMethodSourceCode(
+        source_cls=ClassMeta(name="Source", _type=DataclassType.DATACLASSES, alias_name="Source"),
+        target_cls=ClassMeta(
+            name="Target", _type=DataclassType.DATACLASSES, alias_name="TargetAlias"
+        ),
+        bypass_validators=True,
+    )
+    expected_code = prepare_expected_code(
+        """
+        def convert(self) -> "Target":
+            d = {}
             return TargetAlias(**d)
         """
     )

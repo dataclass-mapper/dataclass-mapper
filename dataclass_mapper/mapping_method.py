@@ -38,7 +38,9 @@ class AssignmentOptions:
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
 
-    def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
+    def __init__(
+        self, source_cls: ClassMeta, target_cls: ClassMeta, bypass_validators: bool
+    ) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
         self.lines = [
@@ -46,6 +48,7 @@ class MappingMethodSourceCode:
             f"    d = {{}}",
         ]
         self.methods: dict[str, Callable] = {}
+        self.bypass_validators = bypass_validators
 
     def get_source(self, name: str) -> str:
         return f"self.{name}"
@@ -175,7 +178,7 @@ class MappingMethodSourceCode:
                 )
 
     def __str__(self) -> str:
-        if self.target_cls._type == DataclassType.PYDANTIC:
+        if self.target_cls._type == DataclassType.PYDANTIC and self.bypass_validators:
             return_statement = f"    return {self.target_cls.alias_name}.construct(**d)"
         else:
             return_statement = f"    return {self.target_cls.alias_name}(**d)"
