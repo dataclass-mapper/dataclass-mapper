@@ -126,6 +126,7 @@ The current version has support for:
 * Assign Values with lambdas (e.g. ``{"x": lambda: 42}``)
 * Custom mapping computations with with lambdas (e.g. ``{"x": lambda self: self.x + 1}``)
 * For Optional fields in Pydantic classes, only set those target fields that actually set in the source (`__fields_set__`).
+* Disable Pydantic's validators by using `bypass_validators=True` (can give an up to 30x boost)
 
 Still missing features:
 
