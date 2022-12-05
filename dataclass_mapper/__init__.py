@@ -1,4 +1,4 @@
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 from .mapper import map_to, mapper, mapper_from
 from .mapping_method import Spezial

@@ -23,7 +23,7 @@ copyright = "2022, Jakob Kogler"
 author = "Jakob Kogler"
 
 # The full version, including alpha/beta/rc tags
-release = "1.2.0"
+release = "1.3.0"
 
 
 # -- General configuration ---------------------------------------------------
