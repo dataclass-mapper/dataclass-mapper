@@ -3,6 +3,7 @@ from dataclasses import fields
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
+from .assignments import get_map_to_func_name
 from .classmeta import get_dataclass_type
 from .mapping_method import (
     ClassMeta,
@@ -11,7 +12,6 @@ from .mapping_method import (
     MappingMethodSourceCode,
     Spezial,
     StringFieldMapping,
-    get_map_to_func_name,
 )
 
 
@@ -33,9 +33,7 @@ def _make_mapper(
     target_cls_meta = ClassMeta.from_class(target_cls)
     actual_source_fields = get_class_fields(source_cls)
     actual_target_fields = get_class_fields(target_cls)
-    source_code = MappingMethodSourceCode(
-        source_cls=source_cls_meta, target_cls=target_cls_meta
-    )
+    source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
 
     for target_field_name in actual_target_fields.keys():
         target = actual_target_fields[target_field_name]
@@ -81,9 +79,7 @@ def _make_mapper(
 T = TypeVar("T")
 
 
-def mapper(
-    TargetCls: Any, mapping: Optional[StringFieldMapping] = None
-) -> Callable[[T], T]:
+def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
     The mapper method can be called using the ``map_to`` function.
 
@@ -111,9 +107,7 @@ def mapper(
     return wrapped
 
 
-def mapper_from(
-    SourceCls: Any, mapping: Optional[StringFieldMapping] = None
-) -> Callable[[T], T]:
+def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
     The mapper method can be called using the ``map_to`` function.
 

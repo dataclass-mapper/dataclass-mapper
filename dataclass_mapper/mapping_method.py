@@ -1,10 +1,16 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from inspect import isfunction, signature
-from typing import Any, Callable, Optional, Type, Union, cast, get_args, get_origin
-from uuid import uuid4
+from inspect import isfunction
+from typing import Callable, Optional, Type, Union
 
+from .assignments import (
+    Assignment,
+    FunctionAssignment,
+    ListRecursiveAssignment,
+    RecursiveAssignment,
+    SimpleAssignment,
+    get_var_name,
+)
 from .classmeta import ClassMeta, DataclassType
 from .fieldmeta import FieldMeta
 
@@ -35,75 +41,35 @@ class AssignmentOptions:
     only_if_not_None: bool = False
     if_None: bool = False
 
-
-class Assignment(ABC):
-    def __init__(self, source: FieldMeta, target: FieldMeta):
-        """
-        :param source: meta infos about the source field
-        :param target: meta infos about the target field
-        """
-        self.source = source
-        self.target = target
-
-    @abstractmethod
-    def applicable(self) -> bool:
-        ...
-
-    @abstractmethod
-    def right_side(self) -> str:
-        ...
-
-
-class SimpleAssignment(Assignment):
-    def applicable(self) -> bool:
-        return bool(self.target.type == self.source.type)
-
-    def right_side(self) -> str:
-        return get_var_name(self.source)
-
-
-class RecursiveAssignment(Assignment):
-    def applicable(self) -> bool:
-        return is_mappable_to(self.source.type, self.target.type) and not (
-            self.source.allow_none and self.target.disallow_none
+    @classmethod
+    def from_Metas(
+        cls, source_cls: ClassMeta, target_cls: ClassMeta, source: FieldMeta, target: FieldMeta
+    ) -> "AssignmentOptions":
+        # maintain Pydantic's unset property
+        only_if_set = (
+            source.allow_none
+            and target.allow_none
+            and not target.required
+            and source_cls._type == target_cls._type == DataclassType.PYDANTIC
         )
+        # TODO: what if the defaults of source/target are not just None?
+        # How to map `x: Optional[int] = Field(42)` to `x: Optional[int] = Field(15)`?
 
-    def right_side(self) -> str:
-        return self._get_map_func(get_var_name(self.source), target_cls=self.target.type)
+        # handle optional to non-optional mappings
+        only_if_not_None = False
+        if source.allow_none and target.disallow_none:
+            if not target.required:
+                only_if_not_None = True
+            else:
+                raise TypeError(f"{source} of '{source_cls.name}' cannot be converted to {target}")
 
-    def _get_map_func(self, name: str, target_cls: Any) -> str:
-        func_name = get_map_to_func_name(target_cls)
-        return f"{name}.{func_name}()"
+        if_None = source.allow_none
 
-
-class ListRecursiveAssignment(RecursiveAssignment):
-    def applicable(self) -> bool:
-        return (
-            get_origin(self.source.type) is list
-            and get_origin(self.target.type) is list
-            and is_mappable_to(get_args(self.source.type)[0], get_args(self.target.type)[0])
+        return cls(
+            only_if_set=only_if_set,
+            only_if_not_None=only_if_not_None,
+            if_None=if_None,
         )
-
-    def right_side(self) -> str:
-        list_item_type = get_args(self.target.type)[0]
-        return f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(self.source)}]'
-
-
-class FunctionAssignment:
-    def __init__(self, function: Callable, target: FieldMeta, methods: dict[str, Callable]):
-        self.function = function
-        self.target = target
-        self.methods = methods
-
-    def create_code(self) -> list[str]:
-        name = f"_{uuid4().hex}"
-        if len(signature(self.function).parameters) == 0:
-            self.methods[name] = cast(Callable, staticmethod(self.function))
-        else:
-            # already a method
-            # TODO assert that there is only one parameter and that it is `self`
-            self.methods[name] = self.function
-        return [f'    d["{self.target.name}"] = self.{name}()']
 
 
 class MappingMethodSourceCode:
@@ -158,46 +124,25 @@ class MappingMethodSourceCode:
         right_side = right_side
         if options.if_None and not options.only_if_not_None:
             right_side = f"None if {get_var_name(source)} is None else {right_side}"
-        lines.append(f'{" "*indent}d["{target.name}"] = {right_side}')
-
+        lines.append(self._get_assignment_str(target, right_side, indent))
         return lines
 
-    def _get_options(self, source: FieldMeta, target: FieldMeta) -> AssignmentOptions:
-        options = AssignmentOptions()
-
-        # maintain Pydantic's unset property
-        options.only_if_set = (
-            source.allow_none
-            and target.allow_none
-            and not target.required
-            and self.source_cls._type == self.target_cls._type == DataclassType.PYDANTIC
-        )
-        # TODO: what if the defaults of source/target are not just None?
-        # How to map `x: Optional[int] = Field(42)` to `x: Optional[int] = Field(15)`?
-
-        # handle optional to non-optional mappings
-        if source.allow_none and target.disallow_none:
-            if not target.required:
-                options.only_if_not_None = True
-            else:
-                raise TypeError(
-                    f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
-                )
-
-        options.if_None = source.allow_none
-
-        return options
+    def _get_assignment_str(self, target: FieldMeta, right_side: str, indent: int = 4) -> str:
+        return f'{" "*indent}d["{target.name}"] = {right_side}'
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
             function_assignment = FunctionAssignment(
                 function=source, target=target, methods=self.methods
             )
-            self.lines.extend(function_assignment.create_code())
+            right_side = function_assignment.right_side()
+            self.lines.append(self._get_assignment_str(target, right_side))
         else:
             assert isinstance(source, FieldMeta)
 
-            options = self._get_options(source=source, target=target)
+            options = AssignmentOptions.from_Metas(
+                source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
+            )
             if assignment := self._get_asssigment(source=source, target=target):
                 self.lines.extend(
                     self._assignment_lines(
@@ -218,16 +163,3 @@ class MappingMethodSourceCode:
         else:
             return_statement = f"    return {self.target_cls.alias_name}(**d)"
         return "\n".join(self.lines + [return_statement])
-
-
-def is_mappable_to(SourceCls: Any, TargetCls: Any) -> bool:
-    func_name = get_map_to_func_name(TargetCls)
-    return hasattr(SourceCls, func_name)
-
-
-def get_map_to_func_name(cls: Any) -> str:
-    return f"_map_to_{cls.__name__}"
-
-
-def get_var_name(fieldmeta: FieldMeta) -> str:
-    return f"self.{fieldmeta.name}"
