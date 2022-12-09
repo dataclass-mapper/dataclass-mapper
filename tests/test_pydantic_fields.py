@@ -13,9 +13,9 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_fields(Foo)
     assert fields == {
-        "x": FieldMeta(name="x", type=int, allow_none=False, required=True),
-        "y": FieldMeta(name="y", type=str, allow_none=False, required=True),
-        "z": FieldMeta(name="z", type=list[int], allow_none=False, required=True),
+        "x": FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
+        "y": FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
+        "z": FieldMeta(name="z", type=list[int], allow_none=False, required=True, alias="z"),
     }
 
 
@@ -54,3 +54,36 @@ def test_pydantic_defaults_field() -> None:
     assert not fields["e"].required
     assert not fields["f"].required
     assert not fields["g"].required
+
+
+def test_pydantic_alias() -> None:
+    class Foo(BaseModel):
+        a: int = Field(alias="b")
+        c: int
+
+    fields = get_class_fields(Foo)
+    assert fields["a"].name == "a"
+    assert fields["a"].alias == "b"
+
+    assert fields["c"].name == "c"
+    assert fields["c"].alias == "c"
+
+    class Bar(BaseModel):
+        a: int
+
+        class Config:
+            alias_generator = lambda x: x.upper()
+
+    fields = get_class_fields(Bar)
+    assert fields["a"].name == "a"
+    assert fields["a"].alias == "A"
+
+    class Baz(BaseModel):
+        a: int
+
+        class Config:
+            fields = {"a": "aaa"}
+
+    fields = get_class_fields(Baz)
+    assert fields["a"].name == "a"
+    assert fields["a"].alias == "aaa"

@@ -1,7 +1,7 @@
 from dataclasses import MISSING
 from dataclasses import Field as DataclassField
 from dataclasses import dataclass
-from typing import Any, Union, cast, get_args, get_origin
+from typing import Any, Union, cast, get_args, get_origin, Optional
 
 
 def is_optional(type_: Any) -> bool:
@@ -24,6 +24,7 @@ class FieldMeta:
     type: Any
     allow_none: bool
     required: bool
+    alias: Optional[str] = None
 
     @property
     def disallow_none(self) -> bool:
@@ -66,4 +67,5 @@ class FieldMeta:
             type=field.outer_type_,
             allow_none=field.allow_none,
             required=field.required,
+            alias=field.alias
         )
