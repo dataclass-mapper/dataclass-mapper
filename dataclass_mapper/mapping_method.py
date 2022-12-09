@@ -1,9 +1,9 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from inspect import isfunction, signature
-from typing import Any, Callable, Union, cast, get_args, get_origin, Optional, Type
+from typing import Any, Callable, Optional, Type, Union, cast, get_args, get_origin
 from uuid import uuid4
-from abc import ABC, abstractmethod
 
 from .classmeta import ClassMeta, DataclassType
 from .fieldmeta import FieldMeta
@@ -64,10 +64,8 @@ class SimpleAssignment(Assignment):
 
 class RecursiveAssignment(Assignment):
     def applicable(self) -> bool:
-        return (
-            is_mappable_to(self.source.type, self.target.type)
-            and
-            not (self.source.allow_none and self.target.disallow_none)
+        return is_mappable_to(self.source.type, self.target.type) and not (
+            self.source.allow_none and self.target.disallow_none
         )
 
     def right_side(self) -> str:
@@ -76,6 +74,7 @@ class RecursiveAssignment(Assignment):
     def _get_map_func(self, name: str, target_cls: Any) -> str:
         func_name = get_map_to_func_name(target_cls)
         return f"{name}.{func_name}()"
+
 
 class ListRecursiveAssignment(RecursiveAssignment):
     def applicable(self) -> bool:
@@ -88,6 +87,7 @@ class ListRecursiveAssignment(RecursiveAssignment):
     def right_side(self) -> str:
         list_item_type = get_args(self.target.type)[0]
         return f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(self.source)}]'
+
 
 class FunctionAssignment:
     def __init__(self, function: Callable, target: FieldMeta, methods: dict[str, Callable]):
@@ -108,11 +108,14 @@ class FunctionAssignment:
 
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
-    AssignmentClasses: list[Type[Assignment]] = [SimpleAssignment, RecursiveAssignment, ListRecursiveAssignment]
 
-    def __init__(
-        self, source_cls: ClassMeta, target_cls: ClassMeta
-    ) -> None:
+    AssignmentClasses: list[Type[Assignment]] = [
+        SimpleAssignment,
+        RecursiveAssignment,
+        ListRecursiveAssignment,
+    ]
+
+    def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
         self.lines = [
@@ -127,7 +130,7 @@ class MappingMethodSourceCode:
     @classmethod
     def _get_asssigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
         for AssignmentCls in cls.AssignmentClasses:
-            if (assignment := AssignmentCls(source=source, target=target)).applicable() :
+            if (assignment := AssignmentCls(source=source, target=target)).applicable():
                 return assignment
         return None
 
@@ -185,18 +188,26 @@ class MappingMethodSourceCode:
 
         return options
 
-
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
-            function_assignment = FunctionAssignment(function=source, target=target, methods=self.methods)
+            function_assignment = FunctionAssignment(
+                function=source, target=target, methods=self.methods
+            )
             self.lines.extend(function_assignment.create_code())
         else:
             assert isinstance(source, FieldMeta)
 
             options = self._get_options(source=source, target=target)
             if assignment := self._get_asssigment(source=source, target=target):
-                self.lines.extend(self._assignment_lines(source=source, target=target, right_side=assignment.right_side(), options=options))
-            else: # impossible
+                self.lines.extend(
+                    self._assignment_lines(
+                        source=source,
+                        target=target,
+                        right_side=assignment.right_side(),
+                        options=options,
+                    )
+                )
+            else:  # impossible
                 raise TypeError(
                     f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
                 )
