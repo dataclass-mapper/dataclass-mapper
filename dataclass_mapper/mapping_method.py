@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from inspect import isfunction, signature
-from typing import Any, Callable, Union, cast, get_args, get_origin
+from typing import Any, Callable, Union, cast, get_args, get_origin, Optional, Type
 from uuid import uuid4
+from abc import ABC, abstractmethod
 
 from .classmeta import ClassMeta, DataclassType
 from .fieldmeta import FieldMeta
@@ -35,6 +36,63 @@ class AssignmentOptions:
     if_None: bool = False
 
 
+class Assignment(ABC):
+    def __init__(self, source: FieldMeta, target: FieldMeta):
+        """
+        :param source: meta infos about the source field
+        :param target: meta infos about the target field
+        """
+        self.source = source
+        self.target = target
+
+    @abstractmethod
+    def right_side(self) -> str:
+        ...
+
+    def create_code(
+        self,
+        options: AssignmentOptions,
+    ) -> list[str]:
+        """Generate code for setting the target field to the right side.
+        Only do it for a couple of conditions.
+
+        :param right_side: some expression (code) that will be assigned to the target if conditions allow it
+        """
+        lines: list[str] = []
+        indent = 4
+        if options.only_if_not_None:
+            lines.append(f"    if {get_var_name(self.source)} is not None:")
+            indent = 8
+        if options.only_if_set:
+            lines.append(f"    if '{self.source.name}' in self.__fields_set__:")
+            indent = 8
+
+        right_side = self.right_side()
+        if options.if_None:
+            right_side = f"None if {get_var_name(self.source)} is None else {right_side}"
+        lines.append(f'{" "*indent}d["{self.target.name}"] = {right_side}')
+
+        return lines
+
+
+class SimpleAssignment(Assignment):
+    def right_side(self) -> str:
+        return get_var_name(self.source)
+
+class RecursiveAssignment(Assignment):
+    def right_side(self) -> str:
+        return self._get_map_func(get_var_name(self.source), target_cls=self.target.type)
+
+    def _get_map_func(self, name: str, target_cls: Any) -> str:
+        func_name = get_map_to_func_name(target_cls)
+        return f"{name}.{func_name}()"
+
+class ListRecursiveAssignment(RecursiveAssignment):
+    def right_side(self) -> str:
+        list_item_type = get_args(self.target.type)[0]
+        return f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(self.source)}]'
+
+
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
 
@@ -55,62 +113,9 @@ class MappingMethodSourceCode:
     def _add_line(self, left_side: str, right_side: str, indent=4) -> None:
         self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
 
-    def add_assignment(
-        self,
-        target: FieldMeta,
-        source: FieldMeta,
-        options: AssignmentOptions,
-    ) -> None:
-        self._add_code(
-            source=source, target=target, right_side=get_var_name(source), options=options
-        )
-
-    def _get_map_func(self, name: str, target_cls: Any) -> str:
-        func_name = get_map_to_func_name(target_cls)
-        return f"{name}.{func_name}()"
-
     def is_mappable_to(self, SourceCls, TargetCls) -> bool:
         func_name = get_map_to_func_name(TargetCls)
         return hasattr(SourceCls, func_name)
-
-    def add_recursive(
-        self, target: FieldMeta, source: FieldMeta, options: AssignmentOptions
-    ) -> None:
-        right_side = self._get_map_func(get_var_name(source), target_cls=target.type)
-        self._add_code(source=source, target=target, right_side=right_side, options=options)
-
-    def add_recursive_list(
-        self, target: FieldMeta, source: FieldMeta, options: AssignmentOptions
-    ) -> None:
-        list_item_type = get_args(target.type)[0]
-        right_side = f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(source)}]'
-        self._add_code(source=source, target=target, right_side=right_side, options=options)
-
-    def _add_code(
-        self,
-        source: FieldMeta,
-        target: FieldMeta,
-        right_side: str,
-        options: AssignmentOptions,
-    ) -> None:
-        """Generate code for setting the target field to the right side.
-        Only do it for a couple of conditions.
-
-        :param source: meta infos about the source field
-        :param target: meta infos about the target field
-        :param right_side: some expression (code) that will be assigned to the target if conditions allow it
-        """
-        indent = 4
-        if options.only_if_not_None:
-            self.lines.append(f"    if {get_var_name(source)} is not None:")
-            indent = 8
-        if options.only_if_set:
-            self.lines.append(f"    if '{source.name}' in self.__fields_set__:")
-            indent = 8
-
-        if options.if_None:
-            right_side = f"None if {get_var_name(source)} is None else {right_side}"
-        self._add_line(target.name, right_side, indent)
 
     def add_function_call(self, target: FieldMeta, function: Callable) -> None:
         name = f"_{uuid4().hex}"
@@ -150,16 +155,18 @@ class MappingMethodSourceCode:
                         f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
                     )
 
+            AssignmentCls: Optional[Type[Assignment]] = None
+
             # same type, just assign it
             if target.type == source.type:
-                self.add_assignment(target=target, source=source, options=options)
+                AssignmentCls = SimpleAssignment
 
             # different type, but also safe mappable
             elif self.is_mappable_to(source.type, target.type) and not (
                 source.allow_none and target.disallow_none
             ):
                 options.if_None = source.allow_none
-                self.add_recursive(target=target, source=source, options=options)
+                AssignmentCls = RecursiveAssignment
 
             # both are lists of safe mappable types
             elif (
@@ -168,10 +175,12 @@ class MappingMethodSourceCode:
                 and self.is_mappable_to(get_args(source.type)[0], get_args(target.type)[0])
             ):
                 options.if_None = source.allow_none
-                self.add_recursive_list(target=target, source=source, options=options)
+                AssignmentCls = ListRecursiveAssignment
 
-            # impossible
-            else:
+            if AssignmentCls is not None:
+                assignment = AssignmentCls(source=source, target=target)
+                self.lines.extend(assignment.create_code(options))
+            else: # impossible
                 raise TypeError(
                     f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
                 )
