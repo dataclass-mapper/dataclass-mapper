@@ -92,6 +92,22 @@ class ListRecursiveAssignment(RecursiveAssignment):
         list_item_type = get_args(self.target.type)[0]
         return f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(self.source)}]'
 
+class FunctionAssignment:
+    def __init__(self, function: Callable, target: FieldMeta, methods: dict[str, Callable]):
+        self.function = function
+        self.target = target
+        self.methods = methods
+
+    def create_code(self, options: AssignmentOptions) -> list[str]:
+        name = f"_{uuid4().hex}"
+        if len(signature(self.function).parameters) == 0:
+            self.methods[name] = cast(Callable, staticmethod(self.function))
+        else:
+            # already a method
+            # TODO assert that there is only one parameter and that it is `self`
+            self.methods[name] = self.function
+        return [f'    d["{self.target.name}"] = self.{name}()']
+
 
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
@@ -107,9 +123,6 @@ class MappingMethodSourceCode:
         ]
         self.methods: dict[str, Callable] = {}
 
-    def get_source(self, name: str) -> str:
-        return f"self.{name}"
-
     def _add_line(self, left_side: str, right_side: str, indent=4) -> None:
         self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
 
@@ -117,20 +130,11 @@ class MappingMethodSourceCode:
         func_name = get_map_to_func_name(TargetCls)
         return hasattr(SourceCls, func_name)
 
-    def add_function_call(self, target: FieldMeta, function: Callable) -> None:
-        name = f"_{uuid4().hex}"
-        if len(signature(function).parameters) == 0:
-            self.methods[name] = cast(Callable, staticmethod(function))
-        else:
-            # already a method
-            # TODO assert that there is only one parameter and that it is `self`
-            self.methods[name] = function
-        source = self.get_source(name)
-        self._add_line(target.name, f"{source}()")
-
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
-            self.add_function_call(target, source)
+            function_assignment = FunctionAssignment(function=source, target=target, methods=self.methods)
+            options = AssignmentOptions()
+            self.lines.extend(function_assignment.create_code(options))
         else:
             assert isinstance(source, FieldMeta)
 
