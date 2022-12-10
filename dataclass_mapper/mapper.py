@@ -31,7 +31,8 @@ def _make_mapper(
                 if raw_source in (Spezial.USE_DEFAULT, Spezial.IGNORE_MISSING_MAPPING):
                     if raw_source is Spezial.USE_DEFAULT:
                         warnings.warn(
-                            "USE_DEFAULT is deprecated, use xyz instead", DeprecationWarning
+                            "USE_DEFAULT is deprecated, use IGNORE_MISSING_MAPPING instead",
+                            DeprecationWarning,
                         )
 
                     if target_field.required:
