@@ -18,13 +18,14 @@ def _make_mapper(
     actual_target_fields = target_cls_meta.fields
     source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
 
-    for target_field_name in actual_target_fields.keys():
-        target = actual_target_fields[target_field_name]
+    for target_field_name, target_field in actual_target_fields.items():
         # mapping exists
         if target_field_name in mapping:
             raw_source = mapping[target_field_name]
             if isinstance(raw_source, str):
-                source_code.add_mapping(target=target, source=actual_source_fields[raw_source])
+                source_code.add_mapping(
+                    target=target_field, source=actual_source_fields[raw_source]
+                )
             elif isinstance(raw_source, Spezial):
                 if raw_source in (Spezial.USE_DEFAULT, Spezial.IGNORE_MISSING_MAPPING):
                     if raw_source is Spezial.USE_DEFAULT:
@@ -32,7 +33,7 @@ def _make_mapper(
                             "USE_DEFAULT is deprecated, use xyz instead", DeprecationWarning
                         )
 
-                    if actual_target_fields[target_field_name].required:
+                    if target_field.required:
                         # leaving the target empty and using the default value/factory is not possible,
                         # as the target doesn't have a default value/factory
                         raise ValueError(
@@ -41,10 +42,12 @@ def _make_mapper(
                 else:
                     raise NotImplemented
             else:
-                source_code.add_mapping(target=target, source=raw_source)
+                source_code.add_mapping(target=target_field, source=raw_source)
         # there's a variable with the same name in the source
         elif target_field_name in actual_source_fields:
-            source_code.add_mapping(target=target, source=actual_source_fields[target_field_name])
+            source_code.add_mapping(
+                target=target_field, source=actual_source_fields[target_field_name]
+            )
         # not possible to map
         else:
             raise ValueError(
