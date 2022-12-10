@@ -6,6 +6,8 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import importlib.metadata
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -18,12 +20,14 @@ sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 
-project = "dataclass-mapper"
+_DISTRIBUTION_METADATA = importlib.metadata.metadata("dataclass-mapper")
+project = _DISTRIBUTION_METADATA["Name"]
 copyright = "2022, Jakob Kogler"
-author = "Jakob Kogler"
+author = _DISTRIBUTION_METADATA["Author"]
 
 # The full version, including alpha/beta/rc tags
-release = "1.3.0"
+release = _DISTRIBUTION_METADATA["Version"]
+version = _DISTRIBUTION_METADATA["Version"]
 
 
 # -- General configuration ---------------------------------------------------

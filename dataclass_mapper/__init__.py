@@ -1,5 +1,3 @@
-__version__ = "1.3.0"
-
 from .mapper import enum_mapper, enum_mapper_from, map_to, mapper, mapper_from
 from .mapping_method import Spezial
 
