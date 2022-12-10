@@ -90,9 +90,6 @@ class MappingMethodSourceCode:
         ]
         self.methods: dict[str, Callable] = {}
 
-    def _add_line(self, left_side: str, right_side: str, indent=4) -> None:
-        self.lines.append(f'{" "*indent}d["{left_side}"] = {right_side}')
-
     @classmethod
     def _get_asssigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
         for AssignmentCls in cls.AssignmentClasses:
@@ -128,7 +125,7 @@ class MappingMethodSourceCode:
         return lines
 
     def _get_assignment_str(self, target: FieldMeta, right_side: str, indent: int = 4) -> str:
-        variable_name = target.name
+        variable_name = self.target_cls.get_assignment_name(target)
         return f'{" "*indent}d["{variable_name}"] = {right_side}'
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:

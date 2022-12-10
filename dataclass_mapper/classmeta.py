@@ -26,12 +26,19 @@ class ClassMeta(ABC):
     def return_statement(self) -> str:
         ...
 
+    @abstractmethod
+    def get_assignment_name(self, field: FieldMeta) -> str:
+        """Returns the name for the variable that should be used for an assignment"""
+
 
 class DataclassClassMeta(ClassMeta):
     _type = DataclassType.DATACLASSES
 
     def return_statement(self) -> str:
         return f"    return {self.alias_name}(**d)"
+
+    def get_assignment_name(self, field: FieldMeta) -> str:
+        return field.name
 
     @staticmethod
     def _fields(clazz: Any) -> dict[str, FieldMeta]:
@@ -68,6 +75,12 @@ class PydanticClassMeta(ClassMeta):
             return f"    return {self.alias_name}.construct(**d)"
         else:
             return f"    return {self.alias_name}(**d)"
+
+    def get_assignment_name(self, field: FieldMeta) -> str:
+        if self.use_construct:
+            return field.name
+        else:
+            return field.alias or field.name
 
     @staticmethod
     def _fields(clazz: Any) -> dict[str, FieldMeta]:

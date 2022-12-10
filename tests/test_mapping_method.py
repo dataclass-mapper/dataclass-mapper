@@ -131,3 +131,35 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
         """
     )
     assert str(code) == expected_code
+
+
+def test_pydantic_alias() -> None:
+    code = MappingMethodSourceCode(
+        source_cls=PydanticClassMeta(
+            name="Source",
+            fields={},
+            use_construct=False,
+            alias_name="Source",
+        ),
+        target_cls=PydanticClassMeta(
+            name="Target",
+            fields={},
+            use_construct=False,
+            alias_name="TargetAlias",
+        ),
+    )
+    code.add_mapping(
+        target=FieldMeta(
+            name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"
+        ),
+        source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
+    )
+    expected_code = prepare_expected_code(
+        """
+        def convert(self) -> "Target":
+            d = {}
+            d["TARGET_VARIABLE_X"] = self.source_x
+            return TargetAlias(**d)
+        """
+    )
+    assert str(code) == expected_code

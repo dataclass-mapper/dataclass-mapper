@@ -70,7 +70,7 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
     :param mapping: An optional dictionary which which it's possible to describe how each field in the target class gets initialized.
         Fields that are not specified will be mapped automatically.
         Every single field in the target class must have some mapping (in order to not forget about a field),
-        either a default mapping (if the variable names match), or an explicit mapping definition with this `mapping` parameter.
+        either a default mapping (if the field names match), or an explicit mapping definition with this `mapping` parameter.
 
         - ``{"x": "y"}`` means, that the field ``x`` of the target object will have the value of the ``y`` fields in the target object.
         - ``{"x": lambda: 42}`` means, that the field ``x`` will be initialized with the value 42.
