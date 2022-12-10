@@ -19,12 +19,12 @@ def make_enum_mapper(
     if unknown_source_members := set(mapping.keys()) - set(source_members.keys()):
         unknown = list(unknown_source_members)[0]
         raise ValueError(
-            f"The mapping key '{unknown}' is not part of the source Enum {source_cls.__name__}"
+            f"The mapping key '{unknown}' is not part of the source enum '{source_cls.__name__}'"
         )
     if unknown_target_members := set(mapping.values()) - set(target_members.keys()):
         unknown = list(unknown_target_members)[0]
         raise ValueError(
-            f"The mapping key '{unknown}' is not part of the target Enum {target_cls.__name__}"
+            f"The mapping key '{unknown}' is not part of the target enum '{target_cls.__name__}'"
         )
 
     full_mapping: dict[Any, Any] = {}
@@ -37,7 +37,7 @@ def make_enum_mapper(
             full_mapping[source_member] = target_members[source_member_name]
         else:
             raise ValueError(
-                f"The member '{source_member_name}' of the source Enum {source_cls.__name__} doesn't have a mapping."
+                f"The member '{source_member_name}' of the source enum '{source_cls.__name__}' doesn't have a mapping."
             )
 
     def convert(self: Any) -> Any:

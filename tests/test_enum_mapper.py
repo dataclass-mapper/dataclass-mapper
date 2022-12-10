@@ -1,5 +1,7 @@
 from enum import Enum, auto
 
+import pytest
+
 from dataclass_mapper import enum_mapper, enum_mapper_from, map_to
 
 
@@ -41,3 +43,38 @@ def test_enum_mapping_between_str_and_int():
 
     assert map_to(BarSource.A, Bar) == Bar.A
     assert map_to(BarSource.C, Bar) == Bar.B
+
+
+def test_enum_mapper_wrong_source():
+    with pytest.raises(ValueError) as excinfo:
+
+        @enum_mapper(Bar, {"CC": "B"})
+        class BarSource(Enum):
+            A = 1
+            C = -1
+
+    assert "The mapping key 'CC' is not part of the source enum 'BarSource'" in str(excinfo.value)
+
+
+def test_enum_mapper_wrong_target():
+    with pytest.raises(ValueError) as excinfo:
+
+        @enum_mapper(Bar, {"C": "BB"})
+        class BarSource(Enum):
+            A = 1
+            C = -1
+
+    assert "The mapping key 'BB' is not part of the target enum 'Bar'" in str(excinfo.value)
+
+
+def test_enum_mapper_missing_mapping():
+    with pytest.raises(ValueError) as excinfo:
+
+        @enum_mapper(Bar)
+        class BarSource(Enum):
+            A = 1
+            C = -1
+
+    assert "The member 'C' of the source enum 'BarSource' doesn't have a mapping." in str(
+        excinfo.value
+    )
