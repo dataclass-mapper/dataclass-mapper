@@ -133,7 +133,6 @@ Still missing features:
 
 * ``Union`` types
 * ``Dict`` types
-* Aliases in `pydantic` classes
 * Checking if all source attributes were used
 * SQLAlchemy ORM / attr
 
