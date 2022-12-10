@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from dataclass_mapper.mapper import FieldMeta, get_class_fields
+from dataclass_mapper.classmeta import FieldMeta, get_class_meta
 
 
 def test_pydantic_normal_field() -> None:
@@ -11,7 +11,7 @@ def test_pydantic_normal_field() -> None:
         y: str
         z: list[int]
 
-    fields = get_class_fields(Foo)
+    fields = get_class_meta(Foo).fields
     assert fields == {
         "x": FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
         "y": FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
@@ -24,7 +24,7 @@ def test_pydantic_optional_fields() -> None:
         x: Optional[int]
         y: Optional[list[int]]
 
-    fields = get_class_fields(Foo)
+    fields = get_class_meta(Foo).fields
     assert fields["x"].type is int
     assert fields["x"].allow_none
     assert not fields["x"].disallow_none
@@ -44,7 +44,7 @@ def test_pydantic_defaults_field() -> None:
         f: Optional[str] = Field(default="hello")
         g: Optional[str] = Field(default_factory=lambda: "hello")
 
-    fields = get_class_fields(Foo)
+    fields = get_class_meta(Foo).fields
     assert fields["a"].required
     assert not fields["b1"].required  # pydantic fills optionals fields automatically with None
     assert fields["b2"].required  # however not for elipsis defaults
@@ -61,7 +61,7 @@ def test_pydantic_alias() -> None:
         a: int = Field(alias="b")
         c: int
 
-    fields = get_class_fields(Foo)
+    fields = get_class_meta(Foo).fields
     assert fields["a"].name == "a"
     assert fields["a"].alias == "b"
 
@@ -74,7 +74,7 @@ def test_pydantic_alias() -> None:
         class Config:
             alias_generator = lambda x: x.upper()
 
-    fields = get_class_fields(Bar)
+    fields = get_class_meta(Bar).fields
     assert fields["a"].name == "a"
     assert fields["a"].alias == "A"
 
@@ -84,6 +84,6 @@ def test_pydantic_alias() -> None:
         class Config:
             fields = {"a": "aaa"}
 
-    fields = get_class_fields(Baz)
+    fields = get_class_meta(Baz).fields
     assert fields["a"].name == "a"
     assert fields["a"].alias == "aaa"

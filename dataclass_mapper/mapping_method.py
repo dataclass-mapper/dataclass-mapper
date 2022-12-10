@@ -128,7 +128,8 @@ class MappingMethodSourceCode:
         return lines
 
     def _get_assignment_str(self, target: FieldMeta, right_side: str, indent: int = 4) -> str:
-        return f'{" "*indent}d["{target.name}"] = {right_side}'
+        variable_name = target.name
+        return f'{" "*indent}d["{variable_name}"] = {right_side}'
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
@@ -158,8 +159,4 @@ class MappingMethodSourceCode:
                 )
 
     def __str__(self) -> str:
-        if self.target_cls._type == DataclassType.PYDANTIC and not self.target_cls.has_validators:
-            return_statement = f"    return {self.target_cls.alias_name}.construct(**d)"
-        else:
-            return_statement = f"    return {self.target_cls.alias_name}(**d)"
-        return "\n".join(self.lines + [return_statement])
+        return "\n".join(self.lines + [self.target_cls.return_statement()])

@@ -1,7 +1,10 @@
-from dataclasses import dataclass, field, is_dataclass
+from abc import ABC, abstractmethod
+from dataclasses import fields, is_dataclass
 from enum import Enum, auto
-from typing import Any
+from typing import Any, Optional, cast
 from uuid import uuid4
+
+from .fieldmeta import FieldMeta
 
 
 class DataclassType(Enum):
@@ -9,39 +12,83 @@ class DataclassType(Enum):
     PYDANTIC = auto()
 
 
-@dataclass
-class ClassMeta:
-    name: str
+class ClassMeta(ABC):
     _type: DataclassType
-    has_validators: bool
-    alias_name: str = field(default_factory=lambda: f"_{uuid4().hex}")
+
+    def __init__(
+        self, name: str, fields: dict[str, FieldMeta], alias_name: Optional[str] = None
+    ) -> None:
+        self.name = name
+        self.fields = fields
+        self.alias_name = alias_name or f"_{uuid4().hex}"
+
+    @abstractmethod
+    def return_statement(self) -> str:
+        ...
+
+
+class DataclassClassMeta(ClassMeta):
+    _type = DataclassType.DATACLASSES
+
+    def return_statement(self) -> str:
+        return f"    return {self.alias_name}(**d)"
+
+    @staticmethod
+    def _fields(clazz: Any) -> dict[str, FieldMeta]:
+        return {field.name: FieldMeta.from_dataclass(field) for field in fields(clazz)}
 
     @classmethod
-    def from_class(cls, clazz: Any):
-        _type = get_dataclass_type(clazz)
+    def from_clazz(cls, clazz: Any) -> "DataclassClassMeta":
+        return cls(name=cast(str, clazz.__name__), fields=cls._fields(clazz))
 
+
+class PydanticClassMeta(ClassMeta):
+    _type = DataclassType.PYDANTIC
+
+    def __init__(
+        self,
+        name: str,
+        fields: dict[str, FieldMeta],
+        use_construct: bool,
+        alias_name: Optional[str] = None,
+    ) -> None:
+        super().__init__(name=name, fields=fields, alias_name=alias_name)
+        self.use_construct = use_construct
+
+    @staticmethod
+    def has_validators(clazz: Any) -> bool:
+        return (
+            bool(clazz.__validators__)
+            or bool(clazz.__pre_root_validators__)
+            or bool(clazz.__post_root_validators__)
+        )
+
+    def return_statement(self) -> str:
+        if self.use_construct:
+            return f"    return {self.alias_name}.construct(**d)"
+        else:
+            return f"    return {self.alias_name}(**d)"
+
+    @staticmethod
+    def _fields(clazz: Any) -> dict[str, FieldMeta]:
+        return {field.name: FieldMeta.from_pydantic(field) for field in clazz.__fields__.values()}
+
+    @classmethod
+    def from_clazz(cls, clazz: Any) -> "PydanticClassMeta":
         return cls(
-            name=clazz.__name__,
-            _type=_type,
-            has_validators=has_validators(clazz, _type)
+            name=cast(str, clazz.__name__),
+            fields=cls._fields(clazz),
+            use_construct=not cls.has_validators(clazz),
         )
 
 
-def get_dataclass_type(cls: Any) -> DataclassType:
+def get_class_meta(cls: Any) -> ClassMeta:
     if is_dataclass(cls):
-        return DataclassType.DATACLASSES
+        return DataclassClassMeta.from_clazz(cls)
     try:
         pydantic = __import__("pydantic")
         if issubclass(cls, pydantic.BaseModel):
-            return DataclassType.PYDANTIC
+            return PydanticClassMeta.from_clazz(cls)
     except ImportError:
         pass
-    raise NotImplementedError("only dataclasses and pydantic classes are supported")
-
-
-def has_validators(cls: Any, _type: DataclassType) -> bool:
-    if _type == DataclassType.DATACLASSES:
-        return False
-    elif _type == DataclassType.PYDANTIC:
-        return bool(cls.__validators__) or bool(cls.__pre_root_validators__) or bool(cls.__post_root_validators__)
     raise NotImplementedError("only dataclasses and pydantic classes are supported")

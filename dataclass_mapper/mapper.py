@@ -1,27 +1,10 @@
 import warnings
-from dataclasses import fields
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .assignments import get_map_to_func_name
-from .classmeta import get_dataclass_type
-from .mapping_method import (
-    ClassMeta,
-    DataclassType,
-    FieldMeta,
-    MappingMethodSourceCode,
-    Spezial,
-    StringFieldMapping,
-)
-
-
-def get_class_fields(cls: Any) -> dict[str, FieldMeta]:
-    dataclass_type = get_dataclass_type(cls)
-    if dataclass_type == DataclassType.DATACLASSES:
-        return {field.name: FieldMeta.from_dataclass(field) for field in fields(cls)}
-    elif dataclass_type == DataclassType.PYDANTIC:
-        return {field.name: FieldMeta.from_pydantic(field) for field in cls.__fields__.values()}
-    assert False, "unreachable code"
+from .classmeta import get_class_meta
+from .mapping_method import MappingMethodSourceCode, Spezial, StringFieldMapping
 
 
 def _make_mapper(
@@ -29,10 +12,10 @@ def _make_mapper(
     source_cls: Any,
     target_cls: Any,
 ) -> tuple[str, dict[str, Callable], dict[str, Any]]:
-    source_cls_meta = ClassMeta.from_class(source_cls)
-    target_cls_meta = ClassMeta.from_class(target_cls)
-    actual_source_fields = get_class_fields(source_cls)
-    actual_target_fields = get_class_fields(target_cls)
+    source_cls_meta = get_class_meta(source_cls)
+    target_cls_meta = get_class_meta(target_cls)
+    actual_source_fields = source_cls_meta.fields
+    actual_target_fields = target_cls_meta.fields
     source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
 
     for target_field_name in actual_target_fields.keys():
