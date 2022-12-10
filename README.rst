@@ -127,7 +127,7 @@ The current version has support for:
 * Custom mapping computations with with lambdas (e.g. ``{"x": lambda self: self.x + 1}``)
 * For Optional fields in Pydantic classes, only set those target fields that actually set in the source (`__fields_set__`).
 * Use Pydantic's `.construct` method if no validators are used (can give an up to 30x boost)
-* Pydantic's field aliases.
+* Pydantic's field aliases (including the `allow_population_by_field_name` configuration)
 
 Still missing features:
 

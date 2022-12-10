@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from dataclass_mapper.mapper import map_to, mapper
 
@@ -122,3 +122,47 @@ def test_maintain_unset_field_infos():
     }
     assert mapped.x1.__fields_set__ == {"x1"}
     assert mapped.l1[0].__fields_set__ == {"x1"}
+
+
+class BarWithAlias(BaseModel):
+    x: int = Field(alias="xxx")
+    y: str
+
+    @validator("x")
+    def val_x(cls, v):
+        return v
+
+    class Config:
+        fields = {"y": "yyy"}
+
+
+def test_pydantic_with_alias():
+    @mapper(BarWithAlias)
+    class Foo(BaseModel):
+        x: int
+        y: str
+
+    foo = Foo(x=42, y="answer")
+    bar = BarWithAlias(xxx=42, yyy="answer")
+    assert map_to(foo, BarWithAlias) == bar
+
+
+class BarWithAliasAllowFieldPopulation(BaseModel):
+    x: int = Field(alias="x x")
+
+    @validator("x")
+    def val_x(cls, v):
+        return v
+
+    class Config:
+        allow_population_by_field_name = True
+
+
+def test_pydantic_with_alias_allow_population_with_fields():
+    @mapper(BarWithAliasAllowFieldPopulation)
+    class Foo(BaseModel):
+        x: int
+
+    foo = Foo(x=42)
+    bar = BarWithAliasAllowFieldPopulation(x=42)
+    assert map_to(foo, BarWithAliasAllowFieldPopulation) == bar

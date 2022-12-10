@@ -57,10 +57,12 @@ class PydanticClassMeta(ClassMeta):
         name: str,
         fields: dict[str, FieldMeta],
         use_construct: bool,
+        allow_population_by_field_name: bool = False,
         alias_name: Optional[str] = None,
     ) -> None:
         super().__init__(name=name, fields=fields, alias_name=alias_name)
         self.use_construct = use_construct
+        self.allow_population_by_field_name = allow_population_by_field_name
 
     @staticmethod
     def has_validators(clazz: Any) -> bool:
@@ -77,7 +79,7 @@ class PydanticClassMeta(ClassMeta):
             return f"    return {self.alias_name}(**d)"
 
     def get_assignment_name(self, field: FieldMeta) -> str:
-        if self.use_construct:
+        if self.use_construct or self.allow_population_by_field_name:
             return field.name
         else:
             return field.alias or field.name
@@ -92,6 +94,9 @@ class PydanticClassMeta(ClassMeta):
             name=cast(str, clazz.__name__),
             fields=cls._fields(clazz),
             use_construct=not cls.has_validators(clazz),
+            allow_population_by_field_name=getattr(
+                clazz.Config, "allow_population_by_field_name", False
+            ),
         )
 
 
