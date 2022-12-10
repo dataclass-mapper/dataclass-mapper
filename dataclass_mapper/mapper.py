@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .assignments import get_map_to_func_name
 from .classmeta import get_class_meta
+from .enum import EnumMapping, make_enum_mapper
 from .mapping_method import MappingMethodSourceCode, Spezial, StringFieldMapping
 
 
@@ -129,6 +130,60 @@ def add_mapper_function(
     setattr(SourceCls, get_map_to_func_name(TargetCls), d["convert"])
     for name, factory in factories.items():
         setattr(SourceCls, name, factory)
+
+
+def enum_mapper(TargetCls: Any, mapping: Optional[EnumMapping] = None) -> Callable[[T], T]:
+    """Class decorator that adds a private mapper method, that maps the current enum class to the enum class ``TargetCls``.
+    The mapper method can be called using the ``map_to`` function.
+
+    :param TargetCls: The enum class (source class) that you want to map members from to the current (target) enum class to.
+    :param mapping: An optional dictionary which which it's possible to describe to which member of the target class a member of the source class is mapped to.
+        Fields that are not specified will be mapped automatically.
+        Every single field in the source class must have some mapping,
+        either a default mapping (if the member names match), or an explicit mapping definition with this `mapping` parameter.
+
+        - ``{"x": "y"}`` means, that the member ``x`` of the source enum will get mapped to the member ``y`` in the target object.
+    """
+
+    def wrapped(SourceCls: T) -> T:
+        add_enum_mapper_function(
+            SourceCls=SourceCls,
+            TargetCls=TargetCls,
+            mapping=mapping,
+        )
+        return SourceCls
+
+    return wrapped
+
+
+def enum_mapper_from(SourceCls: Any, mapping: Optional[EnumMapping] = None) -> Callable[[T], T]:
+    """Class decorator that adds a private mapper method, that maps members of the enum class ``SourceCls`` to members of the current enum class.
+    The mapper method can be called using the ``map_to`` function.
+
+    :param SourceCls: The enum class (source class) that you want to map an object of the current (source) enum class to.
+    :param mapping: An optional dictionary which which it's possible to describe to which member of the target class a member of the source class is mapped to.
+    """
+
+    def wrapped(TargetCls: T) -> T:
+        add_enum_mapper_function(
+            SourceCls=SourceCls,
+            TargetCls=TargetCls,
+            mapping=mapping,
+        )
+        return TargetCls
+
+    return wrapped
+
+
+def add_enum_mapper_function(
+    SourceCls: Any, TargetCls: Any, mapping: Optional[EnumMapping]
+) -> None:
+    convert_function = make_enum_mapper(
+        source_cls=SourceCls,
+        target_cls=TargetCls,
+        mapping=mapping or cast(EnumMapping, {}),
+    )
+    setattr(SourceCls, get_map_to_func_name(TargetCls), convert_function)
 
 
 def map_to(obj, TargetCls: Type[T]) -> T:

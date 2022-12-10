@@ -128,6 +128,7 @@ The current version has support for:
 * For Optional fields in Pydantic classes, only set those target fields that actually set in the source (`__fields_set__`).
 * Use Pydantic's `.construct` method if no validators are used (can give an up to 30x boost)
 * Pydantic's field aliases (including the `allow_population_by_field_name` configuration)
+* Mappings between enums in both direction with ``enum_mapper`` and ``enum_mapper_from``
 
 Still missing features:
 
