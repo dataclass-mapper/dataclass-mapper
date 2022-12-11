@@ -63,7 +63,8 @@ Mapping from another class
 
 Here we added a decorator `@mapper_from(OrderItem)` to the `Item` class.
 That defines a mapper from `OrderItem` instances to `Order` instances.
-The order of the mapping parameters is the same, it's `{"target_field": "source_field"}.
+The order of the mapping parameters is the same, it's `{"target_field": "source_field"}`,
+only difference is that the target class is now the class that is decorated.
 
 .. note::
    It's also possible to add multiple decorators to one dataclass.
@@ -104,7 +105,7 @@ In case the function takes no arguments, the function just behaves like setting 
 The first function `lambda: 45` has no parameters and just returns the constant `45`, so the age will always be initialized with `45`.
 
 In case the function has one parameter, the source object will be passed and you can initialize the field however you want.
-In the second function `lambda self: f"{self.first_name} {self.surname}"` there is one parameter `self` (resembling a class methods), and it combines the `first_name` and `surname` into a string and initialize the field `name` with it.
+In the second function `lambda self: f"{self.first_name} {self.surname}"` there is one parameter `self` (resembling a class method), and it combines the `first_name` and `surname` into a string and initialize the field `name` with it.
 
 .. warning::
    Custom conversion functions are not type-checked.
