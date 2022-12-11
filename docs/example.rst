@@ -101,7 +101,7 @@ you can write:
         surname: str
         age: int
 
-    @enum_mapper(Employment, {"FREELANCER": "EXTERNAL", "SUBCOMPANY": "EXTERNAL"})
+    @enum_mapper(Employment, {"FREELANCER": Employment.EXTERNAL, "SUBCOMPANY": Employment.EXTERNAL})
     class ContractType(str, Enum):
         FULL_TIME = "FULL_TIME"
         PART_TIME = "PART_TIME"

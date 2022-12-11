@@ -139,6 +139,7 @@ def enum_mapper(TargetCls: Any, mapping: Optional[EnumMapping] = None) -> Callab
 
     :param TargetCls: The enum class (source class) that you want to map members from to the current (target) enum class to.
     :param mapping: An optional dictionary which which it's possible to describe to which member of the target class a member of the source class is mapped to.
+        Key/value of the mapping can either be the names of the enum members, or the members themselves.
         Fields that are not specified will be mapped automatically.
         Every single field in the source class must have some mapping,
         either a default mapping (if the member names match), or an explicit mapping definition with this `mapping` parameter.

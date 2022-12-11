@@ -45,6 +45,16 @@ def test_enum_mapping_between_str_and_int():
     assert map_to(BarSource.C, Bar) == Bar.B
 
 
+def test_enum_mapping_with_actual_members():
+    @enum_mapper(Bar, {"C": Bar.B})
+    class BarSource(Enum):
+        A = 1
+        C = -1
+
+    assert map_to(BarSource.A, Bar) == Bar.A
+    assert map_to(BarSource.C, Bar) == Bar.B
+
+
 def test_enum_mapper_wrong_source():
     with pytest.raises(ValueError) as excinfo:
 
@@ -53,7 +63,10 @@ def test_enum_mapper_wrong_source():
             A = 1
             C = -1
 
-    assert "The mapping key 'CC' is not part of the source enum 'BarSource'" in str(excinfo.value)
+    assert (
+        "The mapping key 'CC' is must be a member of the source enum 'BarSource' or a string with its name"
+        in str(excinfo.value)
+    )
 
 
 def test_enum_mapper_wrong_target():
@@ -64,7 +77,10 @@ def test_enum_mapper_wrong_target():
             A = 1
             C = -1
 
-    assert "The mapping key 'BB' is not part of the target enum 'Bar'" in str(excinfo.value)
+    assert (
+        "The mapping key 'BB' is must be a member of the target enum 'Bar' or a string with its name"
+        in str(excinfo.value)
+    )
 
 
 def test_enum_mapper_missing_mapping():
@@ -75,6 +91,6 @@ def test_enum_mapper_missing_mapping():
             A = 1
             C = -1
 
-    assert "The member 'C' of the source enum 'BarSource' doesn't have a mapping." in str(
+    assert ("The member 'C' of the source enum 'BarSource' doesn't have a mapping.") in str(
         excinfo.value
     )

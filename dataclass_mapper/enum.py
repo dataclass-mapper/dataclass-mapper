@@ -1,8 +1,21 @@
 from enum import Enum
-from typing import Any, Callable, cast
+from typing import Any, Callable, Union
 
 # mapping between source members and target members
-EnumMapping = dict[str, str]
+EnumMapping = dict[Union[str, Enum], Union[str, Enum]]
+
+
+def member_to_name_and_raise(
+    member: Union[str, Enum], members: dict[str, Enum], enum_cls: Any, class_description: str
+) -> str:
+    if isinstance(member, str) and member in members:
+        return member
+    if isinstance(member, enum_cls) and isinstance(member, Enum):
+        return member.name
+
+    raise ValueError(
+        f"The mapping key '{member}' is must be a member of the {class_description} enum '{enum_cls.__name__}' or a string with its name"
+    )
 
 
 def make_enum_mapper(
@@ -16,22 +29,21 @@ def make_enum_mapper(
     source_members = {member.name: member for member in source_cls}
     target_members = {member.name: member for member in target_cls}
 
-    if unknown_source_members := set(mapping.keys()) - set(source_members.keys()):
-        unknown = list(unknown_source_members)[0]
-        raise ValueError(
-            f"The mapping key '{unknown}' is not part of the source enum '{source_cls.__name__}'"
+    name_mapping: dict[str, str] = {}
+    for source_member, target_member in mapping.items():
+        source_member = member_to_name_and_raise(
+            source_member, source_members, source_cls, "source"
         )
-    if unknown_target_members := set(mapping.values()) - set(target_members.keys()):
-        unknown = list(unknown_target_members)[0]
-        raise ValueError(
-            f"The mapping key '{unknown}' is not part of the target enum '{target_cls.__name__}'"
+        target_member = member_to_name_and_raise(
+            target_member, target_members, target_cls, "target"
         )
+        name_mapping[source_member] = target_member
 
     full_mapping: dict[Any, Any] = {}
     for source_member_name, source_member in source_members.items():
         # mapping exists
-        if source_member_name in mapping:
-            full_mapping[source_member] = target_members[mapping[source_member.name]]
+        if source_member_name in name_mapping:
+            full_mapping[source_member] = target_members[name_mapping[source_member_name]]
         # there's a member with the same name in the target
         elif source_member_name in target_members:
             full_mapping[source_member] = target_members[source_member_name]
