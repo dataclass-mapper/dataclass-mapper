@@ -28,11 +28,23 @@ dataclass-mapper
    :target: https://dataclass-mapper.readthedocs.io/en/latest/
 
 Writing mapper methods between two similar dataclasses is boring, need to be actively maintained and are error-prone.
-Much better to let a library auto-generate them for you.
+Much better to let this library auto-generate them for you.
 
-This library makes it easy to autogenerate mappers, makes sure that the types between source and target class match, and that all fields of the target class are actually mapped to.
-Most of those checks are already done at class definition time, not when the mappings are run.
-It supports Python's dataclasses and also Pydantic models, and can also map between those two.
+The focus of this library is:
+
+* **Concise and easy syntax:**
+  
+  * using it has to be a lot less overhead than writing the mappers by hand
+  * trivial mappings should not require code
+  * identical syntax for mapping between dataclasses and Pydantic models
+
+* **Safety:** the library checks that
+
+  * the types between source and target type matches (including optional checks)
+  * all target fields are actually initialized,
+  * all the mappings are actually valid
+
+* **Performance:** all type checks and generation of the mapper function happen during the definition of the classes
 
 Installation
 ------------
@@ -41,9 +53,9 @@ Installation
 
 .. code-block:: bash
 
-    pip install dataclass-mapper
-    # or for Pydantic support
-    pip install dataclass-mapper[pydantic]
+   pip install dataclass-mapper
+   # or for Pydantic support
+   pip install 'dataclass-mapper[pydantic]'
 
 Small Example
 -------------
@@ -119,7 +131,7 @@ The current version has support for:
 * Python's ``dataclass``
 * ``pydantic`` classes
 * Checks if all target fields are actually initialized.
-  Raises a ``ValueError`` at class definition time when the type is different.
+  Raises a ``ValueError`` at class definition time when a value is missing.
 * Checks if the type on the target field is the same as the source field.
   Raises a ``TypeError`` at class definition time when the type is different.
 * Recursive dataclasses

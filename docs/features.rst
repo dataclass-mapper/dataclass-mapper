@@ -1,0 +1,285 @@
+Supported features
+==================
+
+Mapping by field names
+----------------------
+
+.. testsetup:: *
+
+   >>> from dataclasses import dataclass
+   >>> from enum import Enum, auto
+   >>> from typing import Optional
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, IGNORE_MISSING_MAPPING
+   >>> from pydantic import BaseModel, Field, validator
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Person:
+   ...     name: str
+   ...     age: int
+   >>>
+   >>> @mapper(Person, {"name": "surname"})
+   ... @dataclass
+   ... class Contact:
+   ...     surname: str
+   ...     first_name: str
+   ...     age: int
+   >>>
+   >>> contact = Contact(first_name="Jesse", surname="Cross", age=50)
+   >>> map_to(contact, Person)
+   Person(name='Cross', age=50)
+
+With the `mapping` parameter it's possible to define how the fields in the target class are filled.
+Here we defining a mapper function from the `Contact` class to the `Person` class.
+By specifying the mapping `{'"name": "surname"}` (in the order `{"target_field": "source_field"}`) the field `name` in the target class `Person` will be filled with the value of the `surname` of the source class `Contact`.
+The `age` will be mapped automatically, as the field name `age` and the type `int` are identically in both classes.
+The additional field `first_name` in the `Contact` class will just be ignored.
+
+.. note::
+  A mapping is not bidirectional.
+  Here you can only map from `Contact` instances to `Person` instances, but not the other way.
+  To also have a mapping from `Person` to `Contact`, we would need to add a `@mapper(Contact)` decorator to `Person`, or a `@mapper_from` to `Contact` (see next section).
+
+Mapping from another class
+--------------------------
+
+.. doctest::
+
+   >>> @dataclass
+   ... class OrderItem:
+   ...     name: str
+   ...     cnt: int
+   >>>
+   >>> @mapper_from(OrderItem, {"description": "name"})
+   ... @dataclass
+   ... class Item:
+   ...     description: str
+   ...     cnt: int
+   >>>
+   >>> order_item = OrderItem(name="fruit", cnt=5)
+   >>> map_to(order_item, Item)
+   Item(description='fruit', cnt=5)
+
+Here we added a decorator `@mapper_from(OrderItem)` to the `Item` class.
+That defines a mapper from `OrderItem` instances to `Order` instances.
+The order of the mapping parameters is the same, it's `{"target_field": "source_field"}.
+
+.. note::
+   It's also possible to add multiple decorators to one dataclass.
+   E.g. it is possible to add a `mapper` and a `mapper_from` in order to have mappers in both directions.
+
+   .. doctest::
+
+      >>> @mapper(OrderItem, {"name": "description"})
+      ... @mapper_from(OrderItem, {"description": "name"})
+      ... @dataclass
+      ... class Item:
+      ...     description: str
+      ...     cnt: int
+
+Custom conversion functions
+---------------------------
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Person:
+   ...     name: str
+   ...     age: int
+   >>>
+   >>> @mapper(Person, {"age": lambda: 45, "name": lambda self: f"{self.first_name} {self.surname}"})
+   ... @dataclass
+   ... class Contact:
+   ...     surname: str
+   ...     first_name: str
+   >>>
+   >>> contact = Contact(first_name="Jesse", surname="Cross")
+   >>> map_to(contact, Person)
+   Person(name='Jesse Cross', age=45)
+
+It's possible to add custom functions to mappings.
+
+In case the function takes no arguments, the function just behaves like setting a constant.
+The first function `lambda: 45` has no parameters and just returns the constant `45`, so the age will always be initialized with `45`.
+
+In case the function has one parameter, the source object will be passed and you can initialize the field however you want.
+In the second function `lambda self: f"{self.first_name} {self.surname}"` there is one parameter `self` (resembling a class methods), and it combines the `first_name` and `surname` into a string and initialize the field `name` with it.
+
+.. warning::
+   Custom conversion functions are not type-checked.
+   So be careful when using them.
+
+Recursive models
+----------------
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Order:
+   ...     recipient: Person
+   ...     items: list[Item]
+   >>>
+   >>> @mapper(Order)
+   ... @dataclass
+   ... class CustomOrder:
+   ...     recipient: Contact
+   ...     items: list[OrderItem]
+   >>>
+   >>> custom_order = CustomOrder(
+   ...     recipient=Contact(first_name="Barbara E.", surname="Rolfe"),
+   ...     items=[OrderItem(name="fruit", cnt=3), OrderItem(name="sweets", cnt=5)]
+   ... )
+   >>> map_to(custom_order, Order) #doctest: +NORMALIZE_WHITESPACE
+   Order(recipient=Person(name='Barbara E. Rolfe', age=45),
+         items=[Item(description='fruit', cnt=3), Item(description='sweets', cnt=5)])
+
+Here the dataclasses use other dataclasses as fields, either direct `recipient: Contact` (and `recipient: Person`),
+or even inside a list `items: list[OrderItem]` (and `items: list[Item]`).
+As there is a mapper defined from `Contact` to `Person`, and also a mapper defined from `OrderItem` to `Item`, the object `custom_order` can be recusively mapped.
+
+Use default values of the target library
+----------------------------------------
+
+Sometimes there is a default value in the target class, and you want to use the default value instead of mapping some field from the source class.
+
+.. doctest::
+   
+   >>> @dataclass
+   ... class X:
+   ...     x: int = 5
+   >>>
+   >>> @mapper(X, {"x": IGNORE_MISSING_MAPPING})
+   ... @dataclass
+   ... class Y:
+   ...     pass
+   >>>
+   >>> map_to(Y(), X)
+   X(x=5)
+
+This is also usefull if you map an optional field to an non-optional field with default value.
+
+.. doctest::
+
+   >>> @mapper(X, {"x": IGNORE_MISSING_MAPPING})
+   ... @dataclass
+   ... class Y:
+   ...     x: Optional[int] = None
+   >>>
+   >>> map_to(Y(x=1), X)
+   X(x=1)
+   >>> map_to(Y(), X)
+   X(x=5)
+   >>>
+   >>> @mapper(X)
+   ... @dataclass
+   ... class Y:
+   ...     x: Optional[int] = None
+   ValueError
+
+Enum mappings
+-------------
+
+.. doctest::
+
+   >>> class ProgrammingLanguage(Enum):
+   ...     PYTHON = auto()
+   ...     JAVA = auto()
+   ...     CPLUSPLUS = auto()
+   >>>
+   >>> @enum_mapper(ProgrammingLanguage, {"PY": "PYTHON", "CPP": "CPLUSPLUS", "H": "CPLUSPLUS"})
+   ... class FileEndings(str, Enum):
+   ...    PY = ".py"
+   ...    JAVA = ".java"
+   ...    CPP = ".cpp"
+   ...    H = ".h"
+   >>>
+   >>> map_to(FileEndings.PY, ProgrammingLanguage)
+   <ProgrammingLanguage.PYTHON: 1>
+
+
+Here a mapping between two enums is defined.
+Notice, that the order of the mapping is defined in the opposite way.
+For each member of the source enum, you have to list the member of the target enum.
+That way you can also map multiple source members to the same target member.
+In the example both `FileEndings.CPP` and `FileEndings.H` are mapped to `ProgrammingLanguage.CPLUSPLUS`.
+
+As always, if enum members have the same name, you don't need specify them in the mapping.
+And it's also possible to define a member to the current class with `enum_mapper_from`.
+
+.. note::
+   It's also possible to specify the target members directly instead of strings.
+
+   .. doctest::
+
+      >>> @enum_mapper(
+      ...     ProgrammingLanguage,
+      ...     {
+      ...         "PY": ProgrammingLanguage.PYTHON,
+      ...         "CPP": ProgrammingLanguage.CPLUSPLUS,
+      ...         "H": ProgrammingLanguage.CPLUSPLUS
+      ...     }
+      ... )
+      ... class FileEndings(str, Enum):
+      ...    PY = ".py"
+      ...    JAVA = ".java"
+      ...    CPP = ".cpp"
+      ...    H = ".h"
+
+   For the source class `FileEndings` that's not possible, because the `FileEndings` class doesn't exist yet for the decorator.
+
+Pydantic models
+---------------
+
+The library can also handle Pydantic's models, and map to them and from them.
+
+For performance reasons it will use Pydantic's `.construct` class method to construct objects.
+However it will fall back to the normal, slow initializer, when required (e.g. when the Pydantic model has validators that modify the model).
+
+Additionally it can work with fields with `alias`, and also with the `allow_population_by_field_name` configuration.
+
+.. doctest::
+
+   >>> class Animal(BaseModel):
+   ...     name: str
+   ...     greeting: str = Field(alias="greetingSound")
+   ... 
+   ...     @validator("greeting")
+   ...     def repeat_greeting(cls, v):
+   ...         return " ".join([v] * 3)
+   >>>
+   >>> @mapper(Animal)
+   ... @dataclass
+   ... class Pet:
+   ...     name: str
+   ...     greeting: str
+   >>>
+   >>> rocky = Pet(name="Rocky", greeting="Woof")
+   >>> map_to(rocky, Animal)
+   Animal(name='Rocky', greeting='Woof Woof Woof')
+
+Pydantic also remembers which optional fields are set, and which are unset (with default `None`).
+This might be useful, if you want to distinguish if user explicitely set the value `None`, or if they didn't set it all all (e.g. setting it explicitely could mean deleting the value in a database).
+This library will remember which fields are set, and are unset.
+
+.. doctest::
+
+   >>> class Foo(BaseModel):
+   ...     x: Optional[float]
+   ...     y: Optional[int]
+   ...     z: Optional[bool]
+   >>>
+   >>> @mapper(Foo)
+   ... class Bar(BaseModel):
+   ...     x: Optional[float] = None
+   ...     y: Optional[int] = None
+   ...     z: Optional[bool] = None
+   >>>
+   >>> bar = Bar(x=1.23, z=None)
+   >>> sorted(bar.__fields_set__)
+   ['x', 'z']
+   >>> foo = map_to(bar, Foo)
+   >>> foo
+   Foo(x=1.23, y=None, z=None)
+   >>> sorted(foo.__fields_set__)
+   ['x', 'z']
