@@ -57,3 +57,4 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "--doctest-glob \"*.rst\""
+filterwarnings = ["error"]

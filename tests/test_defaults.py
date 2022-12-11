@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+import pytest
 from pydantic import BaseModel, Field
 
 from dataclass_mapper import IGNORE_MISSING_MAPPING, USE_DEFAULT, map_to, mapper
@@ -13,13 +14,16 @@ class BarPydantic(BaseModel):
 
 
 def test_pydantic_defaults():
-    @mapper(
-        BarPydantic, {"x": USE_DEFAULT, "y": IGNORE_MISSING_MAPPING, "z": IGNORE_MISSING_MAPPING}
-    )
-    class Bar(BaseModel):
-        pass
+    with pytest.deprecated_call():
 
-    assert repr(map_to(Bar(), BarPydantic)) == repr(BarPydantic(x=5, y="some_default", z=1))
+        @mapper(
+            BarPydantic,
+            {"x": USE_DEFAULT, "y": IGNORE_MISSING_MAPPING, "z": IGNORE_MISSING_MAPPING},
+        )
+        class Bar(BaseModel):
+            pass
+
+        assert repr(map_to(Bar(), BarPydantic)) == repr(BarPydantic(x=5, y="some_default", z=1))
 
 
 @dataclass
@@ -30,14 +34,17 @@ class BarDataclass:
 
 
 def test_dataclass_defaults():
-    @mapper(
-        BarDataclass, {"x": USE_DEFAULT, "y": IGNORE_MISSING_MAPPING, "z": IGNORE_MISSING_MAPPING}
-    )
-    @dataclass
-    class Bar:
-        pass
+    with pytest.deprecated_call():
 
-    assert map_to(Bar(), BarDataclass) == BarDataclass(x=5, y="some_default", z=1)
+        @mapper(
+            BarDataclass,
+            {"x": USE_DEFAULT, "y": IGNORE_MISSING_MAPPING, "z": IGNORE_MISSING_MAPPING},
+        )
+        @dataclass
+        class Bar:
+            pass
+
+        assert map_to(Bar(), BarDataclass) == BarDataclass(x=5, y="some_default", z=1)
 
 
 class FooPydantic(BaseModel):
