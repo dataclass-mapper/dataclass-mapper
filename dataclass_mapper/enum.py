@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, cast
 
 # mapping between source members and target members
 EnumMapping = dict[Union[str, Enum], Union[str, Enum]]
@@ -11,7 +11,7 @@ def member_to_name_and_raise(
     if isinstance(member, str) and member in members:
         return member
     if isinstance(member, enum_cls) and isinstance(member, Enum):
-        return member.name
+        return cast(str, member.name)  # in 3.11.0 .name is of type Any
 
     raise ValueError(
         f"The mapping key '{member}' is must be a member of the {class_description} enum '{enum_cls.__name__}' or a string with its name"
