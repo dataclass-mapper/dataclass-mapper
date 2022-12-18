@@ -6,10 +6,10 @@ Mapping by field names
 
 .. testsetup:: *
 
-   >>> from dataclasses import dataclass
+   >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import Optional
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, IGNORE_MISSING_MAPPING
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default
    >>> from pydantic import BaseModel, Field, validator
 
 .. doctest::
@@ -142,41 +142,23 @@ As there is a mapper defined from `Contact` to `Person`, and also a mapper defin
 Use default values of the target library
 ----------------------------------------
 
-Sometimes there is a default value in the target class, and you want to use the default value instead of mapping some field from the source class.
+Sometimes there is a default value, or default factory in the target class, and you want to use the default value instead of mapping some field from the source class.
+This will also use the default in case there is a field with the same name.
 
 .. doctest::
    
    >>> @dataclass
    ... class X:
    ...     x: int = 5
+   ...     y: int = field(default_factory=lambda: 42)
    >>>
-   >>> @mapper(X, {"x": IGNORE_MISSING_MAPPING})
+   >>> @mapper(X, {"x": init_with_default(), "y": init_with_default()})
    ... @dataclass
    ... class Y:
-   ...     pass
+   ...     y: int
    >>>
-   >>> map_to(Y(), X)
-   X(x=5)
-
-This is also usefull if you map an optional field to an non-optional field with default value.
-
-.. doctest::
-
-   >>> @mapper(X, {"x": IGNORE_MISSING_MAPPING})
-   ... @dataclass
-   ... class Y:
-   ...     x: Optional[int] = None
-   >>>
-   >>> map_to(Y(x=1), X)
-   X(x=1)
-   >>> map_to(Y(), X)
-   X(x=5)
-   >>>
-   >>> @mapper(X)
-   ... @dataclass
-   ... class Y:
-   ...     x: Optional[int] = None
-   ValueError
+   >>> map_to(Y(y=0), X)
+   X(x=5, y=42)
 
 Enum mappings
 -------------

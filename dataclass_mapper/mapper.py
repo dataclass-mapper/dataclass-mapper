@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional, Type, TypeVar, cast
 from .assignments import get_map_to_func_name
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
-from .mapping_method import MappingMethodSourceCode, Spezial, StringFieldMapping
+from .mapping_method import InitWithDefault, MappingMethodSourceCode, Spezial, StringFieldMapping
 
 
 def _make_mapper(
@@ -27,19 +27,32 @@ def _make_mapper(
                 source_code.add_mapping(
                     target=target_field, source=actual_source_fields[raw_source]
                 )
-            elif isinstance(raw_source, Spezial):
-                if raw_source in (Spezial.USE_DEFAULT, Spezial.IGNORE_MISSING_MAPPING):
+            elif isinstance(raw_source, (Spezial, InitWithDefault)):
+                if raw_source in (
+                    Spezial.USE_DEFAULT,
+                    Spezial.IGNORE_MISSING_MAPPING,
+                ) or isinstance(raw_source, InitWithDefault):
                     if raw_source is Spezial.USE_DEFAULT:
                         warnings.warn(
-                            "USE_DEFAULT is deprecated, use IGNORE_MISSING_MAPPING instead",
+                            "USE_DEFAULT is deprecated, use init_with_default() instead",
+                            DeprecationWarning,
+                        )
+                    if raw_source is Spezial.IGNORE_MISSING_MAPPING:
+                        warnings.warn(
+                            "IGNORE_MISSING_MAPPING is deprecated, use init_with_default() instead",
                             DeprecationWarning,
                         )
 
                     if target_field.required:
                         # leaving the target empty and using the default value/factory is not possible,
                         # as the target doesn't have a default value/factory
+                        setting_name = (
+                            raw_source.name
+                            if isinstance(raw_source, Spezial)
+                            else "init_with_default()"
+                        )
                         raise ValueError(
-                            f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {raw_source.name}, as it has no default"
+                            f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {setting_name}, as it has no default"
                         )
                 else:
                     raise NotImplemented
@@ -81,7 +94,8 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
         - ``{"x": lambda: 42}`` means, that the field ``x`` will be initialized with the value 42.
         - ``{"x": lambda self: self.x + 1}`` means, that the field ``x`` will be initialized with the incremented value ``x`` of the source object.
         - ``{"x": USE_DEFAULT}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
-        - ``{"x": IGNORE_MISSING_MAPPING}`` means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
+        - ``{"x": IGNORE_MISSING_MAPPING}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
+        - ``{"x": init_with_default()}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
     """
 
     def wrapped(SourceCls: T) -> T:

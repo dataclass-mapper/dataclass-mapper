@@ -20,6 +20,16 @@ class Spezial(Enum):
     IGNORE_MISSING_MAPPING = auto()
 
 
+@dataclass
+class InitWithDefault:
+    pass
+
+
+def init_with_default() -> InitWithDefault:
+    """initialize the field with the default value, or default factory."""
+    return InitWithDefault()
+
+
 # the different types that can be used as origin (source) for mapping to a member
 # - str: the name of a different variable in the original class
 # - Callable: a function that produces the value (can use `self` as parameter)

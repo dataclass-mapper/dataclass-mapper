@@ -4,19 +4,16 @@ Type safety
 The library will perform a lot of checks when creating a mapping.
 All these checks already happen during the definition of the mapper, they are not run every single time when converting an instance of one class to an instance of another class.
 
-Field checks
-------------
-
 .. testsetup:: *
 
    >>> from dataclasses import dataclass
    >>> from enum import Enum, auto
    >>> from typing import Optional
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, IGNORE_MISSING_MAPPING
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default
    >>> from pydantic import BaseModel, Field, validator
 
-Missing fields
-^^^^^^^^^^^^^^
+Missing fields check
+--------------------
 
 .. doctest::
 
@@ -58,13 +55,13 @@ However you can use the default value by setting:
 
 .. doctest::
 
-   >>> @mapper(Foo, {"x": IGNORE_MISSING_MAPPING})
+   >>> @mapper(Foo, {"x": init_with_default()})
    ... @dataclass
    ... class Bar:
    ...     pass
 
-Existence of mapping fields
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Field name checks
+-----------------
 
 .. doctest::
 
