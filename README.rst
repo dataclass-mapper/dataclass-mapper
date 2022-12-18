@@ -80,7 +80,7 @@ Small Example
 
 We have the following target data structure, a class called ``Person``.
 
-.. doctest::
+.. code-block:: python
 
    >>> from dataclasses import dataclass
 
@@ -97,7 +97,7 @@ Other than that, all the attribute names are the same.
 
 Instead of writing a mapper `to_Person` by hand:
 
-.. doctest::
+.. code-block:: python
 
    >>> @dataclass
    ... class ContactInfo:
@@ -118,7 +118,7 @@ Instead of writing a mapper `to_Person` by hand:
 
 you can let the mapper autogenerate with:
 
-.. doctest::
+.. code-block:: python
 
    >>> from dataclass_mapper import map_to, mapper
    >>>
