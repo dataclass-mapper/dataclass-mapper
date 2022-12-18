@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dataclass-mapper"
-version = "1.5.0"
+version = "1.5.1"
 description = "Autogenerate mappings between dataclasses"
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
 
