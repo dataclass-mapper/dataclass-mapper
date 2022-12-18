@@ -38,13 +38,19 @@ The focus of this library is:
   * trivial mappings should not require code
   * identical syntax for mapping between dataclasses and Pydantic models
 
-* **Safety:** the library checks that
+* **Safety:**
 
-  * the types between source and target type matches (including optional checks)
-  * all target fields are actually initialized,
-  * all the mappings are actually valid
+  * using this library must give equal or more type safety than writing the mappers by hand
+  * the types between source and target classes must matches (including optional checks)
+  * all target fields must be actually initialized
+  * mappings cannot reference non-existing fields
+  * in case of an error a clean exception must be raised
 
-* **Performance:** all type checks and generation of the mapper function happen during the definition of the classes
+* **Performance:**
+
+  * mapping an object using this library must be the same speed than mapping using a custom mapper function
+  * the type checks shouldn't slow down the program
+  * because of the first two points, all type checks and the generation of the mapper functions happen during the definition of the classes
 
 Motivation
 ----------
@@ -140,31 +146,10 @@ Features
 
 The current version has support for:
 
-* Python's ``dataclass``
-* ``pydantic`` classes
-* Checks if all target fields are actually initialized.
-  Raises a ``ValueError`` at class definition time when a value is missing.
-* Checks if the type on the target field is the same as the source field.
-  Raises a ``TypeError`` at class definition time when the type is different.
-* Recursive dataclasses
-* ``IGNORE_MISSING_MAPPING`` for values that you don't wanna set but have a default value/factory.
-* ``Optional`` types (mapping from an non-optional to an optional field, or to an optional field with default values/fields).
-  Raises a ``TypeError`` at class definition time when an optional type is mapped to a non-optional type.
-* ``List`` types
-* Mapper in both direction with ``mapper`` and ``mapper_from``.
-* Assign Values with lambdas (e.g. ``{"x": lambda: 42}``)
-* Custom mapping computations with with lambdas (e.g. ``{"x": lambda self: self.x + 1}``)
-* For Optional fields in Pydantic classes, only set those target fields that actually set in the source (`__fields_set__`).
-* Use Pydantic's `.construct` method if no validators are used (can give an up to 30x boost)
-* Pydantic's field aliases (including the `allow_population_by_field_name` configuration)
-* Mappings between enums in both direction with ``enum_mapper`` and ``enum_mapper_from`` (mapping allows specifying members either directly or via strings)
-
-Still missing features:
-
-* ``Union`` types
-* ``Dict`` types
-* Checking if all source attributes were used
-* SQLAlchemy ORM / attr
+* Python's ``dataclass`` (with recursive models, custom initializers, optional types, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/latest/features.html>`_ for the full list and examples
+* Mappings between Enum classes:  see `Enum mappings <https://dataclass-mapper.readthedocs.io/en/latest/enums.html>`_
+* Pydantic models:  see `Pydanitc support <https://dataclass-mapper.readthedocs.io/en/latest/pydantic.html>`_
+* Type/Value checks:  see `Type safety <https://dataclass-mapper.readthedocs.io/en/latest/type_safety.html>`_
 
 License
 -------

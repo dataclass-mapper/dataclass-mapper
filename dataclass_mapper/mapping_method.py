@@ -37,7 +37,9 @@ class AssumeNotNone:
 
 def assume_not_none(field_name: Optional[str] = None) -> AssumeNotNone:
     """Assume that the source field is not none, even if it is an optional field.
-    Allows a mapping from Optional[T] to T."""
+    Allows a mapping from ``Optional[T]`` to ``T``.
+    If the field name is not specified, it is assumed that the source field has the same name as the target field.
+    """
     return AssumeNotNone(field_name)
 
 
