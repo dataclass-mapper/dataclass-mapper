@@ -51,7 +51,7 @@ This happens also when the field has a default value
        raise ValueError(
    ValueError: 'x' of 'Foo' has no mapping in 'Bar'
 
-However you can use the default value by setting:
+However you can use the default value by using `init_with_default`. This needs to be done explicitly.
 
 .. doctest::
 
@@ -74,8 +74,19 @@ Field name checks
      File "dataclass_mapper/mapper.py", line 60, in _make_mapper
        raise ValueError(
    ValueError: 'first_name' of mapping in 'Contact' doesn't exist in 'Person'
+   >>>
+   >>> @mapper(Person, {"name": "surname", "name": "name"})
+   ... @dataclass
+   ... class Contact:
+   ...     surname: str
+   ...     first_name: str
+   Traceback (most recent call last):
+     File "dataclass_mapper/mapper.py", line 60, in _make_mapper
+       raise ValueError(
+   ValueError: 'name' of mapping in 'Contact' doesn't exist in 'Contact'
 
-Here we tried to map the `first_name` parameter, however the source class `Person` doesn't even have a `first_name` parameter.
+Here we tried to map the `first_name` parameter, however the target class `Person` doesn't have a `first_name` parameter.
+And we tried to map the `name` parameter, however the source class `Contact` doesn't have a `name` parameter.
 
 Type checks
 -----------

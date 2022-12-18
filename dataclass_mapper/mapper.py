@@ -1,11 +1,18 @@
 import warnings
+from copy import deepcopy
 from importlib import import_module
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .assignments import get_map_to_func_name
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
-from .mapping_method import InitWithDefault, MappingMethodSourceCode, Spezial, StringFieldMapping
+from .mapping_method import (
+    AssumeNotNone,
+    InitWithDefault,
+    MappingMethodSourceCode,
+    Spezial,
+    StringFieldMapping,
+)
 
 
 def _make_mapper(
@@ -24,9 +31,24 @@ def _make_mapper(
         if target_field_name in mapping:
             raw_source = mapping[target_field_name]
             if isinstance(raw_source, str):
+                source_field_name = raw_source
+                if source_field_name not in actual_source_fields:
+                    raise ValueError(
+                        f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{source_cls.__name__}'"
+                    )
                 source_code.add_mapping(
-                    target=target_field, source=actual_source_fields[raw_source]
+                    target=target_field, source=actual_source_fields[source_field_name]
                 )
+            elif isinstance(raw_source, AssumeNotNone):
+                source_field_name = raw_source.field_name or target_field.name
+                if source_field_name not in actual_source_fields:
+                    raise ValueError(
+                        f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{source_cls.__name__}'"
+                    )
+                source_field = deepcopy(actual_source_fields[source_field_name])
+                # pretend like the source field isn't optional
+                source_field.allow_none = False
+                source_code.add_mapping(target=target_field, source=source_field)
             elif isinstance(raw_source, (Spezial, InitWithDefault)):
                 if raw_source in (
                     Spezial.USE_DEFAULT,

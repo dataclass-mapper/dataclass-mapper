@@ -9,7 +9,7 @@ Mapping by field names
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import Optional
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none
    >>> from pydantic import BaseModel, Field, validator
 
 .. doctest::
@@ -189,6 +189,26 @@ In case the field in the target class has a different default, the result might 
    >>> map_to(Source(x1=2, y1=1), Target)
    Target(x1=2, x2=42, y1=1, y2=None)
 
+It's also possible to map an optional field to a non-optional field, if you can guarantee that the source field is always initialized.
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Car:
+   ...     value: int
+   ...     color: str
+   >>>
+   >>> @mapper(Car, {"value": assume_not_none("price"), "color": assume_not_none()})
+   ... @dataclass
+   ... class SportCar:
+   ...     price: Optional[int]
+   ...     color: Optional[str]
+   >>>
+   >>> map_to(SportCar(price=30_000, color="red"), Car)
+   Car(value=30000, color='red')
+
+.. warning::
+   This will not give any warning/exception in case you use it with an object that has `None` values in those fields.
 
 Enum mappings
 -------------

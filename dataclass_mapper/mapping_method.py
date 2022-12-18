@@ -26,15 +26,27 @@ class InitWithDefault:
 
 
 def init_with_default() -> InitWithDefault:
-    """initialize the field with the default value, or default factory."""
+    """Initialize the target field with the default value, or default factory."""
     return InitWithDefault()
+
+
+@dataclass
+class AssumeNotNone:
+    field_name: Optional[str] = None
+
+
+def assume_not_none(field_name: Optional[str] = None) -> AssumeNotNone:
+    """Assume that the source field is not none, even if it is an optional field.
+    Allows a mapping from Optional[T] to T."""
+    return AssumeNotNone(field_name)
 
 
 # the different types that can be used as origin (source) for mapping to a member
 # - str: the name of a different variable in the original class
 # - Callable: a function that produces the value (can use `self` as parameter)
-# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING: Don't map to this variable (only allowed if there is a default value/factory for it)
-Origin = Union[str, Callable, Spezial]
+# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default(): Don't map to this variable (only allowed if there is a default value/factory for it)
+# - assume_not_none(): assume that the source field is not None
+Origin = Union[str, Callable, Spezial, InitWithDefault, AssumeNotNone]
 StringFieldMapping = dict[str, Origin]
 
 

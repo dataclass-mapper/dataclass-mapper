@@ -1,5 +1,5 @@
 from .mapper import enum_mapper, enum_mapper_from, map_to, mapper, mapper_from
-from .mapping_method import Spezial, init_with_default
+from .mapping_method import Spezial, assume_not_none, init_with_default
 
 USE_DEFAULT = Spezial.USE_DEFAULT
 IGNORE_MISSING_MAPPING = Spezial.IGNORE_MISSING_MAPPING
@@ -13,4 +13,5 @@ __all__ = [
     "USE_DEFAULT",
     "IGNORE_MISSING_MAPPING",
     "init_with_default",
+    "assume_not_none",
 ]
