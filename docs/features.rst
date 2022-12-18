@@ -160,6 +160,36 @@ This will also use the default in case there is a field with the same name.
    >>> map_to(Y(y=0), X)
    X(x=5, y=42)
 
+Optional source fields
+----------------------
+
+Optional source fields are handled in a practical way.
+The value `None` means, that the field is not yet initialized, and if you map the value to a field with a default value, the default value will be taken.
+
+This makes mostly sense, if the default for the target class is also `None`, or an default factory (e.g. like generating a random UUID).
+In case the field in the target class has a different default, the result might be a bit surprising.
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Target:
+   ...     x1: int = 5
+   ...     x2: int = 42
+   ...     y1: Optional[int] = None
+   ...     y2: Optional[int] = None
+   >>>
+   >>> @mapper(Target)
+   ... @dataclass
+   ... class Source:
+   ...     x1: Optional[int] = None
+   ...     x2: Optional[int] = None
+   ...     y1: Optional[int] = None
+   ...     y2: Optional[int] = None
+   >>>
+   >>> map_to(Source(x1=2, y1=1), Target)
+   Target(x1=2, x2=42, y1=1, y2=None)
+
+
 Enum mappings
 -------------
 
@@ -219,7 +249,9 @@ The library can also handle Pydantic's models, and map to them and from them.
 For performance reasons it will use Pydantic's `.construct` class method to construct objects.
 However it will fall back to the normal, slow initializer, when required (e.g. when the Pydantic model has validators that modify the model).
 
-Additionally it can work with fields with `alias`, and also with the `allow_population_by_field_name` configuration.
+It supports all the listed features above.
+
+Additionally it can work with `alias` fields, and also with the `allow_population_by_field_name` configuration.
 
 .. doctest::
 
