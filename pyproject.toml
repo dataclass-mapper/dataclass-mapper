@@ -27,9 +27,7 @@ mypy = "^0.950"
 tox = "^3.25.0"
 Sphinx = "^5.0.2"
 sphinx-rtd-theme = "^1.0.0"
-pytest-cov = "^3.0.0"
-
-[tool.poetry.group.dev.dependencies]
+pytest-cov = "^4.0.0"
 pytest-sphinx = "^0.5.0"
 
 [build-system]
