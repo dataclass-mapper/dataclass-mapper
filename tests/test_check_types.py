@@ -1,8 +1,9 @@
+import sys
 from dataclasses import dataclass
 
 import pytest
 
-from dataclass_mapper.mapper import map_to, mapper
+from dataclass_mapper.mapper import mapper
 
 
 @dataclass
@@ -25,3 +26,18 @@ def test_check_normal_types():
         "'y' of type 'str' of 'Foo' cannot be converted to 'x' of type 'int'",
     ]
     assert any(p in str(excinfo.value) for p in possible_errors)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
+def test_check_good_error_message_for_union_types():
+    with pytest.raises(TypeError) as excinfo:
+
+        @mapper(Bar)
+        @dataclass
+        class Foo:
+            x: int | str
+            y: str
+
+    assert "'x' of type 'int | str' of 'Foo' cannot be converted to 'x' of type 'int'" in str(
+        excinfo.value
+    )
