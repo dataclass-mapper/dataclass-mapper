@@ -1,12 +1,23 @@
+import sys
 from dataclasses import MISSING
 from dataclasses import Field as DataclassField
 from dataclasses import dataclass
-from typing import Any, Union, cast, get_args, get_origin, Optional
+from typing import Any, Optional, Union, cast, get_args, get_origin
+
+
+def is_union_type(type_: Any) -> bool:
+    origin = get_origin(type_)
+    if sys.version_info < (3, 10):
+        return origin is Union
+    else:
+        from types import UnionType
+
+        return origin in (Union, UnionType)
 
 
 def is_optional(type_: Any) -> bool:
     # requires Python 3.8
-    return get_origin(type_) is Union and type(None) in get_args(type_)
+    return is_union_type(type_) and type(None) in get_args(type_)
 
 
 @dataclass
@@ -70,5 +81,5 @@ class FieldMeta:
             type=field.outer_type_,
             allow_none=field.allow_none,
             required=field.required,
-            alias=field.alias
+            alias=field.alias,
         )

@@ -1,6 +1,8 @@
+import sys
 from dataclasses import dataclass
 from typing import Optional
 
+import pytest
 from pydantic import BaseModel
 
 from dataclass_mapper.mapper import map_to, mapper
@@ -19,6 +21,23 @@ def test_simple_pydantic_mapper_with_optional():
 
     foo = Foo(x=42, y="answer")
     bar = BarPydantic(x=42, y="answer")
+    assert map_to(foo, BarPydantic) == bar
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
+def test_simple_dataclass_mapper_with_optional_union():
+    @mapper(BarPydantic)
+    @dataclass
+    class Foo:
+        x: int | None
+        y: str
+
+    foo = Foo(x=42, y="answer")
+    bar = BarPydantic(x=42, y="answer")
+    assert map_to(foo, BarPydantic) == bar
+
+    foo = Foo(x=None, y="answer")
+    bar = BarPydantic(x=None, y="answer")
     assert map_to(foo, BarPydantic) == bar
 
 
