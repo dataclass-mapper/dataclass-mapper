@@ -1,5 +1,7 @@
+import sys
 from typing import Optional
 
+import pytest
 from pydantic import BaseModel, Field
 
 from dataclass_mapper.classmeta import FieldMeta, get_class_meta
@@ -30,6 +32,17 @@ def test_pydantic_optional_fields() -> None:
     assert not fields["x"].disallow_none
     assert str(fields["y"].type) == "list[int]"
     assert fields["y"].allow_none
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
+def test_pydantic_optional_fields_with_union():
+    class Foo(BaseModel):
+        x: int | None
+
+    fields = get_class_meta(Foo).fields
+    assert fields["x"].type is int
+    assert fields["x"].allow_none
+    assert not fields["x"].disallow_none
 
 
 def test_pydantic_defaults_field() -> None:
