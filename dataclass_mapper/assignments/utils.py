@@ -8,9 +8,15 @@ def get_var_name(fieldmeta: FieldMeta) -> str:
 
 
 def is_mappable_to(SourceCls: Any, TargetCls: Any) -> bool:
-    func_name = get_map_to_func_name(TargetCls)
-    return hasattr(SourceCls, func_name)
+    try:
+        func_name = get_map_to_func_name(TargetCls)
+        return hasattr(SourceCls, func_name)
+    except TypeError:
+        return False
 
 
 def get_map_to_func_name(cls: Any) -> str:
-    return f"_map_to_{cls.__name__}"
+    try:
+        return f"_map_to_{cls.__name__}"
+    except AttributeError:
+        raise TypeError("Bad Type")
