@@ -14,4 +14,4 @@ class ListRecursiveAssignment(RecursiveAssignment):
 
     def right_side(self) -> str:
         list_item_type = get_args(self.target.type)[0]
-        return f'[{self._get_map_func("x", target_cls=list_item_type)} for x in {get_var_name(self.source)}]'
+        return f'[{self._get_map_func("x", target_cls=list_item_type, extra_str="e")} for x, e in self.__zip_longest({get_var_name(self.source)}, {self.extra_str()} or [], fillvalue=dict())]'

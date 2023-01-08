@@ -52,7 +52,7 @@ def make_enum_mapper(
                 f"The member '{source_member_name}' of the source enum '{source_cls.__name__}' doesn't have a mapping."
             )
 
-    def convert(self: Any) -> Any:
+    def convert(self: Any, extra: dict) -> Any:
         return convert.d[self]  # type: ignore
 
     convert.d = full_mapping  # type: ignore

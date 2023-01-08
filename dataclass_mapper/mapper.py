@@ -1,6 +1,7 @@
 import warnings
 from copy import deepcopy
 from importlib import import_module
+from itertools import zip_longest
 from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from .assignments import get_map_to_func_name
@@ -10,6 +11,7 @@ from .mapping_method import (
     AssumeNotNone,
     InitWithDefault,
     MappingMethodSourceCode,
+    ProvideWithExtra,
     Spezial,
     StringFieldMapping,
 )
@@ -49,6 +51,8 @@ def _make_mapper(
                 # pretend like the source field isn't optional
                 source_field.allow_none = False
                 source_code.add_mapping(target=target_field, source=source_field)
+            elif isinstance(raw_source, ProvideWithExtra):
+                source_code.add_fill_with_extra(target=target_field)
             elif isinstance(raw_source, (Spezial, InitWithDefault)):
                 if raw_source in (
                     Spezial.USE_DEFAULT,
@@ -119,6 +123,7 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
         - ``{"x": IGNORE_MISSING_MAPPING}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
         - ``{"x": init_with_default()}`` means, nothing is mapped to the field ``x``, it will just be initialized with the default value / factory of that field.
         - ``{"x": assume_not_none("y")}`` means, that the target field ``x`` will have the value of the ``y`` source field, and the library will assume that the source field might be optional. If no source field name is given, it will additionally assume that the source field is also called ``x``.
+        - ``{"x": provide_with_extra()}`` means, that you don't fill this field with any field of the source class, but with the extra dictionary given by the `map_to` method.
     """
 
     def wrapped(SourceCls: T) -> T:
@@ -164,6 +169,7 @@ def add_mapper_function(
     module = import_module(SourceCls.__module__)
 
     d: dict = {}
+    setattr(SourceCls, "__zip_longest", zip_longest)
     exec(map_code, module.__dict__ | context, d)
     setattr(SourceCls, get_map_to_func_name(TargetCls), d["convert"])
     for name, factory in factories.items():
@@ -225,17 +231,20 @@ def add_enum_mapper_function(
     setattr(SourceCls, get_map_to_func_name(TargetCls), convert_function)
 
 
-def map_to(obj, TargetCls: Type[T]) -> T:
+def map_to(obj, TargetCls: Type[T], extra: Optional[dict[str, Any]] = None) -> T:
     """Maps the given object to an object of type ``TargetCls``, if such a safe mapping was defined for the type of the given object.
     Raises an ``NotImplementedError`` if no such mapping is defined.
 
     :param obj: the source object that you want to map to an object of type ``TargetCls``
-    :param TargetCls: The (target) class that you want to map to.
+    :param TargetCls: the (target) class that you want to map to.
+    :param extra: dictionary with the values for the `provide_with_extra()` fields
     :return: the mapped object
     """
+    if extra is None:
+        extra = {}
     func_name = get_map_to_func_name(TargetCls)
     if hasattr(obj, func_name):
-        return cast(T, getattr(obj, func_name)())
+        return cast(T, getattr(obj, func_name)(extra))
 
     raise NotImplementedError(
         f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"

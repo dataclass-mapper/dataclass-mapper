@@ -43,12 +43,23 @@ def assume_not_none(field_name: Optional[str] = None) -> AssumeNotNone:
     return AssumeNotNone(field_name)
 
 
+@dataclass
+class ProvideWithExtra:
+    pass
+
+
+def provide_with_extra() -> ProvideWithExtra:
+    """Don't map this field using a source class field, fill it with a dictionary called `extra` duing `map_to`."""
+    return ProvideWithExtra()
+
+
 # the different types that can be used as origin (source) for mapping to a member
 # - str: the name of a different variable in the original class
 # - Callable: a function that produces the value (can use `self` as parameter)
 # - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default(): Don't map to this variable (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
-Origin = Union[str, Callable, Spezial, InitWithDefault, AssumeNotNone]
+# - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
+Origin = Union[str, Callable, Spezial, InitWithDefault, AssumeNotNone, ProvideWithExtra]
 StringFieldMapping = dict[str, Origin]
 
 
@@ -109,7 +120,7 @@ class MappingMethodSourceCode:
         self.source_cls = source_cls
         self.target_cls = target_cls
         self.lines = [
-            f'def convert(self) -> "{self.target_cls.name}":',
+            f'def convert(self, extra: dict) -> "{self.target_cls.name}":',
             f"    d = {{}}",
         ]
         self.methods: dict[str, Callable] = {}
@@ -178,6 +189,23 @@ class MappingMethodSourceCode:
                 raise TypeError(
                     f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
                 )
+
+    def add_fill_with_extra(self, target: FieldMeta) -> None:
+        variable_name = self.target_cls.get_assignment_name(target)
+        exception_msg = (
+            f"When mapping an object of '{self.source_cls.name}' to '{self.target_cls.name}' "
+            f"the field '{variable_name}' needs to be provided in the `extra` dictionary"
+        )
+        self.lines.extend(
+            [
+                f'    if "{variable_name}" not in extra:',
+                f'        raise TypeError("{exception_msg}")',
+                self._get_assignment_str(
+                    target=target,
+                    right_side=f'extra["{variable_name}"]',
+                ),
+            ]
+        )
 
     def __str__(self) -> str:
         return "\n".join(self.lines + [self.target_cls.return_statement()])
