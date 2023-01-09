@@ -135,3 +135,34 @@ def test_dataclass_optional_with_none_default():
     assert map_to(Foo(), OptionalWithNoneDefaultDataclass) == OptionalWithNoneDefaultDataclass(
         x=None
     )
+
+
+@dataclass
+class RequiredField:
+    x: int
+
+
+def test_dataclass_init_with_default_for_required_field():
+    with pytest.raises(ValueError) as excinfo:
+
+        @mapper(RequiredField, {"x": init_with_default()})
+        @dataclass
+        class Foo:
+            pass
+
+    assert (
+        str(excinfo.value)
+        == "'x' of 'RequiredField' cannot be set to init_with_default(), as it has no default"
+    )
+
+    with pytest.deprecated_call(), pytest.raises(ValueError) as excinfo:
+
+        @mapper(RequiredField, {"x": IGNORE_MISSING_MAPPING})
+        @dataclass
+        class Foo:
+            pass
+
+    assert (
+        str(excinfo.value)
+        == "'x' of 'RequiredField' cannot be set to IGNORE_MISSING_MAPPING, as it has no default"
+    )
