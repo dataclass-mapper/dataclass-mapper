@@ -56,3 +56,9 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 addopts = "--doctest-glob \"*.rst\""
 filterwarnings = ["error"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "@abstractmethod"
+]
