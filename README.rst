@@ -95,28 +95,7 @@ We want to have a mapper from the source data structure, a class called ``Contac
 Notice that the attribute ``second_name`` of `Person` is called ``surname`` in `ContactInfo`.
 Other than that, all the attribute names are the same.
 
-Instead of writing a mapper `to_Person` by hand:
-
-.. code-block:: python
-
-   >>> @dataclass
-   ... class ContactInfo:
-   ...     first_name: str
-   ...     surname: str
-   ...     age: int
-   ...
-   ...     def to_Person(self) -> Person:
-   ...         return Person(
-   ...             first_name=self.first_name,
-   ...             second_name=self.surname,
-   ...             age=self.age,
-   ...         )
-
-   >>> contact = ContactInfo(first_name="Henry", surname="Kaye", age=42)
-   >>> contact.to_Person()
-   Person(first_name='Henry', second_name='Kaye', age=42)
-
-you can let the mapper autogenerate with:
+Instead of writing a mapper function by hand, you can let it autogenerate with:
 
 .. code-block:: python
 
@@ -146,7 +125,7 @@ Features
 
 The current version has support for:
 
-* Python's ``dataclass`` (with recursive models, custom initializers, optional types, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/latest/features.html>`_ for the full list and examples
+* Python's ``dataclass`` (with recursive models, custom initializers, optional types, extra-context, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/latest/features.html>`_ for the full list and examples
 * Mappings between Enum classes:  see `Enum mappings <https://dataclass-mapper.readthedocs.io/en/latest/enums.html>`_
 * Pydantic models:  see `Pydanitc support <https://dataclass-mapper.readthedocs.io/en/latest/pydantic.html>`_
 * Type/Value checks:  see `Type safety <https://dataclass-mapper.readthedocs.io/en/latest/type_safety.html>`_

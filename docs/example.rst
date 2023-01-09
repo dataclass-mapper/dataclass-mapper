@@ -28,6 +28,7 @@ Given a target data structure, a class `WorkContract` that contains an attribute
    ...     salary: int
    ...     signable: bool
    ...     employment: Employment
+   ...     location: str
 
 We want to have a mapper from the source data structure - ``SoftwareDeveloperContract`` with the attribute ``ContactInfo``.
 Notice that the attribute ``second_name`` of ``Person`` is called ``surname`` in ``ContactInfo``.
@@ -72,13 +73,14 @@ Instead of writing:
    ...     salary: int
    ...     contract_type: ContractType
    ...
-   ...     def to_WorkContract(self) -> WorkContract:
+   ...     def to_WorkContract(self, location: str) -> WorkContract:
    ...         return WorkContract(
    ...             worker=self.worker.to_Person(),
    ...             manager=(None if self.manager is None else self.manager.to_Person()),
    ...             salary=self.salary,
    ...             signable=True,
-   ...             employment=self.contract_type.to_Employment()
+   ...             employment=self.contract_type.to_Employment(),
+   ...             location=location,
    ...         )
    >>>
    >>> software_developer_contract = SoftwareDeveloperContract(
@@ -87,18 +89,19 @@ Instead of writing:
    ...     salary=5000,
    ...     contract_type=ContractType.FULL_TIME,
    ... )
-   >>> software_developer_contract.to_WorkContract() #doctest: +NORMALIZE_WHITESPACE
+   >>> software_developer_contract.to_WorkContract(location="New York") #doctest: +NORMALIZE_WHITESPACE
    WorkContract(worker=Person(first_name='John', second_name='Page', full_name='John Page', age=30),
                 manager=Person(first_name='Jennifer', second_name='Coulter', full_name='Jennifer Coulter', age=35),
                 salary=5000,
                 signable=True,
-                employment=<Employment.FULL_TIME: 1>)
+                employment=<Employment.FULL_TIME: 1>,
+                location='New York')
 
 you can write:
 
 .. doctest::
 
-   >>> from dataclass_mapper import map_to, mapper, enum_mapper
+   >>> from dataclass_mapper import map_to, mapper, enum_mapper, provide_with_extra
    >>>
    >>> @mapper(Person, {
    ...   "second_name": "surname",
@@ -117,7 +120,7 @@ you can write:
    ...     FREELANCER = "FREELANCER"
    ...     SUBCOMPANY = "SUBCOMPANY"
    >>>       
-   >>> @mapper(WorkContract, {"signable": lambda: True, "employment": "contract_type"})
+   >>> @mapper(WorkContract, {"signable": lambda: True, "employment": "contract_type", "location": provide_with_extra()})
    ... @dataclass
    ... class SoftwareDeveloperContract:
    ...     worker: ContactInfo
@@ -131,9 +134,10 @@ you can write:
    ...     salary=5000,
    ...     contract_type=ContractType.FULL_TIME,
    ... )
-   >>> map_to(software_developer_contract, WorkContract) #doctest: +NORMALIZE_WHITESPACE
+   >>> map_to(software_developer_contract, WorkContract, extra={"location": "New York"}) #doctest: +NORMALIZE_WHITESPACE
    WorkContract(worker=Person(first_name='John', second_name='Page', full_name='John Page', age=30),
                 manager=Person(first_name='Jennifer', second_name='Coulter', full_name='Jennifer Coulter', age=35),
                 salary=5000,
                 signable=True,
-                employment=<Employment.FULL_TIME: 1>)
+                employment=<Employment.FULL_TIME: 1>,
+                location='New York')
