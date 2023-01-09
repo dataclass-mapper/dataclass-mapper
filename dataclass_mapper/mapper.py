@@ -247,5 +247,5 @@ def map_to(obj, TargetCls: Type[T], extra: Optional[dict[str, Any]] = None) -> T
         return cast(T, getattr(obj, func_name)(extra))
 
     raise NotImplementedError(
-        f"Object of type '{type(obj)}' cannot be mapped to {TargetCls.__name__}'"
+        f"Object of type '{type(obj).__name__}' cannot be mapped to '{TargetCls.__name__}'"
     )
