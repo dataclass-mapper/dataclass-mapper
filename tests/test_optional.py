@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 
 import pytest
 from pydantic import BaseModel

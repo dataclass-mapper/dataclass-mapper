@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel, ConstrainedStr, Field, root_validator, validator
 
 from dataclass_mapper.classmeta import PydanticClassMeta

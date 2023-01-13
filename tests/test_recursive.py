@@ -1,3 +1,5 @@
+from typing import Dict
+
 from dataclasses import dataclass
 
 from dataclass_mapper.mapper import map_to, mapper

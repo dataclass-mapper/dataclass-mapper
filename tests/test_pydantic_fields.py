@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import sys
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from pydantic import BaseModel, Field
@@ -17,20 +19,20 @@ def test_pydantic_normal_field() -> None:
     assert fields == {
         "x": FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
         "y": FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
-        "z": FieldMeta(name="z", type=list[int], allow_none=False, required=True, alias="z"),
+        "z": FieldMeta(name="z", type=List[int], allow_none=False, required=True, alias="z"),
     }
 
 
 def test_pydantic_optional_fields() -> None:
     class Foo(BaseModel):
         x: Optional[int]
-        y: Optional[list[int]]
+        y: Optional[List[int]]
 
     fields = get_class_meta(Foo).fields
     assert fields["x"].type is int
     assert fields["x"].allow_none
     assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "list[int]"
+    assert str(fields["y"].type) == "typing.List[int]"
     assert fields["y"].allow_none
 
 
