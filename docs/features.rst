@@ -8,7 +8,7 @@ Mapping by field names
 
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
-   >>> from typing import Optional
+   >>> from typing import List, Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra
    >>> from pydantic import BaseModel, Field, validator
 
