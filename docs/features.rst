@@ -119,13 +119,13 @@ Recursive models
    >>> @dataclass
    ... class Order:
    ...     recipient: Person
-   ...     items: list[Item]
+   ...     items: List[Item]
    >>>
    >>> @mapper(Order)
    ... @dataclass
    ... class CustomOrder:
    ...     recipient: Contact
-   ...     items: list[OrderItem]
+   ...     items: List[OrderItem]
    >>>
    >>> custom_order = CustomOrder(
    ...     recipient=Contact(first_name="Barbara E.", surname="Rolfe"),
@@ -136,7 +136,7 @@ Recursive models
          items=[Item(description='fruit', cnt=3), Item(description='sweets', cnt=5)])
 
 Here the dataclasses use other dataclasses as fields, either direct `recipient: Contact` (and `recipient: Person`),
-or even inside a list `items: list[OrderItem]` (and `items: list[Item]`).
+or even inside a list `items: List[OrderItem]` (and `items: List[Item]`).
 As there is a mapper defined from `Contact` to `Person`, and also a mapper defined from `OrderItem` to `Item`, the object `custom_order` can be recusively mapped.
 
 Use default values of the target library
@@ -229,13 +229,13 @@ With `provide_with_extra` you can mark fields, so that no mapping is generated, 
    ...     x: int
    ...     item: TargetItem
    ...     optional_item: Optional[TargetItem]
-   ...     items: list[TargetItem]
+   ...     items: List[TargetItem]
    >>>
    >>> @mapper(TargetCollection, {"x": provide_with_extra()})
    ... class SourceCollection(BaseModel):
    ...     item: SourceItem
    ...     optional_item: Optional[SourceItem]
-   ...     items: list[SourceItem]
+   ...     items: List[SourceItem]
    >>>
    >>> source_collection = SourceCollection(
    ...    item=SourceItem(), optional_item=SourceItem(), items=[SourceItem(), SourceItem()]

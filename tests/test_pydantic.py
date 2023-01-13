@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -35,7 +35,7 @@ def test_recursive_pydantic_mapper():
     class Baz2(BaseModel):
         bar: Bar2
 
-    data: dict = {"bar": {"x": 42, "y": "answer"}}
+    data: Dict = {"bar": {"x": 42, "y": "answer"}}
     assert repr(map_to(Baz2(**data), Baz)) == repr(Baz(**data))
 
 
@@ -58,9 +58,9 @@ class UnsetFields(BaseModel):
     x1: Optional[X] = None
     x2: Optional[X] = None
     x3: Optional[X] = None
-    l1: Optional[list[X]] = None
-    l2: Optional[list[X]] = None
-    l3: Optional[list[X]] = None
+    l1: Optional[List[X]] = None
+    l2: Optional[List[X]] = None
+    l3: Optional[List[X]] = None
 
 
 def test_maintain_unset_field_infos():

@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel
 
 from dataclass_mapper.mapper import map_to, mapper_from
@@ -18,7 +20,7 @@ def test_pydantic_from():
 
 
 class RecFrom(BaseModel):
-    bars: list[BarFrom]
+    bars: List[BarFrom]
     bar: BarFrom
 
 
@@ -30,7 +32,7 @@ class Bar(BaseModel):
 
 @mapper_from(RecFrom)
 class Rec(BaseModel):
-    bars: list[Bar]
+    bars: List[Bar]
     bar: Bar
 
 

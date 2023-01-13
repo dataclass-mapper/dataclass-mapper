@@ -1,12 +1,12 @@
 from inspect import signature
-from typing import Callable, cast
+from typing import Callable, Dict, cast
 from uuid import uuid4
 
 from ..fieldmeta import FieldMeta
 
 
 class FunctionAssignment:
-    def __init__(self, function: Callable, target: FieldMeta, methods: dict[str, Callable]):
+    def __init__(self, function: Callable, target: FieldMeta, methods: Dict[str, Callable]):
         self.function = function
         self.target = target
         self.methods = methods

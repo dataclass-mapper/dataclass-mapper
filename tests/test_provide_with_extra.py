@@ -85,12 +85,12 @@ def test_provide_with_extra_recursive_optional():
 def test_provide_with_extra_recursive_list():
     @dataclass
     class TargetCollection:
-        fields: list[Target]
+        fields: List[Target]
 
     @mapper(TargetCollection)
     @dataclass
     class SourceCollection:
-        fields: list[Source]
+        fields: List[Source]
 
     source_collection = SourceCollection(fields=[Source(), Source()])
     target_collection = TargetCollection(fields=[Target(x=0), Target(x=1)])

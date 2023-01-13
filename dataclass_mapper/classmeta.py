@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import fields, is_dataclass
 from enum import Enum, auto
-from typing import Any, Optional, cast
+from typing import Any, Dict, Optional, cast
 from uuid import uuid4
 
 from .fieldmeta import FieldMeta
@@ -16,7 +16,7 @@ class ClassMeta(ABC):
     _type: DataclassType
 
     def __init__(
-        self, name: str, fields: dict[str, FieldMeta], alias_name: Optional[str] = None
+        self, name: str, fields: Dict[str, FieldMeta], alias_name: Optional[str] = None
     ) -> None:
         self.name = name
         self.fields = fields
@@ -41,7 +41,7 @@ class DataclassClassMeta(ClassMeta):
         return field.name
 
     @staticmethod
-    def _fields(clazz: Any) -> dict[str, FieldMeta]:
+    def _fields(clazz: Any) -> Dict[str, FieldMeta]:
         return {field.name: FieldMeta.from_dataclass(field) for field in fields(clazz)}
 
     @classmethod
@@ -55,7 +55,7 @@ class PydanticClassMeta(ClassMeta):
     def __init__(
         self,
         name: str,
-        fields: dict[str, FieldMeta],
+        fields: Dict[str, FieldMeta],
         use_construct: bool,
         allow_population_by_field_name: bool = False,
         alias_name: Optional[str] = None,
@@ -85,7 +85,7 @@ class PydanticClassMeta(ClassMeta):
             return field.alias or field.name
 
     @staticmethod
-    def _fields(clazz: Any) -> dict[str, FieldMeta]:
+    def _fields(clazz: Any) -> Dict[str, FieldMeta]:
         return {field.name: FieldMeta.from_pydantic(field) for field in clazz.__fields__.values()}
 
     @classmethod

@@ -11,7 +11,7 @@ def test_pydantic_normal_field() -> None:
     class Foo(BaseModel):
         x: int
         y: str
-        z: list[int]
+        z: List[int]
 
     fields = get_class_meta(Foo).fields
     assert fields == {

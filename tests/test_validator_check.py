@@ -45,7 +45,7 @@ def test_pydantic_has_validators():
     assert not PydanticClassMeta.from_clazz(Pydantic3).use_construct
 
     class Pydantic4(BaseModel):
-        x: list[int]
+        x: List[int]
 
         @validator("x", each_item=True)
         def val_x(cls, v):

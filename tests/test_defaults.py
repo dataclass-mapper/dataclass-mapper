@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from pydantic import BaseModel, Field
@@ -91,7 +91,7 @@ class ATo(BaseModel):
 
 
 class BTo(BaseModel):
-    aa: list[ATo] = Field(default_factory=list)
+    aa: List[ATo] = Field(default_factory=list)
 
 
 def test_pydantic_optional_list_to_defaults():
