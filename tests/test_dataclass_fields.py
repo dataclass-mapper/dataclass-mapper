@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -34,7 +32,7 @@ def test_dataclass_optional_fields() -> None:
     assert fields["x"].type is int
     assert fields["x"].allow_none
     assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "List[int]"
+    assert str(fields["y"].type) == "typing.List[int]"
     assert fields["y"].allow_none
 
 
