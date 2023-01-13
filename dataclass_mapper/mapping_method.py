@@ -120,7 +120,7 @@ class MappingMethodSourceCode:
         self.source_cls = source_cls
         self.target_cls = target_cls
         self.lines = [
-            f'def convert(self, extra: Dict) -> "{self.target_cls.name}":',
+            f'def convert(self, extra: dict) -> "{self.target_cls.name}":',
             f"    d = {{}}",
         ]
         self.methods: Dict[str, Callable] = {}
