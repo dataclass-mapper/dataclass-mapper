@@ -28,7 +28,7 @@ def test_dataclass_optional_fields() -> None:
     @dataclass
     class Foo:
         x: Optional[int]
-        y: Optional[list[int]]
+        y: Optional[List[int]]
 
     fields = get_class_meta(Foo).fields
     assert fields["x"].type is int
