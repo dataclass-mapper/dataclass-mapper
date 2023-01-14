@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set up python 3.9
         id: setup-python
@@ -25,7 +27,9 @@ jobs:
           version: 1.2.2
 
       - name: Install Dependencies
-        run: poetry install
+        run:
+          poetry self add "poetry-dynamic-versioning[plugin]"
+          poetry install --all-extras
 
       - name: Publish
         env:

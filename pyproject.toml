@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dataclass-mapper"
-version = "1.6.0"
+version = "0.0.0"
 description = "Autogenerate mappings between dataclasses"
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
 
@@ -62,3 +62,8 @@ exclude_lines = [
   "pragma: no cover",
   "@abstractmethod"
 ]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "semver"
