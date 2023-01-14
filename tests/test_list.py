@@ -1,6 +1,8 @@
+import sys
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List
 
+import pytest
 from pydantic import BaseModel
 
 from dataclass_mapper.mapper import map_to, mapper
@@ -56,3 +58,17 @@ def test_rec_dataclass_mapper_with_optional():
     baz_before = Baz(bar=[Bar(x=42, y="answer")])
     baz_after = BazDataclass(bar=[BarDataclass(x=42, y="answer")])
     assert map_to(baz_before, BazDataclass) == baz_after
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Using builtin collection types are introduced in Python 3.9"
+)
+def test_builtin_list_type():
+    @dataclass
+    class Foo:
+        x: list[int]
+
+    @mapper(Foo)
+    @dataclass
+    class Bar:
+        x: list[int]
