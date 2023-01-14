@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from inspect import isfunction
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Dict, List, Optional, Type, Union
 
 from .assignments import (
     Assignment,
@@ -60,7 +60,7 @@ def provide_with_extra() -> ProvideWithExtra:
 # - assume_not_none(): assume that the source field is not None
 # - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
 Origin = Union[str, Callable, Spezial, InitWithDefault, AssumeNotNone, ProvideWithExtra]
-StringFieldMapping = dict[str, Origin]
+StringFieldMapping = Dict[str, Origin]
 
 
 @dataclass
@@ -110,7 +110,7 @@ class AssignmentOptions:
 class MappingMethodSourceCode:
     """Source code of the mapping method"""
 
-    AssignmentClasses: list[Type[Assignment]] = [
+    AssignmentClasses: List[Type[Assignment]] = [
         SimpleAssignment,
         RecursiveAssignment,
         ListRecursiveAssignment,
@@ -123,7 +123,7 @@ class MappingMethodSourceCode:
             f'def convert(self, extra: dict) -> "{self.target_cls.name}":',
             f"    d = {{}}",
         ]
-        self.methods: dict[str, Callable] = {}
+        self.methods: Dict[str, Callable] = {}
 
     @classmethod
     def _get_asssigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
@@ -138,13 +138,13 @@ class MappingMethodSourceCode:
         target: FieldMeta,
         right_side: str,
         options: AssignmentOptions,
-    ) -> list[str]:
+    ) -> List[str]:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
 
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
         """
-        lines: list[str] = []
+        lines: List[str] = []
         indent = 4
         if options.only_if_not_None:
             lines.append(f"    if {get_var_name(source)} is not None:")

@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel, ConstrainedStr, Field, root_validator, validator
 
 from dataclass_mapper.classmeta import PydanticClassMeta
@@ -45,7 +47,7 @@ def test_pydantic_has_validators():
     assert not PydanticClassMeta.from_clazz(Pydantic3).use_construct
 
     class Pydantic4(BaseModel):
-        x: list[int]
+        x: List[int]
 
         @validator("x", each_item=True)
         def val_x(cls, v):

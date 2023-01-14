@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from textwrap import dedent
+from typing import Dict, List
 
 import pytest
 
@@ -228,8 +229,8 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
         pass
 
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=list[FooTarget], allow_none=False, required=True),
-        source=FieldMeta(name="source_x", type=list[FooSource], allow_none=False, required=True),
+        target=FieldMeta(name="target_x", type=List[FooTarget], allow_none=False, required=True),
+        source=FieldMeta(name="source_x", type=List[FooSource], allow_none=False, required=True),
     )
     expected_code = prepare_expected_code(
         """

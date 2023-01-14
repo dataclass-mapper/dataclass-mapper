@@ -1,8 +1,9 @@
+import sys
 import warnings
 from copy import deepcopy
 from importlib import import_module
 from itertools import zip_longest
-from typing import Any, Callable, Optional, Type, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, cast
 
 from .assignments import get_map_to_func_name
 from .classmeta import get_class_meta
@@ -21,7 +22,7 @@ def _make_mapper(
     mapping: StringFieldMapping,
     source_cls: Any,
     target_cls: Any,
-) -> tuple[str, dict[str, Callable], dict[str, Any]]:
+) -> Tuple[str, Dict[str, Callable], Dict[str, Any]]:
     source_cls_meta = get_class_meta(source_cls)
     target_cls_meta = get_class_meta(target_cls)
     actual_source_fields = source_cls_meta.fields
@@ -168,9 +169,10 @@ def add_mapper_function(
     )
     module = import_module(SourceCls.__module__)
 
-    d: dict = {}
+    d: Dict = {}
     setattr(SourceCls, "__zip_longest", zip_longest)
-    exec(map_code, module.__dict__ | context, d)
+    # Support older versions of python by calling {**a, **b} rather than a|b
+    exec(map_code, {**module.__dict__, **context}, d)
     setattr(SourceCls, get_map_to_func_name(TargetCls), d["convert"])
     for name, factory in factories.items():
         setattr(SourceCls, name, factory)
@@ -231,7 +233,7 @@ def add_enum_mapper_function(
     setattr(SourceCls, get_map_to_func_name(TargetCls), convert_function)
 
 
-def map_to(obj, TargetCls: Type[T], extra: Optional[dict[str, Any]] = None) -> T:
+def map_to(obj, TargetCls: Type[T], extra: Optional[Dict[str, Any]] = None) -> T:
     """Maps the given object to an object of type ``TargetCls``, if such a safe mapping was defined for the type of the given object.
     Raises an ``NotImplementedError`` if no such mapping is defined.
 

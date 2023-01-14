@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 
@@ -12,13 +12,13 @@ def test_dataclass_normal_field() -> None:
     class Foo:
         x: int
         y: str
-        z: list[int]
+        z: List[int]
 
     fields = get_class_meta(Foo).fields
     assert fields == {
         "x": FieldMeta(name="x", type=int, allow_none=False, required=True),
         "y": FieldMeta(name="y", type=str, allow_none=False, required=True),
-        "z": FieldMeta(name="z", type=list[int], allow_none=False, required=True),
+        "z": FieldMeta(name="z", type=List[int], allow_none=False, required=True),
     }
 
 
@@ -26,13 +26,13 @@ def test_dataclass_optional_fields() -> None:
     @dataclass
     class Foo:
         x: Optional[int]
-        y: Optional[list[int]]
+        y: Optional[List[int]]
 
     fields = get_class_meta(Foo).fields
     assert fields["x"].type is int
     assert fields["x"].allow_none
     assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "list[int]"
+    assert str(fields["y"].type) == "typing.List[int]"
     assert fields["y"].allow_none
 
 

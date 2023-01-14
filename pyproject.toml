@@ -16,7 +16,7 @@ keywords = ['dataclass', 'pydantic', 'python', 'automation']
 classifiers = ["Topic :: Software Development :: Code Generators"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 pydantic = { version = "^1.9.0", optional = true }
 
 [tool.poetry.dev-dependencies]

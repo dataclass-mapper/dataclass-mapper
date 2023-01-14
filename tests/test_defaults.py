@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel, Field
@@ -91,7 +91,7 @@ class ATo(BaseModel):
 
 
 class BTo(BaseModel):
-    aa: list[ATo] = Field(default_factory=list)
+    aa: List[ATo] = Field(default_factory=list)
 
 
 def test_pydantic_optional_list_to_defaults():
@@ -101,7 +101,7 @@ def test_pydantic_optional_list_to_defaults():
 
     @mapper(BTo)
     class B(BaseModel):
-        aa: Optional[list[A]]
+        aa: Optional[List[A]]
 
     assert repr(map_to(B(aa=[A(x=42)]), BTo)) == repr(BTo(aa=[ATo(x=42)]))
     assert repr(map_to(B(aa=None), BTo)) == repr(BTo(aa=[]))

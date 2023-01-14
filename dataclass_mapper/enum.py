@@ -1,12 +1,12 @@
 from enum import Enum
-from typing import Any, Callable, Union, cast
+from typing import Any, Dict, Callable, Union, cast
 
 # mapping between source members and target members
-EnumMapping = dict[Union[str, Enum], Union[str, Enum]]
+EnumMapping = Dict[Union[str, Enum], Union[str, Enum]]
 
 
 def member_to_name_and_raise(
-    member: Union[str, Enum], members: dict[str, Enum], enum_cls: Any, class_description: str
+    member: Union[str, Enum], members: Dict[str, Enum], enum_cls: Any, class_description: str
 ) -> str:
     if isinstance(member, str) and member in members:
         return member
@@ -29,7 +29,7 @@ def make_enum_mapper(
     source_members = {member.name: member for member in source_cls}
     target_members = {member.name: member for member in target_cls}
 
-    name_mapping: dict[str, str] = {}
+    name_mapping: Dict[str, str] = {}
     for source_member, target_member in mapping.items():
         source_member = member_to_name_and_raise(
             source_member, source_members, source_cls, "source"
@@ -39,7 +39,7 @@ def make_enum_mapper(
         )
         name_mapping[source_member] = target_member
 
-    full_mapping: dict[Any, Any] = {}
+    full_mapping: Dict[Any, Any] = {}
     for source_member_name, source_member in source_members.items():
         # mapping exists
         if source_member_name in name_mapping:
@@ -52,7 +52,7 @@ def make_enum_mapper(
                 f"The member '{source_member_name}' of the source enum '{source_cls.__name__}' doesn't have a mapping."
             )
 
-    def convert(self: Any, extra: dict) -> Any:
+    def convert(self: Any, extra: Dict) -> Any:
         return convert.d[self]  # type: ignore
 
     convert.d = full_mapping  # type: ignore

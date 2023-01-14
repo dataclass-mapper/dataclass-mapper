@@ -1,6 +1,8 @@
+import sys
 from dataclasses import dataclass
-from typing import Optional
+from typing import List
 
+import pytest
 from pydantic import BaseModel
 
 from dataclass_mapper.mapper import map_to, mapper
@@ -18,7 +20,7 @@ class BarDataclass:
 
 
 class BazPydantic(BaseModel):
-    bar: list[BarPydantic]
+    bar: List[BarPydantic]
 
 
 def test_rec_pydantic_mapper_with_optional():
@@ -29,7 +31,7 @@ def test_rec_pydantic_mapper_with_optional():
 
     @mapper(BazPydantic)
     class Baz(BaseModel):
-        bar: list[Bar]
+        bar: List[Bar]
 
     baz_before = Baz(bar=[Bar(x=42, y="answer")])
     baz_after = BazPydantic(bar=[BarPydantic(x=42, y="answer")])
@@ -38,7 +40,7 @@ def test_rec_pydantic_mapper_with_optional():
 
 @dataclass
 class BazDataclass:
-    bar: list[BarDataclass]
+    bar: List[BarDataclass]
 
 
 def test_rec_dataclass_mapper_with_optional():
@@ -51,8 +53,22 @@ def test_rec_dataclass_mapper_with_optional():
     @mapper(BazDataclass)
     @dataclass
     class Baz:
-        bar: list[Bar]
+        bar: List[Bar]
 
     baz_before = Baz(bar=[Bar(x=42, y="answer")])
     baz_after = BazDataclass(bar=[BarDataclass(x=42, y="answer")])
     assert map_to(baz_before, BazDataclass) == baz_after
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="Using builtin collection types are introduced in Python 3.9"
+)
+def test_builtin_list_type():
+    @dataclass
+    class Foo:
+        x: list[int]
+
+    @mapper(Foo)
+    @dataclass
+    class Bar:
+        x: list[int]
