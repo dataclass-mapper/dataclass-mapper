@@ -6,7 +6,9 @@ from typing import List, Optional
 import pytest
 from pydantic import BaseModel, Field
 
-from dataclass_mapper.classmeta import FieldMeta, get_class_meta
+from dataclass_mapper.classmeta import FieldMeta, Namespace, get_class_meta
+
+empty_namespace = Namespace(locals={}, globals={})
 
 
 def test_pydantic_normal_field() -> None:
@@ -15,7 +17,7 @@ def test_pydantic_normal_field() -> None:
         y: str
         z: List[int]
 
-    fields = get_class_meta(Foo).fields
+    fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
         "x": FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
         "y": FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
@@ -28,7 +30,7 @@ def test_pydantic_optional_fields() -> None:
         x: Optional[int]
         y: Optional[List[int]]
 
-    fields = get_class_meta(Foo).fields
+    fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields["x"].type is int
     assert fields["x"].allow_none
     assert not fields["x"].disallow_none
@@ -41,7 +43,7 @@ def test_pydantic_optional_fields_with_union():
     class Foo(BaseModel):
         x: int | None
 
-    fields = get_class_meta(Foo).fields
+    fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields["x"].type is int
     assert fields["x"].allow_none
     assert not fields["x"].disallow_none
@@ -59,7 +61,7 @@ def test_pydantic_defaults_field() -> None:
         f: Optional[str] = Field(default="hello")
         g: Optional[str] = Field(default_factory=lambda: "hello")
 
-    fields = get_class_meta(Foo).fields
+    fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields["a"].required
     assert not fields["b1"].required  # pydantic fills optionals fields automatically with None
     assert fields["b2"].required  # however not for elipsis defaults
@@ -76,7 +78,7 @@ def test_pydantic_alias() -> None:
         a: int = Field(alias="b")
         c: int
 
-    fields = get_class_meta(Foo).fields
+    fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields["a"].name == "a"
     assert fields["a"].alias == "b"
 
@@ -89,7 +91,7 @@ def test_pydantic_alias() -> None:
         class Config:
             alias_generator = lambda x: x.upper()
 
-    fields = get_class_meta(Bar).fields
+    fields = get_class_meta(Bar, namespace=empty_namespace).fields
     assert fields["a"].name == "a"
     assert fields["a"].alias == "A"
 
@@ -99,6 +101,6 @@ def test_pydantic_alias() -> None:
         class Config:
             fields = {"a": "aaa"}
 
-    fields = get_class_meta(Baz).fields
+    fields = get_class_meta(Baz, namespace=empty_namespace).fields
     assert fields["a"].name == "a"
     assert fields["a"].alias == "aaa"

@@ -16,15 +16,14 @@ from .mapping_method import (
     Spezial,
     StringFieldMapping,
 )
+from .namespace import Namespace, get_namespace
 
 
 def _make_mapper(
-    mapping: StringFieldMapping,
-    source_cls: Any,
-    target_cls: Any,
+    mapping: StringFieldMapping, source_cls: Any, target_cls: Any, namespace: Namespace
 ) -> Tuple[str, Dict[str, Callable], Dict[str, Any]]:
-    source_cls_meta = get_class_meta(source_cls)
-    target_cls_meta = get_class_meta(target_cls)
+    source_cls_meta = get_class_meta(source_cls, namespace=namespace)
+    target_cls_meta = get_class_meta(target_cls, namespace=namespace)
     actual_source_fields = source_cls_meta.fields
     actual_target_fields = target_cls_meta.fields
     source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
@@ -127,11 +126,14 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
         - ``{"x": provide_with_extra()}`` means, that you don't fill this field with any field of the source class, but with the extra dictionary given by the `map_to` method.
     """
 
+    namespace = get_namespace()
+
     def wrapped(SourceCls: T) -> T:
         add_mapper_function(
             SourceCls=SourceCls,
             TargetCls=TargetCls,
             mapping=mapping,
+            namespace=namespace,
         )
         return SourceCls
 
@@ -146,11 +148,11 @@ def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) ->
     :param mapping: an optional dictionary which which it's possible to describe how each field in the target class gets initialized.
     """
 
+    namespace = get_namespace()
+
     def wrapped(TargetCls: T) -> T:
         add_mapper_function(
-            SourceCls=SourceCls,
-            TargetCls=TargetCls,
-            mapping=mapping,
+            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace
         )
         return TargetCls
 
@@ -158,7 +160,7 @@ def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) ->
 
 
 def add_mapper_function(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping]
+    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping], namespace: Namespace
 ) -> None:
     field_mapping = mapping or cast(StringFieldMapping, {})
 
@@ -166,6 +168,7 @@ def add_mapper_function(
         field_mapping,
         source_cls=SourceCls,
         target_cls=TargetCls,
+        namespace=namespace,
     )
     module = import_module(SourceCls.__module__)
 

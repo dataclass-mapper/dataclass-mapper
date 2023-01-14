@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConstrainedStr, Field, root_validator, validator
 
 from dataclass_mapper.classmeta import PydanticClassMeta
 from dataclass_mapper.mapper import get_class_meta
+from dataclass_mapper.namespace import Namespace
 
 
 def test_pydantic_has_no_validators():
@@ -89,7 +90,7 @@ def test_pydantic_has_validators():
     class Pydantic8(BaseModel):
         x: str = Field(max_length=5)
 
-    class_meta_Pydantic8 = get_class_meta(Pydantic8)
+    class_meta_Pydantic8 = get_class_meta(Pydantic8, namespace=Namespace(locals={}, globals={}))
     field_x_meta = class_meta_Pydantic8.fields["x"]
     assert not PydanticClassMeta.has_validators(Pydantic8), "max_length is not a validator"
     assert field_x_meta.type is not str, "max_length changes the type of the field from str"
