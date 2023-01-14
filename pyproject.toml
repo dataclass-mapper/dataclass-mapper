@@ -28,7 +28,6 @@ tox = "^3.25.0"
 Sphinx = "^5.0.2"
 sphinx-rtd-theme = "^1.0.0"
 pytest-cov = "^4.0.0"
-pytest-sphinx = "^0.5.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

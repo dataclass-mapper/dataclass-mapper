@@ -718,24 +718,6 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
-name = "pytest-sphinx"
-version = "0.5.0"
-description = "Doctest plugin for pytest with support for Sphinx-specific doctest-directives"
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "pytest-sphinx-0.5.0.tar.gz", hash = "sha256:42485af28b97649b0c16fc11fa450ae3d5a51d5ec67e3a8bc29d31c3093eb40a"},
-    {file = "pytest_sphinx-0.5.0-py3-none-any.whl", hash = "sha256:faaa236a47fe87669a7422e44168dc1803049b9a47710c2de4c23f469f40c47e"},
-]
-
-[package.dependencies]
-pytest = ">=7.0.0"
-
-[package.extras]
-lint = ["black", "flake8", "isort (>=5)"]
-
-[[package]]
 name = "pytz"
 version = "2022.7.1"
 description = "World timezone definitions, modern and historical"
@@ -1053,4 +1035,4 @@ pydantic = ["pydantic"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "45ccabbf265f2df6faea779750a385b83335be6ed901bd333355e7356c6c598e"
+content-hash = "02d210978100e2b4e90796841fd7348164a2aef426b444f5662538e1aaf97cbf"
