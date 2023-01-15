@@ -32,25 +32,25 @@ Much better to let this library auto-generate them for you.
 
 The focus of this library is:
 
-* **Concise and easy syntax:**
+- **Concise and easy syntax:**
   
-  * using it has to be a lot less overhead than writing the mappers by hand
-  * trivial mappings should not require code
-  * identical syntax for mapping between dataclasses and Pydantic models
+  - using it has to be a lot less overhead than writing the mappers by hand
+  - trivial mappings should not require code
+  - identical syntax for mapping between dataclasses and Pydantic models
 
-* **Safety:**
+- **Safety:**
 
-  * using this library must give equal or more type safety than writing the mappers by hand
-  * the types between source and target classes must matches (including optional checks)
-  * all target fields must be actually initialized
-  * mappings cannot reference non-existing fields
-  * in case of an error a clean exception must be raised
+  - using this library must give equal or more type safety than writing the mappers by hand
+  - the types between source and target classes must matches (including optional checks)
+  - all target fields must be actually initialized
+  - mappings cannot reference non-existing fields
+  - in case of an error a clean exception must be raised
 
-* **Performance:**
+- **Performance:**
 
-  * mapping an object using this library must be the same speed than mapping using a custom mapper function
-  * the type checks shouldn't slow down the program
-  * because of the first two points, all type checks and the generation of the mapper functions happen during the definition of the classes
+  - mapping an object using this library must be the same speed than mapping using a custom mapper function
+  - the type checks shouldn't slow down the program
+  - because of the first two points, all type checks and the generation of the mapper functions happen during the definition of the classes
 
 Motivation
 ----------
