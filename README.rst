@@ -59,9 +59,9 @@ A couple of example usecases, that show why this library might be useful.
 
 * Given an API with multiple, different interfaces (e.g. different API versions), that are all connected to a common algorithm with some common datamodel.
   All the different API models needs to be mapped to the common datamodel, and afterwards mapped back to the API model.
-* Given an API that has a `POST` and a `GET` endpoint.
-  Both models (`POST` request body model and `GET` response body model) are almost the same, but there are some minor differences.
-  E.g. response model has an additional `id` parameter.
+* Given an API that has a ``POST`` and a ``GET`` endpoint.
+  Both models (``POST`` request body model and ``GET`` response body model) are almost the same, but there are some minor differences.
+  E.g. response model has an additional ``id`` parameter.
   You need a way of mapping the request model to a response model.
 
 Installation
@@ -92,7 +92,7 @@ We have the following target data structure, a class called ``Person``.
 
 
 We want to have a mapper from the source data structure, a class called ``ContactInfo``.
-Notice that the attribute ``second_name`` of `Person` is called ``surname`` in `ContactInfo`.
+Notice that the attribute ``second_name`` of ``Person`` is called ``surname`` in ``ContactInfo``.
 Other than that, all the attribute names are the same.
 
 Instead of writing a mapper function by hand, you can let it autogenerate with:

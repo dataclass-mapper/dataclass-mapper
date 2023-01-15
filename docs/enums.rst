@@ -31,10 +31,10 @@ Here a mapping between two enums is defined.
 Notice, that the order of the mapping is defined in the opposite way.
 For each member of the source enum, you have to list the member of the target enum.
 That way you can also map multiple source members to the same target member.
-In the example both `FileEndings.CPP` and `FileEndings.H` are mapped to `ProgrammingLanguage.CPLUSPLUS`.
+In the example both ``FileEndings.CPP`` and ``FileEndings.H`` are mapped to ``ProgrammingLanguage.CPLUSPLUS``.
 
 As always, if enum members have the same name, you don't need specify them in the mapping.
-And it's also possible to define a member to the current class with `enum_mapper_from`.
+And it's also possible to define a member to the current class with ``enum_mapper_from``.
 
 .. note::
    It's also possible to specify the target members directly instead of strings.
@@ -55,4 +55,4 @@ And it's also possible to define a member to the current class with `enum_mapper
       ...    CPP = ".cpp"
       ...    H = ".h"
 
-   For the source class `FileEndings` that's not possible, because the `FileEndings` class doesn't exist yet for the decorator.
+   For the source class ``FileEndings`` that's not possible, because the ``FileEndings`` class doesn't exist yet for the decorator.

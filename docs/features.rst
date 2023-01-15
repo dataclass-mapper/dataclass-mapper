@@ -30,16 +30,16 @@ Mapping by field names
    >>> map_to(contact, Person)
    Person(name='Cross', age=50)
 
-With the `mapping` parameter it's possible to define how the fields in the target class are filled.
-Here we defining a mapper function from the `Contact` class to the `Person` class.
-By specifying the mapping `{'"name": "surname"}` (in the order `{"target_field": "source_field"}`) the field `name` in the target class `Person` will be filled with the value of the `surname` of the source class `Contact`.
-The `age` will be mapped automatically, as the field name `age` and the type `int` are identically in both classes.
-The additional field `first_name` in the `Contact` class will just be ignored.
+With the ``mapping`` parameter it's possible to define how the fields in the target class are filled.
+Here we defining a mapper function from the ``Contact`` class to the `Person` class.
+By specifying the mapping ``{'"name": "surname"}`` (in the order ``{"target_field": "source_field"}``) the field ``name`` in the target class ``Person`` will be filled with the value of the ``surname`` of the source class ``Contact``.
+The ``age`` will be mapped automatically, as the field name ``age`` and the type ``int`` are identically in both classes.
+The additional field ``first_name`` in the ``Contact`` class will just be ignored.
 
 .. note::
-  A mapping is not bidirectional.
-  Here you can only map from `Contact` instances to `Person` instances, but not the other way.
-  To also have a mapping from `Person` to `Contact`, we would need to add a `@mapper(Contact)` decorator to `Person`, or a `@mapper_from` to `Contact` (see next section).
+   A mapping is not bidirectional.
+   Here you can only map from ``Contact`` instances to ``Person`` instances, but not the other way.
+   To also have a mapping from ``Person`` to ``Contact``, we would need to add a ``@mapper(Contact)`` decorator to ``Person``, or a ``@mapper_from`` to ``Contact`` (see next section).
 
 Mapping from another class
 --------------------------
@@ -61,14 +61,14 @@ Mapping from another class
    >>> map_to(order_item, Item)
    Item(description='fruit', cnt=5)
 
-Here we added a decorator `@mapper_from(OrderItem)` to the `Item` class.
-That defines a mapper from `OrderItem` instances to `Order` instances.
-The order of the mapping parameters is the same, it's `{"target_field": "source_field"}`,
+Here we added a decorator ``@mapper_from(OrderItem)`` to the ``Item`` class.
+That defines a mapper from ``OrderItem`` instances to ``Order`` instances.
+The order of the mapping parameters is the same, it's ``{"target_field": "source_field"}``,
 only difference is that the target class is now the class that is decorated.
 
 .. note::
    It's also possible to add multiple decorators to one dataclass.
-   E.g. it is possible to add a `mapper` and a `mapper_from` in order to have mappers in both directions.
+   E.g. it is possible to add a ``mapper`` and a ``mapper_from`` in order to have mappers in both directions.
 
    .. doctest::
 
@@ -102,10 +102,10 @@ Custom conversion functions
 It's possible to add custom functions to mappings.
 
 In case the function takes no arguments, the function just behaves like setting a constant.
-The first function `lambda: 45` has no parameters and just returns the constant `45`, so the age will always be initialized with `45`.
+The first function ``lambda: 45`` has no parameters and just returns the constant ``45``, so the age will always be initialized with ``45``.
 
 In case the function has one parameter, the source object will be passed and you can initialize the field however you want.
-In the second function `lambda self: f"{self.first_name} {self.surname}"` there is one parameter `self` (resembling a class method), and it combines the `first_name` and `surname` into a string and initialize the field `name` with it.
+In the second function ``lambda self: f"{self.first_name} {self.surname}"`` there is one parameter ``self`` (resembling a class method), and it combines the ``first_name`` and ``surname`` into a string and initialize the field ``name`` with it.
 
 .. warning::
    Custom conversion functions are not type-checked.
@@ -135,9 +135,12 @@ Recursive models
    Order(recipient=Person(name='Barbara E. Rolfe', age=45),
          items=[Item(description='fruit', cnt=3), Item(description='sweets', cnt=5)])
 
-Here the dataclasses use other dataclasses as fields, either direct `recipient: Contact` (and `recipient: Person`),
-or even inside a list `items: List[OrderItem]` (and `items: List[Item]`).
-As there is a mapper defined from `Contact` to `Person`, and also a mapper defined from `OrderItem` to `Item`, the object `custom_order` can be recusively mapped.
+Here the dataclasses use other dataclasses as fields, either direct ``recipient: Contact`` (and ``recipient: Person``),
+or even inside a list ``items: List[OrderItem]`` (and ``items: List[Item]``).
+As there is a mapper defined from ``Contact`` to ``Person``, and also a mapper defined from ``OrderItem`` to ``Item``, the object ``custom_order`` can be recusively mapped.
+
+.. warning::
+   At the moment it's not possible to create cyclic mappings.
 
 Use default values of the target library
 ----------------------------------------
@@ -164,9 +167,9 @@ Optional source fields
 ----------------------
 
 Optional source fields are handled in a practical way.
-The value `None` means, that the field is not yet initialized, and if you map the value to a field with a default value, the default value will be taken.
+The value ``None`` means, that the field is not yet initialized, and if you map the value to a field with a default value, the default value will be taken.
 
-This makes mostly sense, if the default for the target class is also `None`, or an default factory (e.g. like generating a random UUID).
+This makes mostly sense, if the default for the target class is also ``None``, or an default factory (e.g. like generating a random UUID).
 In case the field in the target class has a different default, the result might be a bit surprising.
 
 .. doctest::
@@ -214,7 +217,7 @@ Provide extra context to mapping
 --------------------------------
 
 Sometimes you need additional infos for the target object, that you don't have stored in the source class.
-With `provide_with_extra` you can mark fields, so that no mapping is generated, and the field is filled using an `extra` dictionary that can be given to the `map_to` function.
+With ``provide_with_extra`` you can mark fields, so that no mapping is generated, and the field is filled using an ``extra`` dictionary that can be given to the ``map_to`` function.
 
 .. doctest::
 
@@ -249,11 +252,11 @@ With `provide_with_extra` you can mark fields, so that no mapping is generated, 
 
 
 .. warning::
-   Values given via the `extra` dictionary are not checked for their correct type.
+   Values given via the ``extra`` dictionary are not checked for their correct type.
 
 .. warning::
-   When using the `map_to` function it is checked, if all the required fields (marked with `provide_with_extra()`) are given.
-   It will raise a `TypeError` in case some marked field has no value in the `extra` dictionary.
+   When using the ``map_to`` function it is checked, if all the required fields (marked with ``provide_with_extra()``) are given.
+   It will raise a ``TypeError`` in case some marked field has no value in the ``extra`` dictionary.
 
    Use this feature in moderation.
    Forgetting about a value is incredibly easy, especially a nested value, e.g. in a list.

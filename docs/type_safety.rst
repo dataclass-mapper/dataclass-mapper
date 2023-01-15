@@ -31,7 +31,7 @@ Missing fields check
        raise ValueError(
    ValueError: 'name' of 'Person' has no mapping in 'Contact'
 
-The field `name` in the target class `Person` doesn't have an equivalent in the source class `Contact`.
+The field ``name`` in the target class ``Person`` doesn't have an equivalent in the source class ``Contact``.
 The library complains it.
 
 This happens also when the field has a default value
@@ -51,7 +51,7 @@ This happens also when the field has a default value
        raise ValueError(
    ValueError: 'x' of 'Foo' has no mapping in 'Bar'
 
-However you can use the default value by using `init_with_default`. This needs to be done explicitly.
+However you can use the default value by using ``init_with_default``. This needs to be done explicitly.
 
 .. doctest::
 
@@ -85,8 +85,8 @@ Field name checks
        raise ValueError(
    ValueError: 'name' of mapping in 'Contact' doesn't exist in 'Contact'
 
-Here we tried to map the `first_name` parameter, however the target class `Person` doesn't have a `first_name` parameter.
-And we tried to map the `name` parameter, however the source class `Contact` doesn't have a `name` parameter.
+Here we tried to map the ``first_name`` parameter, however the target class ``Person`` doesn't have a ``first_name`` parameter.
+And we tried to map the ``name`` parameter, however the source class ``Contact`` doesn't have a ``name`` parameter.
 
 Type checks
 -----------
@@ -109,7 +109,7 @@ Type checks
    TypeError: 'full_time' of type 'str' of 'EmploymentAgreement' cannot be converted to 'full_time' of type 'bool'
 
 Here both classes use different types for the fields.
-The library cannot map the field `full_time` of type `str` to a `bool`.
+The library cannot map the field ``full_time`` of type ``str`` to a ``bool``.
 
 .. doctest::
 

@@ -1,7 +1,7 @@
 Large Example
 =============
 
-Given a target data structure, a class `WorkContract` that contains an attribute of type `Person`.
+Given a target data structure, a class ``WorkContract`` that contains an attribute of type ``Person``.
 
 .. doctest::
 
