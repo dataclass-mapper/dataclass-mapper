@@ -121,7 +121,7 @@ class MappingMethodSourceCode:
         self.target_cls = target_cls
         self.lines = [
             f'def convert(self, extra: dict) -> "{self.target_cls.name}":',
-            f"    d = {{}}",
+            "    d = {}",
         ]
         self.methods: Dict[str, Callable] = {}
 

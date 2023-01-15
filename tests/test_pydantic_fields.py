@@ -87,7 +87,8 @@ def test_pydantic_alias() -> None:
         a: int
 
         class Config:
-            alias_generator = lambda x: x.upper()
+            def alias_generator(x):
+                return x.upper()
 
     fields = get_class_meta(Bar).fields
     assert fields["a"].name == "a"

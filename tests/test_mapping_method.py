@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Dict, List
+from typing import List
 
 import pytest
 

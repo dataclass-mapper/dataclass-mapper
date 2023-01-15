@@ -45,7 +45,7 @@ class FieldMeta:
     def type_string(self) -> str:
         try:
             type_name = cast(str, self.type.__name__)
-        except:
+        except Exception:
             type_name = str(self.type)
         if self.allow_none:
             type_name = f"Optional[{type_name}]"

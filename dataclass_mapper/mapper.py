@@ -1,4 +1,3 @@
-import sys
 import warnings
 from copy import deepcopy
 from importlib import import_module
@@ -82,7 +81,7 @@ def _make_mapper(
                             f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {setting_name}, as it has no default"
                         )
                 else:
-                    raise NotImplemented
+                    raise NotImplementedError
             else:
                 source_code.add_mapping(target=target_field, source=raw_source)
         # there's a variable with the same name in the source

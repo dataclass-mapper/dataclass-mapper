@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import pytest
 from pydantic import BaseModel, Field
@@ -159,7 +159,7 @@ def test_dataclass_init_with_default_for_required_field():
 
         @mapper(RequiredField, {"x": IGNORE_MISSING_MAPPING})
         @dataclass
-        class Foo:
+        class Foo2:
             pass
 
     assert (
