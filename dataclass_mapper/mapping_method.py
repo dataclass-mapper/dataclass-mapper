@@ -56,7 +56,8 @@ def provide_with_extra() -> ProvideWithExtra:
 # the different types that can be used as origin (source) for mapping to a member
 # - str: the name of a different variable in the original class
 # - Callable: a function that produces the value (can use `self` as parameter)
-# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default(): Don't map to this variable (only allowed if there is a default value/factory for it)
+# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default(): Don't map to this variable
+#   (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
 # - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
 Origin = Union[str, Callable, Spezial, InitWithDefault, AssumeNotNone, ProvideWithExtra]
@@ -67,9 +68,12 @@ StringFieldMapping = Dict[str, Origin]
 class AssignmentOptions:
     """
     Options for creating an assignment code (target = right_side).
-    :param only_if_set: only set the target to the right_side if the source set (for Optional fields in Pydantic classes)
-    :param only_if_not_None: don't assign the right side, if the value is None (for Optional -> non-Optional mappings with defaults in target fields)
-    :param if_None: only assign the right side if it is not None (for Optional, recursive fields), otherwise set it to None
+    :param only_if_set: only set the target to the right_side if the source set
+        (for Optional fields in Pydantic classes)
+    :param only_if_not_None: don't assign the right side, if the value is None
+        (for Optional -> non-Optional mappings with defaults in target fields)
+    :param if_None: only assign the right side if it is not None (for Optional, recursive fields),
+        otherwise set it to None
     """
 
     only_if_set: bool = False
@@ -165,9 +169,7 @@ class MappingMethodSourceCode:
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if isfunction(source):
-            function_assignment = FunctionAssignment(
-                function=source, target=target, methods=self.methods
-            )
+            function_assignment = FunctionAssignment(function=source, target=target, methods=self.methods)
             right_side = function_assignment.right_side()
             self.lines.append(self._get_assignment_str(target, right_side))
         else:
@@ -186,9 +188,7 @@ class MappingMethodSourceCode:
                     )
                 )
             else:  # impossible
-                raise TypeError(
-                    f"{source} of '{self.source_cls.name}' cannot be converted to {target}"
-                )
+                raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target}")
 
     def add_fill_with_extra(self, target: FieldMeta) -> None:
         variable_name = self.target_cls.get_assignment_name(target)

@@ -37,16 +37,23 @@ optional = true
 Sphinx = "^5.0.2"
 sphinx-rtd-theme = "^1.0.0"
 
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.222"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.ruff]
+line-length = 120
+
 [tool.black]
-line-length = 100
+line-length = 120
 
 [tool.isort]
 profile = "black"
-line_length = 100
+line_length = 120
 
 [tool.mypy]
 warn_return_any = true

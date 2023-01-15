@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Callable, Union, cast
+from typing import Any, Callable, Dict, Union, cast
 
 # mapping between source members and target members
 EnumMapping = Dict[Union[str, Enum], Union[str, Enum]]
@@ -14,7 +14,8 @@ def member_to_name_and_raise(
         return cast(str, member.name)  # in 3.11.0 .name is of type Any
 
     raise ValueError(
-        f"The mapping key '{member}' is must be a member of the {class_description} enum '{enum_cls.__name__}' or a string with its name"
+        f"The mapping key '{member}' is must be a member of the {class_description} enum "
+        f"'{enum_cls.__name__}' or a string with its name"
     )
 
 
@@ -31,12 +32,8 @@ def make_enum_mapper(
 
     name_mapping: Dict[str, str] = {}
     for source_member, target_member in mapping.items():
-        source_member = member_to_name_and_raise(
-            source_member, source_members, source_cls, "source"
-        )
-        target_member = member_to_name_and_raise(
-            target_member, target_members, target_cls, "target"
-        )
+        source_member = member_to_name_and_raise(source_member, source_members, source_cls, "source")
+        target_member = member_to_name_and_raise(target_member, target_members, target_cls, "target")
         name_mapping[source_member] = target_member
 
     full_mapping: Dict[Any, Any] = {}

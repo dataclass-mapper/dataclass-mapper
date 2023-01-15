@@ -152,9 +152,7 @@ def test_pydantic_alias() -> None:
         ),
     )
     code.add_mapping(
-        target=FieldMeta(
-            name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"
-        ),
+        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"),
         source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
     )
     expected_code = prepare_expected_code(
@@ -185,9 +183,7 @@ def test_pydantic_alias_allow_population_by_fields() -> None:
         ),
     )
     code.add_mapping(
-        target=FieldMeta(
-            name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"
-        ),
+        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"),
         source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
     )
     expected_code = prepare_expected_code(
@@ -202,9 +198,7 @@ def test_pydantic_alias_allow_population_by_fields() -> None:
 
 
 def test_provide_with_extra_code_check(code: MappingMethodSourceCode):
-    code.add_fill_with_extra(
-        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True)
-    )
+    code.add_fill_with_extra(target=FieldMeta(name="target_x", type=int, allow_none=False, required=True))
     expected_code = prepare_expected_code(
         """
         def convert(self, extra: dict) -> "Target":
@@ -213,7 +207,7 @@ def test_provide_with_extra_code_check(code: MappingMethodSourceCode):
                 raise TypeError("When mapping an object of 'Source' to 'Target' the field 'target_x' needs to be provided in the `extra` dictionary")
             d["target_x"] = extra["target_x"]
             return TargetAlias(**d)
-        """
+        """  # noqa: E501
     )
     assert str(code) == expected_code
 
@@ -238,6 +232,6 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
             d = {}
             d["target_x"] = [x._map_to_FooTarget(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {}) or [], fillvalue=dict())]
             return TargetAlias(**d)
-        """
+        """  # noqa: E501
     )
     assert str(code) == expected_code
