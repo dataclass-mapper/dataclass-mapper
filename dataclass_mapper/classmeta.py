@@ -90,14 +90,15 @@ class PydanticClassMeta(ClassMeta):
             return field.alias or field.name
 
     @staticmethod
-    def _fields(clazz: Any) -> Dict[str, FieldMeta]:
+    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+        clazz.update_forward_refs(**namespace.locals)
         return {field.name: FieldMeta.from_pydantic(field) for field in clazz.__fields__.values()}
 
     @classmethod
-    def from_clazz(cls, clazz: Any) -> "PydanticClassMeta":
+    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "PydanticClassMeta":
         return cls(
             name=cast(str, clazz.__name__),
-            fields=cls._fields(clazz),
+            fields=cls._fields(clazz, namespace=namespace),
             use_construct=not cls.has_validators(clazz),
             allow_population_by_field_name=getattr(
                 clazz.Config, "allow_population_by_field_name", False
@@ -111,7 +112,7 @@ def get_class_meta(cls: Any, namespace: Namespace) -> ClassMeta:
     try:
         pydantic = __import__("pydantic")
         if issubclass(cls, pydantic.BaseModel):
-            return PydanticClassMeta.from_clazz(cls)
+            return PydanticClassMeta.from_clazz(cls, namespace=namespace)
     except ImportError:
         pass
     raise NotImplementedError("only dataclasses and pydantic classes are supported")
