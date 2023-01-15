@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import fields, is_dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional, cast, get_type_hints
 from uuid import uuid4
 
 from .fieldmeta import FieldMeta
+from .namespace import Namespace
 
 
 class DataclassType(Enum):
@@ -41,12 +42,16 @@ class DataclassClassMeta(ClassMeta):
         return field.name
 
     @staticmethod
-    def _fields(clazz: Any) -> Dict[str, FieldMeta]:
-        return {field.name: FieldMeta.from_dataclass(field) for field in fields(clazz)}
+    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+        real_types = get_type_hints(clazz, globalns=namespace.globals, localns=namespace.locals)
+        return {
+            field.name: FieldMeta.from_dataclass(field, real_type=real_types[field.name])
+            for field in fields(clazz)
+        }
 
     @classmethod
-    def from_clazz(cls, clazz: Any) -> "DataclassClassMeta":
-        return cls(name=cast(str, clazz.__name__), fields=cls._fields(clazz))
+    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "DataclassClassMeta":
+        return cls(name=cast(str, clazz.__name__), fields=cls._fields(clazz, namespace))
 
 
 class PydanticClassMeta(ClassMeta):
@@ -85,14 +90,15 @@ class PydanticClassMeta(ClassMeta):
             return field.alias or field.name
 
     @staticmethod
-    def _fields(clazz: Any) -> Dict[str, FieldMeta]:
+    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+        clazz.update_forward_refs(**namespace.locals)
         return {field.name: FieldMeta.from_pydantic(field) for field in clazz.__fields__.values()}
 
     @classmethod
-    def from_clazz(cls, clazz: Any) -> "PydanticClassMeta":
+    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "PydanticClassMeta":
         return cls(
             name=cast(str, clazz.__name__),
-            fields=cls._fields(clazz),
+            fields=cls._fields(clazz, namespace=namespace),
             use_construct=not cls.has_validators(clazz),
             allow_population_by_field_name=getattr(
                 clazz.Config, "allow_population_by_field_name", False
@@ -100,13 +106,13 @@ class PydanticClassMeta(ClassMeta):
         )
 
 
-def get_class_meta(cls: Any) -> ClassMeta:
+def get_class_meta(cls: Any, namespace: Namespace) -> ClassMeta:
     if is_dataclass(cls):
-        return DataclassClassMeta.from_clazz(cls)
+        return DataclassClassMeta.from_clazz(cls, namespace=namespace)
     try:
         pydantic = __import__("pydantic")
         if issubclass(cls, pydantic.BaseModel):
-            return PydanticClassMeta.from_clazz(cls)
+            return PydanticClassMeta.from_clazz(cls, namespace=namespace)
     except ImportError:
         pass
     raise NotImplementedError("only dataclasses and pydantic classes are supported")

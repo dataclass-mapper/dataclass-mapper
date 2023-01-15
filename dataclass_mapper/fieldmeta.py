@@ -55,10 +55,10 @@ class FieldMeta:
         return f"'{self.name}' of type '{self.type_string}'"
 
     @classmethod
-    def from_dataclass(cls, field: DataclassField) -> "FieldMeta":
+    def from_dataclass(cls, field: DataclassField, real_type: Any) -> "FieldMeta":
         has_default = field.default is not MISSING or field.default_factory is not MISSING
-        if is_optional(field.type):
-            real_types = [t for t in get_args(field.type) if t is not type(None)]
+        if is_optional(real_type):
+            real_types = [t for t in get_args(real_type) if t is not type(None)]
             assert len(real_types) == 1
             return cls(
                 name=field.name,
@@ -69,7 +69,7 @@ class FieldMeta:
         else:
             return cls(
                 name=field.name,
-                type=field.type,
+                type=real_type,
                 allow_none=False,
                 required=not has_default,
             )
