@@ -1,12 +1,12 @@
 import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Dict
 
 
 @dataclass
 class Namespace:
-    locals: dict[str, Any]
-    globals: dict[str, Any]
+    locals: Dict[str, Any]
+    globals: Dict[str, Any]
 
 
 def get_namespace(parent_depth: int = 2) -> Namespace:
