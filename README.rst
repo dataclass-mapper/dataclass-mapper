@@ -75,8 +75,8 @@ Installation
    # or for Pydantic support
    pip install 'dataclass-mapper[pydantic]'
 
-Small Example
--------------
+Example
+-------
 
 We have the following target data structure, a class called ``Person``.
 

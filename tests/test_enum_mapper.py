@@ -64,7 +64,7 @@ def test_enum_mapper_wrong_source():
             A = 1
             C = -1
 
-    assert "The mapping key 'CC' is must be a member of the source enum 'BarSource' or a string with its name" in str(
+    assert "The mapping key 'CC' must be a member of the source enum 'BarSource' or a string with its name" in str(
         excinfo.value
     )
 
@@ -77,7 +77,7 @@ def test_enum_mapper_wrong_target():
             A = 1
             C = -1
 
-    assert "The mapping key 'BB' is must be a member of the target enum 'Bar' or a string with its name" in str(
+    assert "The mapping key 'BB' must be a member of the target enum 'Bar' or a string with its name" in str(
         excinfo.value
     )
 

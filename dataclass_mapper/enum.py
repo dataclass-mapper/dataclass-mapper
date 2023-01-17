@@ -14,7 +14,7 @@ def member_to_name_and_raise(
         return cast(str, member.name)  # in 3.11.0 .name is of type Any
 
     raise ValueError(
-        f"The mapping key '{member}' is must be a member of the {class_description} enum "
+        f"The mapping key '{member}' must be a member of the {class_description} enum "
         f"'{enum_cls.__name__}' or a string with its name"
     )
 
