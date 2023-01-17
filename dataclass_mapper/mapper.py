@@ -179,7 +179,12 @@ def add_mapper_function(
     setattr(SourceCls, "__zip_longest", zip_longest)
     # Support older versions of python by calling {**a, **b} rather than a|b
     exec(map_code, {**module.__dict__, **context}, d)
-    setattr(SourceCls, get_map_to_func_name(TargetCls), d["convert"])
+    map_func_name = get_map_to_func_name(TargetCls)
+    if hasattr(SourceCls, map_func_name):
+        raise AttributeError(
+            f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
+        )
+    setattr(SourceCls, map_func_name, d["convert"])
     for name, factory in factories.items():
         setattr(SourceCls, name, factory)
 
@@ -241,7 +246,12 @@ def add_enum_mapper_function(SourceCls: Any, TargetCls: Any, mapping: Optional[E
         target_cls=TargetCls,
         mapping=mapping or cast(EnumMapping, {}),
     )
-    setattr(SourceCls, get_map_to_func_name(TargetCls), convert_function)
+    map_func_name = get_map_to_func_name(TargetCls)
+    if hasattr(SourceCls, map_func_name):
+        raise AttributeError(
+            f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
+        )
+    setattr(SourceCls, map_func_name, convert_function)
 
 
 def map_to(obj, TargetCls: Type[T], extra: Optional[Dict[str, Any]] = None) -> T:

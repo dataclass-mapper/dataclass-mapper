@@ -70,15 +70,6 @@ only difference is that the target class is now the class that is decorated.
    It's also possible to add multiple decorators to one dataclass.
    E.g. it is possible to add a ``mapper`` and a ``mapper_from`` in order to have mappers in both directions.
 
-   .. doctest::
-
-      >>> @mapper(OrderItem, {"name": "description"})
-      ... @mapper_from(OrderItem, {"description": "name"})
-      ... @dataclass
-      ... class Item:
-      ...     description: str
-      ...     cnt: int
-
 Custom conversion functions
 ---------------------------
 
