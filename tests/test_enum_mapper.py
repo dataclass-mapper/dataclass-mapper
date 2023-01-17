@@ -1,3 +1,4 @@
+import sys
 from enum import Enum, auto
 
 import pytest
@@ -90,3 +91,20 @@ def test_enum_mapper_missing_mapping():
             C = -1
 
     assert ("The member 'C' of the source enum 'BarSource' doesn't have a mapping.") in str(excinfo.value)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="StrEnum was introduced in 3.11")
+def test_StrEnum():
+    from enum import IntEnum, StrEnum
+
+    class StrTarget(StrEnum):
+        ABC = "ABC"
+        DEF = "DEF"
+
+    @enum_mapper(StrTarget)
+    class StrSource(IntEnum):
+        ABC = auto()
+        DEF = auto()
+
+    assert map_to(StrSource.ABC, StrTarget) == StrTarget.ABC
+    assert map_to(StrSource.DEF, StrTarget) == StrTarget.DEF
