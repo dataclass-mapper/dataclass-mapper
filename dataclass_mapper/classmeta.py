@@ -106,4 +106,7 @@ def get_class_meta(cls: Any, namespace: Namespace) -> ClassMeta:
             return PydanticClassMeta.from_clazz(cls, namespace=namespace)
     except ImportError:
         pass
+
+    if issubclass(cls, Enum):
+        raise NotImplementedError("`mapper` does not support for Enums, use `enum_mapper` instead")
     raise NotImplementedError("only dataclasses and pydantic classes are supported")

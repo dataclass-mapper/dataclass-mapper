@@ -47,3 +47,16 @@ def test_enum_mapping_already_exists():
             A = "A"
 
     assert str(excinfo.value) == "There already exists a mapping between 'EnumSource' and 'EnumTarget'"
+
+
+def test_mapper_fails_for_enums():
+    class EnumTarget(str, Enum):
+        A = "A"
+
+    with pytest.raises(NotImplementedError) as excinfo:
+
+        @mapper(EnumTarget)
+        class EnumSource(str, Enum):
+            A = "A"
+
+    assert str(excinfo.value) == "`mapper` does not support for Enums, use `enum_mapper` instead"
