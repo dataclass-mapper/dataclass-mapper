@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from dataclass_mapper.mapper import map_to, mapper_from
 
-def test_duplicate_class_name_in_different_scopes():
 
+def test_duplicate_class_name_in_different_scopes():
     class SongData(BaseModel):
         title: str
         artist: str
@@ -10,14 +10,14 @@ def test_duplicate_class_name_in_different_scopes():
         length: int
         encoding: str
 
-    class Display():
+    class Display:
         @mapper_from(SongData)
         class Song(BaseModel):
             title: str
             artist: str
             genre: str
-        
-    class Technical():
+
+    class Technical:
         @mapper_from(SongData)
         class Song(BaseModel):
             title: str
@@ -30,8 +30,8 @@ def test_duplicate_class_name_in_different_scopes():
         genre="classic",
         length=123,
         encoding="mp3",
-        )
-    
+    )
+
     display = map_to(base, Display.Song)
     technical = map_to(base, Technical.Song)
 
@@ -50,6 +50,7 @@ def test_duplicate_class_name_in_different_scopes():
 
 def test_duplicate_class_name_in_different_modules():
     from tests.models import base, display, technical
+
     base_song = base.SongData.construct(
         title="Ode to Joy",
         artist="Friedrich Schiller",
