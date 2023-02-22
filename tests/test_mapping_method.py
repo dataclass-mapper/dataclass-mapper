@@ -226,12 +226,13 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
         target=FieldMeta(name="target_x", type=List[FooTarget], allow_none=False, required=True),
         source=FieldMeta(name="source_x", type=List[FooSource], allow_none=False, required=True),
     )
+    footarget_id = id(FooTarget)
     expected_code = prepare_expected_code(
         """
         def convert(self, extra: dict) -> "Target":
             d = {}
-            d["target_x"] = [x._map_to_FooTarget(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {}) or [], fillvalue=dict())]
+            d["target_x"] = [x._map_to_FooTarget_%s(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {}) or [], fillvalue=dict())]
             return TargetAlias(**d)
-        """  # noqa: E501
+        """ % footarget_id  # noqa: E501
     )
     assert str(code) == expected_code
