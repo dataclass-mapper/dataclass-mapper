@@ -17,6 +17,6 @@ def is_mappable_to(SourceCls: Any, TargetCls: Any) -> bool:
 
 def get_map_to_func_name(cls: Any) -> str:
     try:
-        return f"_map_to_{cls.__name__}"
+        return f"_map_to_{cls}"
     except AttributeError:
         raise TypeError("Bad Type")
