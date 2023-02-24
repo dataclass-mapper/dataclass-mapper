@@ -233,6 +233,7 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
             d = {}
             d["target_x"] = [x._map_to_FooTarget_%s(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {}) or [], fillvalue=dict())]
             return TargetAlias(**d)
-        """ % footarget_id  # noqa: E501
+        """
+        % footarget_id  # noqa: E501
     )
     assert str(code) == expected_code

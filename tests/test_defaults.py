@@ -116,9 +116,7 @@ def test_pydantic_optional_with_none_default():
     class Foo(BaseModel):
         pass
 
-    assert repr(map_to(Foo(), OptionalWithNoneDefaultPydantic)) == repr(
-        OptionalWithNoneDefaultPydantic(x=None)
-    )
+    assert repr(map_to(Foo(), OptionalWithNoneDefaultPydantic)) == repr(OptionalWithNoneDefaultPydantic(x=None))
 
 
 @dataclass
@@ -132,9 +130,7 @@ def test_dataclass_optional_with_none_default():
     class Foo:
         pass
 
-    assert map_to(Foo(), OptionalWithNoneDefaultDataclass) == OptionalWithNoneDefaultDataclass(
-        x=None
-    )
+    assert map_to(Foo(), OptionalWithNoneDefaultDataclass) == OptionalWithNoneDefaultDataclass(x=None)
 
 
 @dataclass
@@ -150,10 +146,7 @@ def test_dataclass_init_with_default_for_required_field():
         class Foo:
             pass
 
-    assert (
-        str(excinfo.value)
-        == "'x' of 'RequiredField' cannot be set to init_with_default(), as it has no default"
-    )
+    assert str(excinfo.value) == "'x' of 'RequiredField' cannot be set to init_with_default(), as it has no default"
 
     with pytest.deprecated_call(), pytest.raises(ValueError) as excinfo:
 
@@ -162,7 +155,4 @@ def test_dataclass_init_with_default_for_required_field():
         class Foo2:
             pass
 
-    assert (
-        str(excinfo.value)
-        == "'x' of 'RequiredField' cannot be set to IGNORE_MISSING_MAPPING, as it has no default"
-    )
+    assert str(excinfo.value) == "'x' of 'RequiredField' cannot be set to IGNORE_MISSING_MAPPING, as it has no default"

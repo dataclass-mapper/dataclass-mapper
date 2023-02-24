@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 
 from dataclass_mapper import map_to, mapper, mapper_from

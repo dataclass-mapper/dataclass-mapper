@@ -49,9 +49,7 @@ def test_provide_with_extra_recursive_simple():
     source_collection = SourceCollection(field=Source())
     target_collection = TargetCollection(field=Target(x=1))
 
-    assert (
-        map_to(source_collection, TargetCollection, extra={"field": {"x": 1}}) == target_collection
-    )
+    assert map_to(source_collection, TargetCollection, extra={"field": {"x": 1}}) == target_collection
 
 
 def test_provide_with_extra_recursive_optional():

@@ -3,5 +3,9 @@ repos:
     rev: 'v0.0.252'
     hooks:
       - id: ruff
+-   repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
 ci:
     autoupdate_schedule: quarterly

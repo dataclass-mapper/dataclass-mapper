@@ -17,7 +17,4 @@ def test_differnt_union_mapper():
         class Foo(BaseModel):
             x: float | str
 
-    assert (
-        "'x' of type 'float | str' of 'Foo' cannot be converted to 'x' of type 'float | int'"
-        in str(excinfo.value)
-    )
+    assert "'x' of type 'float | str' of 'Foo' cannot be converted to 'x' of type 'float | int'" in str(excinfo.value)

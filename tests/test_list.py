@@ -60,9 +60,7 @@ def test_rec_dataclass_mapper_with_optional():
     assert map_to(baz_before, BazDataclass) == baz_after
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Using builtin collection types are introduced in Python 3.9"
-)
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Using builtin collection types are introduced in Python 3.9")
 def test_builtin_list_type():
     @dataclass
     class Foo:

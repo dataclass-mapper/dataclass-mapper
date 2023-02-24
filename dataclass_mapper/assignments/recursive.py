@@ -11,9 +11,7 @@ class RecursiveAssignment(Assignment):
         )
 
     def right_side(self) -> str:
-        return self._get_map_func(
-            get_var_name(self.source), target_cls=self.target.type, extra_str=self.extra_str()
-        )
+        return self._get_map_func(get_var_name(self.source), target_cls=self.target.type, extra_str=self.extra_str())
 
     def extra_str(self) -> str:
         return f'extra.get("{self.target.name}", {{}})'

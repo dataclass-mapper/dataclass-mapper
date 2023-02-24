@@ -39,6 +39,4 @@ class Rec(BaseModel):
 def test_pydantic_from_rec_list():
     bar_from = BarFrom(x=42, y="Anne")
     bar = Bar(x=42, name="Anne")
-    assert repr(map_to(RecFrom(bar=bar_from, bars=[bar_from]), Rec)) == repr(
-        Rec(bar=bar, bars=[bar])
-    )
+    assert repr(map_to(RecFrom(bar=bar_from, bars=[bar_from]), Rec)) == repr(Rec(bar=bar, bars=[bar]))

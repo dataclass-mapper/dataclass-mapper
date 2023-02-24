@@ -16,9 +16,7 @@ class DataclassType(Enum):
 class ClassMeta(ABC):
     _type: DataclassType
 
-    def __init__(
-        self, name: str, fields: Dict[str, FieldMeta], alias_name: Optional[str] = None
-    ) -> None:
+    def __init__(self, name: str, fields: Dict[str, FieldMeta], alias_name: Optional[str] = None) -> None:
         self.name = name
         self.fields = fields
         self.alias_name = alias_name or f"_{uuid4().hex}"
@@ -45,8 +43,7 @@ class DataclassClassMeta(ClassMeta):
     def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
         real_types = get_type_hints(clazz, globalns=namespace.globals, localns=namespace.locals)
         return {
-            field.name: FieldMeta.from_dataclass(field, real_type=real_types[field.name])
-            for field in fields(clazz)
+            field.name: FieldMeta.from_dataclass(field, real_type=real_types[field.name]) for field in fields(clazz)
         }
 
     @classmethod
@@ -71,11 +68,7 @@ class PydanticClassMeta(ClassMeta):
 
     @staticmethod
     def has_validators(clazz: Any) -> bool:
-        return (
-            bool(clazz.__validators__)
-            or bool(clazz.__pre_root_validators__)
-            or bool(clazz.__post_root_validators__)
-        )
+        return bool(clazz.__validators__) or bool(clazz.__pre_root_validators__) or bool(clazz.__post_root_validators__)
 
     def return_statement(self) -> str:
         if self.use_construct:
@@ -100,9 +93,7 @@ class PydanticClassMeta(ClassMeta):
             name=cast(str, clazz.__name__),
             fields=cls._fields(clazz, namespace=namespace),
             use_construct=not cls.has_validators(clazz),
-            allow_population_by_field_name=getattr(
-                clazz.Config, "allow_population_by_field_name", False
-            ),
+            allow_population_by_field_name=getattr(clazz.Config, "allow_population_by_field_name", False),
         )
 
 
