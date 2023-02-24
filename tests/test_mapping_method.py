@@ -228,12 +228,11 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
     )
     footarget_id = id(FooTarget)
     expected_code = prepare_expected_code(
-        """
+        f"""
         def convert(self, extra: dict) -> "Target":
-            d = {}
-            d["target_x"] = [x._map_to_FooTarget_%s(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {}) or [], fillvalue=dict())]
+            d = {{}}
+            d["target_x"] = [x._map_to_FooTarget_{footarget_id}(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {{}}) or [], fillvalue=dict())]
             return TargetAlias(**d)
-        """
-        % footarget_id  # noqa: E501
+        """  # noqa: E501
     )
     assert str(code) == expected_code

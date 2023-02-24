@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+
 from dataclass_mapper.mapper import map_to, mapper_from
 
 

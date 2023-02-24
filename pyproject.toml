@@ -25,7 +25,6 @@ pydantic = ["pydantic"]
 [tool.poetry.group.test.dependencies]
 pytest = "^7.0.0"
 black = "^22.3.0"
-isort = "^5.10.1"
 mypy = "^0.950"
 tox = "^3.25.0"
 pytest-cov = "^4.0.0"
@@ -46,14 +45,21 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
+select = [
+  # Pyflakes
+  "F",
+  # Pycodestyle
+  "E",
+  "W",
+  # flake8-pie
+  "PIE",
+  # isort
+  "I001",
+]
 line-length = 120
 
 [tool.black]
 line-length = 120
-
-[tool.isort]
-profile = "black"
-line_length = 120
 
 [tool.mypy]
 warn_return_any = true

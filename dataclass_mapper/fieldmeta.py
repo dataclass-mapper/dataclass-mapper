@@ -1,7 +1,6 @@
 import sys
-from dataclasses import MISSING
+from dataclasses import MISSING, dataclass
 from dataclasses import Field as DataclassField
-from dataclasses import dataclass
 from typing import Any, Optional, Union, cast, get_args, get_origin
 
 
