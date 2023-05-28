@@ -7,7 +7,7 @@ It supports all the other features discussed in :doc:`features` or :doc:`enums`.
 
 It supports both the old Pydantic version 1.x and the Rust rewrite 2.x.
 
-Pydantic V2
+Pydantic v2
 -----------
 
 For performance reasons it will use Pydantic's ``.model_construct`` class method to construct objects.
@@ -21,11 +21,12 @@ Additionally it can work with ``alias`` fields, and also with the ``populate_by_
    >>> from enum import Enum, auto
    >>> from typing import Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none
-   >>> from pydantic import BaseModel, Field, field_validator
+   >>> from pydantic import BaseModel, Field
    >>> import pytest
    >>> from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
    >>> if pydantic_version() < (2, 0, 0):
    ...     pytest.skip("V2 validators syntax", allow_module_level=True)
+   >>> from pydantic import field_validator
 
 .. doctest::
 
@@ -72,3 +73,5 @@ This library will remember which fields are set, and are unset.
    Foo(x=1.23, z=None, y=None)
    >>> sorted(foo.model_fields_set)
    ['x', 'z']
+
+.. include:: pydantic_v1.rst

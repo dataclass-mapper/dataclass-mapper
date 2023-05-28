@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional, cast, get_args
 from uuid import uuid4
 
 import dataclass_mapper.code_generator as cg
 from dataclass_mapper.namespace import Namespace
+from dataclass_mapper.utils import is_union_type
 
 
 class DataclassType(Enum):
@@ -42,7 +43,19 @@ class FieldMeta:
             type_name = str(self.type)
         if self.allow_none:
             type_name = f"Optional[{type_name}]"
+        if is_union_type(self.type):
+            ts = ", ".join(self.get_class_name(t) for t in get_args(self.type))
+            if self.allow_none:
+                ts += ", NoneType"
+            type_name = f"Union[{ts}]"
         return type_name
+
+    @staticmethod
+    def get_class_name(clazz: Any) -> str:
+        try:
+            return str(clazz.__name__)
+        except AttributeError:
+            return str(clazz)
 
     def __repr__(self) -> str:
         return f"'{self.name}' of type '{self.type_string}'"

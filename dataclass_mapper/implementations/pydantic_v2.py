@@ -1,9 +1,9 @@
-from typing import Any, Dict, Optional, Tuple, cast, get_args
+from typing import Any, Dict, Optional, Tuple, cast
 
 import dataclass_mapper.code_generator as cg
 from dataclass_mapper.implementations.utils import parse_version
 from dataclass_mapper.namespace import Namespace
-from dataclass_mapper.utils import is_optional
+from dataclass_mapper.utils import is_optional, remove_NoneType
 
 from .base import ClassMeta, DataclassType, FieldMeta
 
@@ -16,24 +16,13 @@ def pydantic_version() -> Tuple[int, int, int]:
 class PydanticV2FieldMeta(FieldMeta):
     @classmethod
     def from_pydantic(cls, field: Any, name: str) -> "PydanticV2FieldMeta":
-        if is_optional(field.annotation):
-            real_types = [t for t in get_args(field.annotation) if t is not type(None)]
-            assert len(real_types) == 1
-            return cls(
-                name=name,
-                type=real_types[0],
-                allow_none=True,
-                required=field.is_required(),
-                alias=field.alias,
-            )
-        else:
-            return cls(
-                name=name,
-                type=field.annotation,
-                allow_none=False,
-                required=field.is_required(),
-                alias=field.alias,
-            )
+        return cls(
+            name=name,
+            type=remove_NoneType(field.annotation),
+            allow_none=is_optional(field.annotation),
+            required=field.is_required(),
+            alias=field.alias,
+        )
 
 
 class PydanticV2ClassMeta(ClassMeta):

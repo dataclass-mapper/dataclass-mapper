@@ -1,4 +1,4 @@
-Pydantic V1
+Pydantic v1
 -----------
 
 For performance reasons it will use Pydantic's ``.construct`` class method to construct objects.

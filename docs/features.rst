@@ -10,7 +10,7 @@ Mapping by field names
    >>> from enum import Enum, auto
    >>> from typing import List, Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra
-   >>> from pydantic import BaseModel, Field, validator
+   >>> from pydantic import BaseModel, Field
    >>> from uuid import UUID
    >>> uuid4 = lambda: UUID('38fc07e1-677e-40ef-830c-00e284056dd8')
 
@@ -41,7 +41,12 @@ The additional field ``first_name`` in the ``Contact`` class will just be ignore
 .. note::
    A mapping is not bidirectional.
    Here you can only map from ``Contact`` instances to ``Person`` instances, but not the other way.
-   To also have a mapping from ``Person`` to ``Contact``, we would need to add a ``@mapper(Contact)`` decorator to ``Person``, or a ``@mapper_from`` to ``Contact`` (see next section).
+   To also have a mapping from ``Person`` to ``Contact``, we would need to add a ``@mapper(Contact)`` decorator to ``Person``, or a ``@mapper_from`` to ``Contact`` (see `Mapping from another class`_).
+
+.. note::
+   It is checked if the types of the fields are compatible, i.e. if the target field allows all the type options of the source field.
+   E.g. it is allowed to map from a ``str`` field to a ``Union[str, int]`` field or to an ``Optional[str]`` field, but not the other way around.
+   You can loosen up those checks or disable them with the methods described in `Optional source fields`_ and `Custom conversion functions`_.
 
 Mapping from another class
 --------------------------
