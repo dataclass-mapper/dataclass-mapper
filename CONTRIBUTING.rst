@@ -19,7 +19,7 @@ Make sure that you install all dependencies, even the optional ones.
 
 .. code-block:: sh
 
-   poetry install --all-extras
+   poetry install --all-extras --with docs
 
 In a shell activate the virtual environment from poetry with `poetry shell`, and/or in an IDE set the path to the virtual environment which you can get via `poetry env info`.
 
@@ -51,7 +51,7 @@ You just need to activate Pre-Commit once.
 Testing / Static type checking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Testing is done via `pytest`, and static type checks are performed by `Mypy <https://mypy-lang.org/>`_.
+Testing is done via `pytest <https://docs.pytest.org>`_, and static type checks are performed by `Mypy <https://mypy-lang.org/>`_.
 
 Additionally you can use `tox <https://tox.wiki>`_ to run all checks and tests in multiple Python versions.
 tox will create new virtual environments for every Python version, make sure that Poetry and all the project's dependencies are installed in it, and then run the checks.
@@ -71,6 +71,19 @@ However tox can only work with Python versions that it can find, so you need to 
 
    # run everything in all supported Python versions
    tox
+
+Documentation
+^^^^^^^^^^^^^
+
+Documentation is built via `Sphinx <https://www.sphinx-doc.org>`_ and published to `Read The Docs <https://dataclass-mapper.readthedocs.io>`_.
+
+.. code-block:: sh
+
+   # create html documentation
+   cd docs
+   make html
+
+All code snippets in ``doctest`` directives are also tested when you run pytest.
 
 Continuous Integration
 ----------------------
