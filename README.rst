@@ -130,6 +130,11 @@ The current version has support for:
 * Pydantic models:  see `Pydanitc support <https://dataclass-mapper.readthedocs.io/en/latest/pydantic.html>`_
 * Type/Value checks:  see `Type safety <https://dataclass-mapper.readthedocs.io/en/latest/type_safety.html>`_
 
+Contributing
+------------
+
+See `CONTRIBUTING.rst <https://github.com/dataclass-mapper/dataclass-mapper/blob/main/CONTRIBUTING.rst>`_.
+
 License
 -------
 
