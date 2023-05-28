@@ -53,10 +53,25 @@ def test_mapper_fails_for_enums():
     class EnumTarget(str, Enum):
         A = "A"
 
-    with pytest.raises(NotImplementedError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
 
         @mapper(EnumTarget)
         class EnumSource(str, Enum):
             A = "A"
 
-    assert str(excinfo.value) == "`mapper` does not support for Enums, use `enum_mapper` instead"
+    assert str(excinfo.value) == "`mapper` does not support enum classes, use `enum_mapper` instead"
+
+
+def test_enum_mapper_failes_for_normal_classes():
+    @dataclass
+    class Target:
+        pass
+
+    with pytest.raises(ValueError) as excinfo:
+
+        @enum_mapper(Target)
+        @dataclass
+        class Source:
+            pass
+
+    assert str(excinfo.value) == "`enum_mapper` does only support enum classes, use `mapper` for other classes"

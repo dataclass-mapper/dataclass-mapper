@@ -24,8 +24,8 @@ def make_enum_mapper(
     source_cls: Any,
     target_cls: Any,
 ) -> Callable:
-    assert issubclass(source_cls, Enum)
-    assert issubclass(target_cls, Enum)
+    if not issubclass(source_cls, Enum) or not issubclass(target_cls, Enum):
+        raise ValueError("`enum_mapper` does only support enum classes, use `mapper` for other classes")
 
     source_members = {member.name: member for member in source_cls}
     target_members = {member.name: member for member in target_cls}
