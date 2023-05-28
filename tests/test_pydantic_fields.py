@@ -89,7 +89,7 @@ def test_pydantic_alias() -> None:
         a: int
 
         class Config:
-            def alias_generator(x):
+            def alias_generator(x: str):  # type: ignore[misc]
                 return x.upper()
 
     fields = get_class_meta(Bar, namespace=empty_namespace).fields

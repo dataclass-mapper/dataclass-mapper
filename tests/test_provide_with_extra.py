@@ -27,7 +27,6 @@ def test_provide_with_extra_simple():
 
 
 def test_provide_with_extra_missing_extra():
-
     with pytest.raises(TypeError) as excinfo:
         map_to(Source(), Target)
     assert (

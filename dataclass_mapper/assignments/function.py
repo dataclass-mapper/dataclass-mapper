@@ -20,7 +20,7 @@ class FunctionAssignment:
         name = f"_{uuid4().hex}"
         if (parameter_cnt := len(signature(self.function).parameters)) < 2:
             if parameter_cnt == 0:
-                self.methods[name] = cast(Callable, staticmethod(self.function))
+                self.methods[name] = cast(Callable, staticmethod(cast(Callable, self.function)))
             else:
                 self.methods[name] = self.function
             return f"self.{name}()"

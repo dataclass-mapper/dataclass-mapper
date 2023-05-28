@@ -95,7 +95,7 @@ def test_enum_mapper_missing_mapping():
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="StrEnum was introduced in 3.11")
 def test_StrEnum():
-    from enum import IntEnum, StrEnum
+    from enum import IntEnum, StrEnum  # type: ignore[attr-defined]
 
     class StrTarget(StrEnum):
         ABC = "ABC"

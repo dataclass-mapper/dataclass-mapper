@@ -60,8 +60,8 @@ def test_refuse_factory_with_multiple_parameters():
         x: int
 
     with pytest.raises(ValueError) as excinfo:
-
-        @mapper(Target, {"x": lambda a, b: a + b})
+        # purposefully wrong factory with two parameter
+        @mapper(Target, {"x": lambda a, b: a + b})  # type: ignore[dict-item]
         @dataclass
         class Source:
             pass

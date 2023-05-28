@@ -104,8 +104,8 @@ def test_maintain_unset_field_infos():
         "l1",
         "l2",
     }
-    assert source.x1.__fields_set__ == {"x1"}
-    assert source.l1[0].__fields_set__ == {"x1"}
+    assert source.x1 and source.x1.__fields_set__ == {"x1"}
+    assert source.l1 and source.l1[0].__fields_set__ == {"x1"}
     mapped = map_to(source, UnsetFields)
     assert mapped.__fields_set__ == {
         "a",
@@ -120,8 +120,8 @@ def test_maintain_unset_field_infos():
         "l1",
         "l2",
     }
-    assert mapped.x1.__fields_set__ == {"x1"}
-    assert mapped.l1[0].__fields_set__ == {"x1"}
+    assert mapped.x1 and mapped.x1.__fields_set__ == {"x1"}
+    assert mapped.l1 and mapped.l1[0].__fields_set__ == {"x1"}
 
 
 class BarWithAlias(BaseModel):
@@ -143,7 +143,7 @@ def test_pydantic_with_alias():
         y: str
 
     foo = Foo(x=42, y="answer")
-    bar = BarWithAlias(xxx=42, yyy="answer")
+    bar = BarWithAlias(xxx=42, yyy="answer")  # type: ignore[call-arg]
     assert map_to(foo, BarWithAlias) == bar
 
 
