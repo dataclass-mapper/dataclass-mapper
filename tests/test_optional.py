@@ -29,7 +29,7 @@ def test_simple_dataclass_mapper_with_optional_union():
     @mapper(BarPydantic)
     @dataclass
     class Foo:
-        x: int | None
+        x: int | None  # type: ignore[syntax]
         y: str
 
     foo = Foo(x=42, y="answer")

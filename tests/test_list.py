@@ -64,9 +64,9 @@ def test_rec_dataclass_mapper_with_optional():
 def test_builtin_list_type():
     @dataclass
     class Foo:
-        x: list[int]
+        x: list[int]  # type: ignore[misc]
 
     @mapper(Foo)
     @dataclass
     class Bar:
-        x: list[int]
+        x: list[int]  # type: ignore[misc]

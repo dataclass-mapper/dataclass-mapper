@@ -41,7 +41,7 @@ def test_dataclass_optional_fields() -> None:
 def test_dataclass_optional_fields_with_union():
     @dataclass
     class Foo:
-        x: int | None
+        x: int | None  # type: ignore[syntax]
 
     fields = get_class_meta(Foo, namespace=Namespace(locals={}, globals={})).fields
     assert fields["x"].type is int

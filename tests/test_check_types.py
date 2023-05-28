@@ -35,7 +35,7 @@ def test_check_good_error_message_for_union_types():
         @mapper(Bar)
         @dataclass
         class Foo:
-            x: int | str
+            x: int | str  # type: ignore[syntax]
             y: str
 
     assert "'x' of type 'int | str' of 'Foo' cannot be converted to 'x' of type 'int'" in str(excinfo.value)
