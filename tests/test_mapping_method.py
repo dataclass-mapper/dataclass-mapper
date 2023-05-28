@@ -231,7 +231,7 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
         f"""
         def convert(self, extra: dict) -> "Target":
             d = {{}}
-            d["target_x"] = [x._map_to_FooTarget_{footarget_id}(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", {{}}) or [], fillvalue=dict())]
+            d["target_x"] = [x._map_to_FooTarget_{footarget_id}(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", []), fillvalue=dict())]
             return TargetAlias(**d)
         """  # noqa: E501
     )
