@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Optional, Type, Union
 
 from .assignments import (
     Assignment,
+    CallableWithMax1Parameter,
     FunctionAssignment,
     ListRecursiveAssignment,
     RecursiveAssignment,
@@ -59,7 +60,7 @@ def provide_with_extra() -> ProvideWithExtra:
 #   (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
 # - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
-Origin = Union[str, Callable, Spezial, InitWithDefault, AssumeNotNone, ProvideWithExtra]
+Origin = Union[str, CallableWithMax1Parameter, Spezial, InitWithDefault, AssumeNotNone, ProvideWithExtra]
 StringFieldMapping = Dict[str, Origin]
 
 
@@ -168,7 +169,9 @@ class MappingMethodSourceCode:
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if callable(source):
-            function_assignment = FunctionAssignment(function=source, target=target, methods=self.methods)
+            function_assignment = FunctionAssignment(
+                function=source, target=target, methods=self.methods, target_cls_name=self.target_cls.name
+            )
             right_side = function_assignment.right_side()
             self.lines.append(self._get_assignment_str(target, right_side))
         else:
