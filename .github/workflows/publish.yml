@@ -3,13 +3,11 @@ name: Publish
 on:
   release:
     types:
-      - created
       - released
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    environment: publish
 
     steps:
       - name: Check out repository
@@ -34,9 +32,29 @@ jobs:
           poetry self add "poetry-dynamic-versioning[plugin]"
           poetry install --all-extras
 
-      - name: Publish
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      - name: Build package
         run: |
-          poetry config pypi-token.pypi $PYPI_TOKEN
-          poetry publish --build
+          poetry build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+  publish:
+    runs-on: ubuntu-latest
+    environment: publish
+    permissions:
+      id-token: write
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
