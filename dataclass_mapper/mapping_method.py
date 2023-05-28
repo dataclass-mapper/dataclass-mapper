@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from inspect import isfunction
 from typing import Callable, Dict, List, Optional, Type, Union
 
 from .assignments import (
@@ -168,7 +167,7 @@ class MappingMethodSourceCode:
         return f'{" "*indent}d["{variable_name}"] = {right_side}'
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
-        if isfunction(source):
+        if callable(source):
             function_assignment = FunctionAssignment(function=source, target=target, methods=self.methods)
             right_side = function_assignment.right_side()
             self.lines.append(self._get_assignment_str(target, right_side))
