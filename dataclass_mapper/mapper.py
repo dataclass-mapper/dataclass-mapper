@@ -112,8 +112,8 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
         either a default mapping (if the field names match), or an explicit mapping definition with this
         `mapping` parameter.
 
-        - ``{"x": "y"}`` means, that the field ``x`` of the target object will have the value of the
-          ``y`` fields in the target object.
+        - ``{"x": "y"}`` means, that the field ``x`` of the target object will be initialized with the value of the
+          ``y`` fields in the source object.
         - ``{"x": lambda: 42}`` means, that the field ``x`` will be initialized with the value 42.
         - ``{"x": lambda self: self.x + 1}`` means, that the field ``x`` will be initialized with the
           incremented value ``x`` of the source object.
@@ -123,8 +123,8 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
           initialized with the default value / factory of that field.
         - ``{"x": init_with_default()}`` means, nothing is mapped to the field ``x``, it will just be
           initialized with the default value / factory of that field.
-        - ``{"x": assume_not_none("y")}`` means, that the target field ``x`` will have the value of the
-          ``y`` source field, and the library will assume that the source field might be optional.
+        - ``{"x": assume_not_none("y")}`` means, that the target field ``x`` will be initialized with the value of the
+          ``y`` source field, and the library will assume that the source field is not ``None``.
           If no source field name is given, it will additionally assume that the source field is also called ``x``.
         - ``{"x": provide_with_extra()}`` means, that you don't fill this field with any field of the source class,
           but with the extra dictionary given by the `map_to` method.
