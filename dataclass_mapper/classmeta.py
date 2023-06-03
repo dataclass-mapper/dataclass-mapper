@@ -34,7 +34,7 @@ class DataclassClassMeta(ClassMeta):
     _type = DataclassType.DATACLASSES
 
     def return_statement(self) -> str:
-        return f"    return {self.alias_name}(**d)"
+        return f"{self.alias_name}(**d)"
 
     def get_assignment_name(self, field: FieldMeta) -> str:
         return field.name
@@ -72,9 +72,9 @@ class PydanticClassMeta(ClassMeta):
 
     def return_statement(self) -> str:
         if self.use_construct:
-            return f"    return {self.alias_name}.construct(**d)"
+            return f"{self.alias_name}.construct(**d)"
         else:
-            return f"    return {self.alias_name}(**d)"
+            return f"{self.alias_name}(**d)"
 
     def get_assignment_name(self, field: FieldMeta) -> str:
         if self.use_construct or self.allow_population_by_field_name:

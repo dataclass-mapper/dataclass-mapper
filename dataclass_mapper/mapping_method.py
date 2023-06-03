@@ -12,6 +12,8 @@ from .assignments import (
     get_var_name,
 )
 from .classmeta import ClassMeta, DataclassType
+from .code_generator import Assignment as AssignmentStatement
+from .code_generator import Block, DictLookup, Function, IfElse, Raise, Return, Statement
 from .fieldmeta import FieldMeta
 
 
@@ -123,10 +125,7 @@ class MappingMethodSourceCode:
     def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
-        self.lines = [
-            f'def convert(self, extra: dict) -> "{self.target_cls.name}":',
-            "    d = {}",
-        ]
+        self.code = Block(AssignmentStatement(name="d", rhs="{}"))
         self.methods: Dict[str, Callable] = {}
 
     @classmethod
@@ -136,36 +135,33 @@ class MappingMethodSourceCode:
                 return assignment
         return None
 
-    def _assignment_lines(
+    def _field_assignment(
         self,
         source: FieldMeta,
         target: FieldMeta,
         right_side: str,
         options: AssignmentOptions,
-    ) -> List[str]:
+    ) -> Statement:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
 
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
         """
-        lines: List[str] = []
-        indent = 4
-        if options.only_if_not_None:
-            lines.append(f"    if {get_var_name(source)} is not None:")
-            indent = 8
-        if options.only_if_set:
-            lines.append(f"    if '{source.name}' in self.__fields_set__:")
-            indent = 8
-
         right_side = right_side
         if options.if_None and not options.only_if_not_None:
             right_side = f"None if {get_var_name(source)} is None else {right_side}"
-        lines.append(self._get_assignment_str(target, right_side, indent))
-        return lines
+        code: Statement = self._get_assignment(target, right_side)
 
-    def _get_assignment_str(self, target: FieldMeta, right_side: str, indent: int = 4) -> str:
+        if options.only_if_not_None:
+            code = IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
+        if options.only_if_set:
+            code = IfElse(condition=f"'{source.name}' in self.__fields_set__", if_block=code)
+        return code
+
+    def _get_assignment(self, target: FieldMeta, right_side: str) -> AssignmentStatement:
         variable_name = self.target_cls.get_assignment_name(target)
-        return f'{" "*indent}d["{variable_name}"] = {right_side}'
+        lookup = DictLookup(dict_name="d", key=variable_name)
+        return AssignmentStatement(name=lookup, rhs=right_side)
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if callable(source):
@@ -173,7 +169,7 @@ class MappingMethodSourceCode:
                 function=source, target=target, methods=self.methods, target_cls_name=self.target_cls.name
             )
             right_side = function_assignment.right_side()
-            self.lines.append(self._get_assignment_str(target, right_side))
+            self.code.append(self._get_assignment(target, right_side))
         else:
             assert isinstance(source, FieldMeta)
 
@@ -181,8 +177,8 @@ class MappingMethodSourceCode:
                 source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
             )
             if assignment := self._get_asssigment(source=source, target=target):
-                self.lines.extend(
-                    self._assignment_lines(
+                self.code.append(
+                    self._field_assignment(
                         source=source,
                         target=target,
                         right_side=assignment.right_side(),
@@ -198,16 +194,12 @@ class MappingMethodSourceCode:
             f"When mapping an object of '{self.source_cls.name}' to '{self.target_cls.name}' "
             f"the field '{variable_name}' needs to be provided in the `extra` dictionary"
         )
-        self.lines.extend(
-            [
-                f'    if "{variable_name}" not in extra:',
-                f'        raise TypeError("{exception_msg}")',
-                self._get_assignment_str(
-                    target=target,
-                    right_side=f'extra["{variable_name}"]',
-                ),
-            ]
+        self.code.append(
+            IfElse(condition=f'"{variable_name}" not in extra', if_block=Raise(f'TypeError("{exception_msg}")'))
         )
+        self.code.append(self._get_assignment(target=target, right_side=f'extra["{variable_name}"]'))
 
     def __str__(self) -> str:
-        return "\n".join(self.lines + [self.target_cls.return_statement()])
+        self.code.append(Return(self.target_cls.return_statement()))
+        function = Function("convert", args="self, extra: dict", return_type=self.target_cls.name, body=self.code)
+        return function.to_string(0)
