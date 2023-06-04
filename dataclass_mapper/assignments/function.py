@@ -2,7 +2,7 @@ from inspect import signature
 from typing import Any, Callable, Dict, Union, cast
 from uuid import uuid4
 
-from ..fieldmeta import FieldMeta
+from ..implementations.base import FieldMeta
 
 CallableWithMax1Parameter = Union[Callable[[], Any], Callable[[Any], Any]]
 

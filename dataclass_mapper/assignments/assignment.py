@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ..fieldmeta import FieldMeta
+from ..implementations.base import FieldMeta
 
 
 class Assignment(ABC):

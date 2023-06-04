@@ -1,6 +1,6 @@
 from typing import Any
 
-from ..fieldmeta import FieldMeta
+from ..implementations.base import FieldMeta
 
 
 def get_var_name(fieldmeta: FieldMeta) -> str:

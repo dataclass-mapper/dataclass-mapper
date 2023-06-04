@@ -6,7 +6,8 @@ from typing import List, Optional
 import pytest
 from pydantic import BaseModel, Field
 
-from dataclass_mapper.classmeta import FieldMeta, Namespace, get_class_meta
+from dataclass_mapper.classmeta import Namespace, get_class_meta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1FieldMeta
 
 empty_namespace = Namespace(locals={}, globals={})
 
@@ -19,9 +20,9 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
-        "x": FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
-        "y": FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
-        "z": FieldMeta(name="z", type=List[int], allow_none=False, required=True, alias="z"),
+        "x": PydanticV1FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
+        "y": PydanticV1FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
+        "z": PydanticV1FieldMeta(name="z", type=List[int], allow_none=False, required=True, alias="z"),
     }
 
 

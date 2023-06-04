@@ -11,10 +11,9 @@ from .assignments import (
     SimpleAssignment,
     get_var_name,
 )
-from .classmeta import ClassMeta, DataclassType
 from .code_generator import Assignment as AssignmentStatement
 from .code_generator import Block, DictLookup, Function, IfElse, Raise, Return, Statement
-from .fieldmeta import FieldMeta
+from .implementations.base import ClassMeta, DataclassType, FieldMeta
 
 
 class Spezial(Enum):
