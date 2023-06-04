@@ -53,6 +53,16 @@ class PydanticV1ClassMeta(ClassMeta):
         clazz.update_forward_refs(**namespace.locals)
         return {field.name: PydanticV1FieldMeta.from_pydantic(field) for field in clazz.__fields__.values()}
 
+    @staticmethod
+    def applies(clz: Any) -> bool:
+        try:
+            pydantic = __import__("pydantic")
+            if issubclass(clz, pydantic.BaseModel):
+                return True
+        except ImportError:
+            pass
+        return False
+
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "PydanticV1ClassMeta":
         return cls(

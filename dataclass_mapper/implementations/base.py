@@ -4,6 +4,8 @@ from enum import Enum, auto
 from typing import Any, Dict, Optional, cast
 from uuid import uuid4
 
+from dataclass_mapper.namespace import Namespace
+
 
 class DataclassType(Enum):
     DATACLASSES = auto()
@@ -60,3 +62,13 @@ class ClassMeta(ABC):
     @abstractmethod
     def get_assignment_name(self, field: FieldMeta) -> str:
         """Returns the name for the variable that should be used for an assignment"""
+
+    @staticmethod
+    @abstractmethod
+    def applies(clz: Any) -> bool:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "ClassMeta":
+        ...

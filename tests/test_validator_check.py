@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel, ConstrainedStr, Field, root_validator, validator
 
-from dataclass_mapper.classmeta import PydanticV1ClassMeta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta
 from dataclass_mapper.mapper import get_class_meta
 from dataclass_mapper.namespace import Namespace
 

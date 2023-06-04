@@ -4,8 +4,9 @@ from typing import List
 
 import pytest
 
-from dataclass_mapper.classmeta import DataclassClassMeta, PydanticV1ClassMeta
 from dataclass_mapper.implementations.base import FieldMeta
+from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta
 from dataclass_mapper.mapper import mapper
 from dataclass_mapper.mapping_method import MappingMethodSourceCode
 

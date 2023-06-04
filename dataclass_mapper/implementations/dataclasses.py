@@ -1,4 +1,4 @@
-from dataclasses import MISSING, fields
+from dataclasses import MISSING, fields, is_dataclass
 from dataclasses import Field as DataclassField
 from typing import Any, Dict, cast, get_args, get_type_hints
 
@@ -46,6 +46,10 @@ class DataclassClassMeta(ClassMeta):
             field.name: DataclassesFieldMeta.from_dataclass(field, real_type=real_types[field.name])
             for field in fields(clazz)
         }
+
+    @staticmethod
+    def applies(clz: Any) -> bool:
+        return cast(bool, is_dataclass(clz))
 
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "DataclassClassMeta":
