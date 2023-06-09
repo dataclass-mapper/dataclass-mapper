@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional, Type, Union
 
+from . import code_generator as cg
 from .assignments import (
     Assignment,
     CallableWithMax1Parameter,
@@ -11,8 +12,6 @@ from .assignments import (
     SimpleAssignment,
     get_var_name,
 )
-from .code_generator import Assignment as AssignmentStatement
-from .code_generator import Block, DictLookup, Function, IfElse, Raise, Return, Statement
 from .implementations.base import ClassMeta, FieldMeta
 
 
@@ -112,7 +111,12 @@ class MappingMethodSourceCode:
     def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
-        self.code = Block(AssignmentStatement(name="d", rhs="{}"))
+        self.function = cg.Function(
+            "convert",
+            args="self, extra: dict",
+            return_type=self.target_cls.name,
+            body=cg.Block(cg.Assignment(name="d", rhs="{}")),
+        )
         self.methods: Dict[str, Callable] = {}
 
     @classmethod
@@ -128,7 +132,7 @@ class MappingMethodSourceCode:
         target: FieldMeta,
         right_side: str,
         options: AssignmentOptions,
-    ) -> Statement:
+    ) -> cg.Statement:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
 
@@ -137,18 +141,18 @@ class MappingMethodSourceCode:
         right_side = right_side
         if options.if_None and not options.only_if_not_None:
             right_side = f"None if {get_var_name(source)} is None else {right_side}"
-        code: Statement = self._get_assignment(target, right_side)
+        code: cg.Statement = self._get_assignment(target, right_side)
 
         if options.only_if_not_None:
-            code = IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
+            code = cg.IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
 
         code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
         return code
 
-    def _get_assignment(self, target: FieldMeta, right_side: str) -> AssignmentStatement:
+    def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
         variable_name = self.target_cls.get_assignment_name(target)
-        lookup = DictLookup(dict_name="d", key=variable_name)
-        return AssignmentStatement(name=lookup, rhs=right_side)
+        lookup = cg.DictLookup(dict_name="d", key=variable_name)
+        return cg.Assignment(name=lookup, rhs=right_side)
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if callable(source):
@@ -156,7 +160,7 @@ class MappingMethodSourceCode:
                 function=source, target=target, methods=self.methods, target_cls_name=self.target_cls.name
             )
             right_side = function_assignment.right_side()
-            self.code.append(self._get_assignment(target, right_side))
+            self.function.body.append(self._get_assignment(target, right_side))
         else:
             assert isinstance(source, FieldMeta)
 
@@ -164,7 +168,7 @@ class MappingMethodSourceCode:
                 source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
             )
             if assignment := self._get_asssigment(source=source, target=target):
-                self.code.append(
+                self.function.body.append(
                     self._field_assignment(
                         source=source,
                         target=target,
@@ -181,12 +185,11 @@ class MappingMethodSourceCode:
             f"When mapping an object of '{self.source_cls.name}' to '{self.target_cls.name}' "
             f"the field '{variable_name}' needs to be provided in the `extra` dictionary"
         )
-        self.code.append(
-            IfElse(condition=f'"{variable_name}" not in extra', if_block=Raise(f'TypeError("{exception_msg}")'))
+        self.function.body.append(
+            cg.IfElse(condition=f'"{variable_name}" not in extra', if_block=cg.Raise(f'TypeError("{exception_msg}")'))
         )
-        self.code.append(self._get_assignment(target=target, right_side=f'extra["{variable_name}"]'))
+        self.function.body.append(self._get_assignment(target=target, right_side=f'extra["{variable_name}"]'))
 
     def __str__(self) -> str:
-        self.code.append(Return(self.target_cls.return_statement()))
-        function = Function("convert", args="self, extra: dict", return_type=self.target_cls.name, body=self.code)
-        return function.to_string(0)
+        self.function.body.append(self.target_cls.return_statement())
+        return self.function.to_string(0)

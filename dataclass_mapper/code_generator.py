@@ -81,7 +81,7 @@ class Function(Statement):
     name: str
     args: str
     return_type: str
-    body: Statement
+    body: Block
 
     def to_string(self, indent: int) -> str:
         return f'{" "*indent}def convert({self.args}) -> "{self.return_type}":\n{self.body.to_string(indent+4)}'

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, cast
 
-from dataclass_mapper.code_generator import IfElse, Statement
+import dataclass_mapper.code_generator as cg
 from dataclass_mapper.namespace import Namespace
 
 from .base import ClassMeta, DataclassType, FieldMeta
@@ -37,11 +37,11 @@ class PydanticV1ClassMeta(ClassMeta):
     def has_validators(clazz: Any) -> bool:
         return bool(clazz.__validators__) or bool(clazz.__pre_root_validators__) or bool(clazz.__post_root_validators__)
 
-    def return_statement(self) -> str:
+    def return_statement(self) -> cg.Return:
         if self.use_construct:
-            return f"{self.alias_name}.construct(**d)"
+            return cg.Return(f"{self.alias_name}.construct(**d)")
         else:
-            return f"{self.alias_name}(**d)"
+            return cg.Return(f"{self.alias_name}(**d)")
 
     def get_assignment_name(self, field: FieldMeta) -> str:
         if self.use_construct or self.allow_population_by_field_name:
@@ -85,8 +85,8 @@ class PydanticV1ClassMeta(ClassMeta):
 
     @classmethod
     def post_process(
-        cls, code: Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
-    ) -> Statement:
+        cls, code: cg.Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
+    ) -> cg.Statement:
         if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
-            code = IfElse(condition=f"'{source_field.name}' in self.__fields_set__", if_block=code)
+            code = cg.IfElse(condition=f"'{source_field.name}' in self.__fields_set__", if_block=code)
         return code

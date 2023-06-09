@@ -4,7 +4,7 @@ from enum import Enum, auto
 from typing import Any, Dict, Optional, cast
 from uuid import uuid4
 
-from dataclass_mapper.code_generator import Statement
+import dataclass_mapper.code_generator as cg
 from dataclass_mapper.namespace import Namespace
 
 
@@ -57,7 +57,7 @@ class ClassMeta(ABC):
         self.alias_name = alias_name or f"_{uuid4().hex}"
 
     @abstractmethod
-    def return_statement(self) -> str:
+    def return_statement(self) -> cg.Return:
         ...
 
     @abstractmethod
@@ -76,6 +76,6 @@ class ClassMeta(ABC):
 
     @classmethod
     def post_process(
-        cls, code: Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
-    ) -> Statement:
+        cls, code: cg.Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
+    ) -> cg.Statement:
         return code
