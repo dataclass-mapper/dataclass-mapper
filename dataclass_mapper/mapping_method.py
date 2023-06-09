@@ -13,7 +13,7 @@ from .assignments import (
 )
 from .code_generator import Assignment as AssignmentStatement
 from .code_generator import Block, DictLookup, Function, IfElse, Raise, Return, Statement
-from .implementations.base import ClassMeta, DataclassType, FieldMeta
+from .implementations.base import ClassMeta, FieldMeta
 
 
 class Spezial(Enum):
@@ -77,7 +77,6 @@ class AssignmentOptions:
         otherwise set it to None
     """
 
-    only_if_set: bool = False
     only_if_not_None: bool = False
     if_None: bool = False
 
@@ -85,16 +84,6 @@ class AssignmentOptions:
     def from_Metas(
         cls, source_cls: ClassMeta, target_cls: ClassMeta, source: FieldMeta, target: FieldMeta
     ) -> "AssignmentOptions":
-        # maintain Pydantic's unset property
-        only_if_set = (
-            source.allow_none
-            and target.allow_none
-            and not target.required
-            and source_cls._type == target_cls._type == DataclassType.PYDANTIC
-        )
-        # TODO: what if the defaults of source/target are not just None?
-        # How to map `x: Optional[int] = Field(42)` to `x: Optional[int] = Field(15)`?
-
         # handle optional to non-optional mappings
         only_if_not_None = False
         if source.allow_none and target.disallow_none:
@@ -106,7 +95,6 @@ class AssignmentOptions:
         if_None = source.allow_none
 
         return cls(
-            only_if_set=only_if_set,
             only_if_not_None=only_if_not_None,
             if_None=if_None,
         )
@@ -153,8 +141,8 @@ class MappingMethodSourceCode:
 
         if options.only_if_not_None:
             code = IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
-        if options.only_if_set:
-            code = IfElse(condition=f"'{source.name}' in self.__fields_set__", if_block=code)
+
+        code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
         return code
 
     def _get_assignment(self, target: FieldMeta, right_side: str) -> AssignmentStatement:

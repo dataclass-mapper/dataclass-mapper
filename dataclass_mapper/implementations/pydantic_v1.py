@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, cast
 
+from dataclass_mapper.code_generator import IfElse, Statement
 from dataclass_mapper.namespace import Namespace
 
 from .base import ClassMeta, DataclassType, FieldMeta
@@ -71,3 +72,21 @@ class PydanticV1ClassMeta(ClassMeta):
             use_construct=not cls.has_validators(clazz),
             allow_population_by_field_name=getattr(clazz.Config, "allow_population_by_field_name", False),
         )
+
+    @classmethod
+    def only_if_set(cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta) -> bool:
+        # maintain Pydantic's unset property
+        return (
+            source_field.allow_none
+            and target_field.allow_none
+            and not target_field.required
+            and source_cls._type == DataclassType.PYDANTIC
+        )
+
+    @classmethod
+    def post_process(
+        cls, code: Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
+    ) -> Statement:
+        if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
+            code = IfElse(condition=f"'{source_field.name}' in self.__fields_set__", if_block=code)
+        return code

@@ -4,6 +4,7 @@ from enum import Enum, auto
 from typing import Any, Dict, Optional, cast
 from uuid import uuid4
 
+from dataclass_mapper.code_generator import Statement
 from dataclass_mapper.namespace import Namespace
 
 
@@ -72,3 +73,9 @@ class ClassMeta(ABC):
     @abstractmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "ClassMeta":
         ...
+
+    @classmethod
+    def post_process(
+        cls, code: Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
+    ) -> Statement:
+        return code
