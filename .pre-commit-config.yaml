@@ -1,6 +1,6 @@
 repos:
--   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.270'
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.0.276'
     hooks:
       - id: ruff
 -   repo: https://github.com/psf/black
@@ -8,7 +8,7 @@ repos:
     hooks:
       - id: black
 -   repo: https://github.com/floatingpurr/sync_with_poetry
-    rev: 1.0.0
+    rev: 1.1.0
     hooks:
       - id: sync_with_poetry
         args: ["--db", ".pre-commit-sync-repos.json"]
