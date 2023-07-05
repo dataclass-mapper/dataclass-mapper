@@ -56,9 +56,9 @@ class ClassMeta(ABC):
         self.fields = fields
         self.alias_name = alias_name or f"_{uuid4().hex}"
 
-    @abstractmethod
     def return_statement(self) -> cg.Return:
-        ...
+        """The code for creating the object and returning it"""
+        return cg.Return(f"{self.alias_name}(**d)")
 
     @abstractmethod
     def get_assignment_name(self, field: FieldMeta) -> str:
@@ -67,15 +67,16 @@ class ClassMeta(ABC):
     @staticmethod
     @abstractmethod
     def applies(clz: Any) -> bool:
-        ...
+        """Determines if the current implementation can supports the provided class"""
 
     @classmethod
     @abstractmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "ClassMeta":
-        ...
+        """Parse the given class"""
 
     @classmethod
     def post_process(
         cls, code: cg.Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
     ) -> cg.Statement:
+        """Modifies the generated code for one field mapping if needed"""
         return code

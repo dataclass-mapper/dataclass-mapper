@@ -2,7 +2,6 @@ from dataclasses import MISSING, fields, is_dataclass
 from dataclasses import Field as DataclassField
 from typing import Any, Dict, cast, get_args, get_type_hints
 
-import dataclass_mapper.code_generator as cg
 from dataclass_mapper.namespace import Namespace
 from dataclass_mapper.utils import is_optional
 
@@ -33,9 +32,6 @@ class DataclassesFieldMeta(FieldMeta):
 
 class DataclassClassMeta(ClassMeta):
     _type = DataclassType.DATACLASSES
-
-    def return_statement(self) -> cg.Return:
-        return cg.Return(f"{self.alias_name}(**d)")
 
     def get_assignment_name(self, field: FieldMeta) -> str:
         return field.name

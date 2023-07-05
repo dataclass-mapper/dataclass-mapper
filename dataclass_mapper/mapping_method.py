@@ -138,7 +138,6 @@ class MappingMethodSourceCode:
 
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
         """
-        right_side = right_side
         if options.if_None and not options.only_if_not_None:
             right_side = f"None if {get_var_name(source)} is None else {right_side}"
         code: cg.Statement = self._get_assignment(target, right_side)

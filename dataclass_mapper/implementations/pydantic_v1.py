@@ -41,7 +41,7 @@ class PydanticV1ClassMeta(ClassMeta):
         if self.use_construct:
             return cg.Return(f"{self.alias_name}.construct(**d)")
         else:
-            return cg.Return(f"{self.alias_name}(**d)")
+            return super().return_statement()
 
     def get_assignment_name(self, field: FieldMeta) -> str:
         if self.use_construct or self.allow_population_by_field_name:
