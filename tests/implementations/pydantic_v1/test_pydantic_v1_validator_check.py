@@ -1,12 +1,18 @@
 from typing import List
 
-from pydantic import BaseModel, ConstrainedStr, Field, root_validator, validator
+import pytest
+from pydantic import BaseModel, Field
 
-from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta, pydantic_version
 from dataclass_mapper.mapper import get_class_meta
 from dataclass_mapper.namespace import Namespace
 
 empty_namespace = Namespace(locals={}, globals={})
+
+if pydantic_version() >= (2, 0, 0):
+    pytest.skip("V1 validators syntax", allow_module_level=True)
+
+from pydantic import ConstrainedStr, root_validator, validator  # noqa: E402
 
 
 def test_pydantic_has_no_validators():
