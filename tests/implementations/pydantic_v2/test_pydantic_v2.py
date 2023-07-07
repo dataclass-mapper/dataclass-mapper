@@ -1,8 +1,15 @@
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+import pytest
+from pydantic import BaseModel, Field
 
+from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper
+
+if pydantic_version() < (2, 0, 0):
+    pytest.skip("V2 validators syntax", allow_module_level=True)
+
+from pydantic import ConfigDict, field_validator
 
 
 class Bar(BaseModel):
@@ -48,7 +55,6 @@ class UnsetFields(BaseModel):
     a: int
     b1: Optional[int] = Field()
     b2: Optional[int] = Field()
-    b3: Optional[int] = Field()
     c1: Optional[int] = Field(None)
     c2: Optional[int] = Field(None)
     c3: Optional[int] = Field(None)
@@ -74,7 +80,6 @@ def test_maintain_unset_field_infos():
         a: int
         b1: Optional[int] = Field()
         b2: Optional[int] = Field()
-        b3: Optional[int] = Field()
         c1: Optional[int] = Field(None)
         c2: Optional[int] = Field(None)
         c3: Optional[int] = Field(None)
@@ -91,7 +96,7 @@ def test_maintain_unset_field_infos():
     source = UnsetFieldsSource(
         a=1, b1=1, b2=None, c1=1, c2=None, d1=1, d2=None, x1=Y(x1=1), x2=None, l1=[Y(x1=1)], l2=None
     )
-    assert source.__fields_set__ == {
+    assert source.model_fields_set == {
         "a",
         "b1",
         "b2",
@@ -104,10 +109,10 @@ def test_maintain_unset_field_infos():
         "l1",
         "l2",
     }
-    assert source.x1 and source.x1.__fields_set__ == {"x1"}
-    assert source.l1 and source.l1[0].__fields_set__ == {"x1"}
+    assert source.x1 and source.x1.model_fields_set == {"x1"}
+    assert source.l1 and source.l1[0].model_fields_set == {"x1"}
     mapped = map_to(source, UnsetFields)
-    assert mapped.__fields_set__ == {
+    assert mapped.model_fields_set == {
         "a",
         "b1",
         "b2",
@@ -120,45 +125,37 @@ def test_maintain_unset_field_infos():
         "l1",
         "l2",
     }
-    assert mapped.x1 and mapped.x1.__fields_set__ == {"x1"}
-    assert mapped.l1 and mapped.l1[0].__fields_set__ == {"x1"}
-
-
-class BarWithAlias(BaseModel):
-    x: int = Field(alias="xxx")
-    y: str
-
-    @validator("x")
-    def val_x(cls, v):
-        return v
-
-    class Config:
-        fields = {"y": "yyy"}
+    assert mapped.x1 and mapped.x1.model_fields_set == {"x1"}
+    assert mapped.l1 and mapped.l1[0].model_fields_set == {"x1"}
 
 
 def test_pydantic_with_alias():
+    class BarWithAlias(BaseModel):
+        x: int = Field(alias="xxx")
+
+        @field_validator("x")
+        def val_x(cls, v):
+            return v
+
     @mapper(BarWithAlias)
     class Foo(BaseModel):
         x: int
-        y: str
 
-    foo = Foo(x=42, y="answer")
-    bar = BarWithAlias(xxx=42, yyy="answer")  # type: ignore[call-arg]
+    foo = Foo(x=42)
+    bar = BarWithAlias(xxx=42)  # type: ignore[call-arg]
     assert map_to(foo, BarWithAlias) == bar
 
 
-class BarWithAliasAllowFieldPopulation(BaseModel):
-    x: int = Field(alias="x x")
-
-    @validator("x")
-    def val_x(cls, v):
-        return v
-
-    class Config:
-        allow_population_by_field_name = True
-
-
 def test_pydantic_with_alias_allow_population_with_fields():
+    class BarWithAliasAllowFieldPopulation(BaseModel):
+        x: int = Field(alias="x x")
+
+        @field_validator("x")
+        def val_x(cls, v):
+            return v
+
+        model_config = ConfigDict(populate_by_name=True)
+
     @mapper(BarWithAliasAllowFieldPopulation)
     class Foo(BaseModel):
         x: int

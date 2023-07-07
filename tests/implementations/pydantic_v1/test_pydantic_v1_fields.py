@@ -7,7 +7,10 @@ import pytest
 from pydantic import BaseModel, Field
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
-from dataclass_mapper.implementations.pydantic_v1 import PydanticV1FieldMeta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1FieldMeta, pydantic_version
+
+if pydantic_version() >= (2, 0, 0):
+    pytest.skip("V1 validators syntax", allow_module_level=True)
 
 empty_namespace = Namespace(locals={}, globals={})
 

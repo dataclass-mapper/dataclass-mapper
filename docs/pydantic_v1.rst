@@ -1,19 +1,10 @@
-Pydantic models
-===============
-
-The library can also handle Pydantic's models, and map to them and from them.
-
-It supports all the other features discussed in :doc:`features` or :doc:`enums`.
-
-It supports both the old Pydantic version 1.x and the Rust rewrite 2.x.
-
-Pydantic V2
+Pydantic V1
 -----------
 
-For performance reasons it will use Pydantic's ``.model_construct`` class method to construct objects.
+For performance reasons it will use Pydantic's ``.construct`` class method to construct objects.
 However it will fall back to the normal, slow initializer, when required (e.g. when the Pydantic model has validators that modify the model).
 
-Additionally it can work with ``alias`` fields, and also with the ``populate_by_name`` configuration.
+Additionally it can work with ``alias`` fields, and also with the ``allow_population_by_field_name`` configuration.
 
 .. testsetup:: *
 
@@ -21,11 +12,11 @@ Additionally it can work with ``alias`` fields, and also with the ``populate_by_
    >>> from enum import Enum, auto
    >>> from typing import Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none
-   >>> from pydantic import BaseModel, Field, field_validator
+   >>> from pydantic import BaseModel, Field, validator
    >>> import pytest
    >>> from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
-   >>> if pydantic_version() < (2, 0, 0):
-   ...     pytest.skip("V2 validators syntax", allow_module_level=True)
+   >>> if pydantic_version() >= (2, 0, 0):
+   ...     pytest.skip("V1 validators syntax", allow_module_level=True)
 
 .. doctest::
 
@@ -33,7 +24,7 @@ Additionally it can work with ``alias`` fields, and also with the ``populate_by_
    ...     name: str
    ...     greeting: str = Field(alias="greetingSound")
    ... 
-   ...     @field_validator("greeting")
+   ...     @validator("greeting")
    ...     def repeat_greeting(cls, v):
    ...         return " ".join([v] * 3)
    >>>
@@ -54,9 +45,9 @@ This library will remember which fields are set, and are unset.
 .. doctest::
 
    >>> class Foo(BaseModel):
-   ...     x: Optional[float] = None
-   ...     y: Optional[int] = None
-   ...     z: Optional[bool] = None
+   ...     x: Optional[float]
+   ...     y: Optional[int]
+   ...     z: Optional[bool]
    >>>
    >>> @mapper(Foo)
    ... class Bar(BaseModel):
@@ -65,10 +56,10 @@ This library will remember which fields are set, and are unset.
    ...     z: Optional[bool] = None
    >>>
    >>> bar = Bar(x=1.23, z=None)
-   >>> sorted(bar.model_fields_set)
+   >>> sorted(bar.__fields_set__)
    ['x', 'z']
    >>> foo = map_to(bar, Foo)
    >>> foo
-   Foo(x=1.23, z=None, y=None)
-   >>> sorted(foo.model_fields_set)
+   Foo(x=1.23, y=None, z=None)
+   >>> sorted(foo.__fields_set__)
    ['x', 'z']
