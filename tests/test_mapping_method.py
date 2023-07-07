@@ -4,7 +4,9 @@ from typing import List
 
 import pytest
 
-from dataclass_mapper.classmeta import DataclassClassMeta, FieldMeta, PydanticClassMeta
+from dataclass_mapper.implementations.base import FieldMeta
+from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta
 from dataclass_mapper.mapper import mapper
 from dataclass_mapper.mapping_method import MappingMethodSourceCode
 
@@ -65,13 +67,13 @@ def test_code_gen_add_assignment_only_if_not_None(code: MappingMethodSourceCode)
 
 def test_bypass_validators_option_for_pydantic() -> None:
     code = MappingMethodSourceCode(
-        source_cls=PydanticClassMeta(
+        source_cls=PydanticV1ClassMeta(
             name="Source",
             fields={},
             use_construct=False,
             alias_name="Source",
         ),
-        target_cls=PydanticClassMeta(
+        target_cls=PydanticV1ClassMeta(
             name="Target",
             fields={},
             use_construct=True,
@@ -90,13 +92,13 @@ def test_bypass_validators_option_for_pydantic() -> None:
 
 def test_dont_bypass_validators_option_for_pydantic() -> None:
     code = MappingMethodSourceCode(
-        source_cls=PydanticClassMeta(
+        source_cls=PydanticV1ClassMeta(
             name="Source",
             fields={},
             use_construct=False,
             alias_name="Source",
         ),
-        target_cls=PydanticClassMeta(
+        target_cls=PydanticV1ClassMeta(
             name="Target",
             fields={},
             use_construct=False,
@@ -138,13 +140,13 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
 
 def test_pydantic_alias() -> None:
     code = MappingMethodSourceCode(
-        source_cls=PydanticClassMeta(
+        source_cls=PydanticV1ClassMeta(
             name="Source",
             fields={},
             use_construct=False,
             alias_name="Source",
         ),
-        target_cls=PydanticClassMeta(
+        target_cls=PydanticV1ClassMeta(
             name="Target",
             fields={},
             use_construct=False,
@@ -168,13 +170,13 @@ def test_pydantic_alias() -> None:
 
 def test_pydantic_alias_allow_population_by_fields() -> None:
     code = MappingMethodSourceCode(
-        source_cls=PydanticClassMeta(
+        source_cls=PydanticV1ClassMeta(
             name="Source",
             fields={},
             use_construct=False,
             alias_name="Source",
         ),
-        target_cls=PydanticClassMeta(
+        target_cls=PydanticV1ClassMeta(
             name="Target",
             fields={},
             use_construct=False,
