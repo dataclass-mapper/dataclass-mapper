@@ -65,7 +65,7 @@ def test_pydantic_has_validators():
     class Pydantic7(BaseModel):
         x: int
 
-        @model_validator(mode="after")
+        @model_validator(mode="after")  # type: ignore[arg-type]
         def check_root(cls, values):
             return values
 

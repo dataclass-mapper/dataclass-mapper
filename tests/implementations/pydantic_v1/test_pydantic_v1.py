@@ -97,7 +97,7 @@ def test_maintain_unset_field_infos():
 
     source = UnsetFieldsSource(
         a=1, b1=1, b2=None, c1=1, c2=None, d1=1, d2=None, x1=Y(x1=1), x2=None, l1=[Y(x1=1)], l2=None
-    )
+    )  # type: ignore[call-arg] # for pydantic v2
     assert source.__fields_set__ == {
         "a",
         "b1",
@@ -169,5 +169,5 @@ def test_pydantic_with_alias_allow_population_with_fields():
         x: int
 
     foo = Foo(x=42)
-    bar = BarWithAliasAllowFieldPopulation(x=42)
+    bar = BarWithAliasAllowFieldPopulation(x=42)  # type: ignore[call-arg] # for pydantic v2
     assert map_to(foo, BarWithAliasAllowFieldPopulation) == bar

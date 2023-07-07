@@ -88,7 +88,7 @@ def test_pydantic_has_validators():
     class Pydantic7(BaseModel):
         x: int
 
-        @root_validator
+        @root_validator  # type: ignore
         def check_root(cls, values):
             return values
 
