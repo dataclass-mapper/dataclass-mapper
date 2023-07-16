@@ -35,7 +35,8 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 Sphinx = "^5.0.2"
 sphinx-rtd-theme = "^1.0.0"
-
+sphinxcontrib-plantuml = "^0.25"
+sphinx-autobuild = "^2021.3.14"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.276"

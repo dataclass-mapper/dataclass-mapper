@@ -1,0 +1,20 @@
+/* Make the page a little bit larger (default: 800px) */
+.wy-nav-content {
+    max-width: 1000px !important;
+}
+
+/* Break long lines in tables instead of adding horizontal scrollbars */
+.wy-table-responsive table td, .wy-table-responsive table th {
+  white-space: break-spaces;
+  vertical-align: top !important;
+}
+
+/* Align all table headers left (per default the values in the first column had been centered) */
+.wy-table-responsive table th {
+  text-align: left !important;
+}
+
+/* Make all tables same size */
+.wy-table-responsive table {
+  width: 100% !important;
+}

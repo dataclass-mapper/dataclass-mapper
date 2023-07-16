@@ -21,7 +21,7 @@ Make sure that you install all dependencies, even the optional ones.
 
    poetry install --all-extras --with docs
 
-In a shell activate the virtual environment from poetry with `poetry shell`, and/or in an IDE set the path to the virtual environment which you can get via `poetry env info`.
+In a shell activate the virtual environment from poetry with ``poetry shell``, and/or in an IDE set the path to the virtual environment which you can get via ``poetry env info``.
 
 Formatting / Linting
 ^^^^^^^^^^^^^^^^^^^^
@@ -79,7 +79,10 @@ Documentation is built via `Sphinx <https://www.sphinx-doc.org>`_ and published 
 
 .. code-block:: sh
 
-   # create html documentation
+   # rebuild and live reload docs
+   sphinx-autobuild docs docs/_build/html
+
+   # alternatively build HTML docs the typical way
    cd docs
    make html
 

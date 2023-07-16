@@ -11,3 +11,4 @@
    Pydantic support <pydantic>
    Type safety <type_safety>
    Large example <example>
+   Architecture documentation <architecture>
