@@ -73,3 +73,18 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: coverage.xml
+
+      - name: Install old pydantic version
+        run: |
+          source .venv/bin/activate
+          pip install "pydantic<2.0.0"
+
+      - name: Run tests and collect coverage
+        run: |
+          source .venv/bin/activate
+          pytest --cov dataclass_mapper --cov-report xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
