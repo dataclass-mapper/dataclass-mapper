@@ -4,27 +4,27 @@ System Scope and Context
 Business Context
 ^^^^^^^^^^^^^^^^
 
-.. uml::
+.. .. uml::
 
-   skinparam componentStyle rectangle
+..    skinparam componentStyle rectangle
 
-   actor User
+..    actor User
 
-   package "Controller" {
-      [Controller] as C
-      [Controller Model] as CM
-      C --> CM : uses
-   }
+..    package "Controller" {
+..       [Controller] as C
+..       [Controller Model] as CM
+..       C --> CM : uses
+..    }
 
-   package "Service Layer" {
-      [Service Layer] as SL
-      [Domain Model] as DM
-      SL --> DM : uses
-      }
+..    package "Service Layer" {
+..       [Service Layer] as SL
+..       [Domain Model] as DM
+..       SL --> DM : uses
+..       }
 
-   User -> C : sends HTTP request
-   C -> SL : "converts models and calls"
-   CM -> DM : define mapping
+..    User -> C : sends HTTP request
+..    C -> SL : "converts models and calls"
+..    CM -> DM : define mapping
 
 .. **<Diagram or Table>**
 
