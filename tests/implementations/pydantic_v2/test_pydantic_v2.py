@@ -1,3 +1,4 @@
+# mypy: disable-error-code="attr-defined"
 from typing import Dict, List, Optional
 
 import pytest
@@ -154,12 +155,12 @@ def test_pydantic_with_alias_allow_population_with_fields():
         def val_x(cls, v):
             return v
 
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(populate_by_name=True)  # type: ignore
 
     @mapper(BarWithAliasAllowFieldPopulation)
     class Foo(BaseModel):
         x: int
 
     foo = Foo(x=42)
-    bar = BarWithAliasAllowFieldPopulation(x=42)
+    bar = BarWithAliasAllowFieldPopulation(x=42)  # type: ignore[call-arg]
     assert map_to(foo, BarWithAliasAllowFieldPopulation) == bar

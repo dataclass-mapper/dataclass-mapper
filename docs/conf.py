@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(".."))
 
 _DISTRIBUTION_METADATA = importlib.metadata.metadata("dataclass-mapper")
 project = _DISTRIBUTION_METADATA["Name"]
-copyright = "2022, Jakob Kogler"
+copyright = "2022-2023, Jakob Kogler"
 author = _DISTRIBUTION_METADATA["Author"]
 
 # The full version, including alpha/beta/rc tags
