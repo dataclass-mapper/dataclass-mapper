@@ -6,6 +6,7 @@ from . import code_generator as cg
 from .assignments import (
     Assignment,
     CallableWithMax1Parameter,
+    DictRecursiveAssignment,
     FunctionAssignment,
     ListRecursiveAssignment,
     RecursiveAssignment,
@@ -106,6 +107,7 @@ class MappingMethodSourceCode:
         SimpleAssignment,
         RecursiveAssignment,
         ListRecursiveAssignment,
+        DictRecursiveAssignment,
     ]
 
     def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:

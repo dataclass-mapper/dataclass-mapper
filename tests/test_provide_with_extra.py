@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 
@@ -99,4 +99,34 @@ def test_provide_with_extra_recursive_list():
             extra={"fields": [{"x": 0}, {"x": 1}]},
         )
         == target_collection
+    )
+
+
+@dataclass
+class BarDataclass:
+    x: int
+    y: str
+
+
+@dataclass
+class BazDataclass:
+    bar: Dict[str, BarDataclass]
+
+
+def test_dict_rec_with_extra():
+    @mapper(BarDataclass, {"y": provide_with_extra()})
+    @dataclass
+    class Bar:
+        x: int
+
+    @mapper(BazDataclass)
+    @dataclass
+    class Baz:
+        bar: Dict[str, Bar]
+
+    baz_before = Baz(bar={"k1": Bar(x=42), "k2": Bar(x=84)})
+    baz_after = BazDataclass(bar={"k1": BarDataclass(x=42, y="answer"), "k2": BarDataclass(x=84, y="answeranswer")})
+    assert (
+        map_to(baz_before, BazDataclass, extra={"bar": {"k1": {"y": "answer"}, "k2": {"y": "answeranswer"}}})
+        == baz_after
     )
