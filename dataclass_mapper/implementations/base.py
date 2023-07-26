@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Optional, cast, get_args
+from typing import Any, Dict, Optional, cast, get_args, get_origin
 from uuid import uuid4
 
 import dataclass_mapper.code_generator as cg
@@ -41,13 +41,24 @@ class FieldMeta:
             type_name = cast(str, self.type.__name__)
         except Exception:
             type_name = str(self.type)
-        if self.allow_none:
-            type_name = f"Optional[{type_name}]"
+
         if is_union_type(self.type):
             ts = ", ".join(self.get_class_name(t) for t in get_args(self.type))
             if self.allow_none:
                 ts += ", NoneType"
             type_name = f"Union[{ts}]"
+            return type_name
+
+        if get_origin(self.type) is list:
+            type_name = f"List[{self.get_class_name(get_args(self.type)[0])}]"
+
+        if get_origin(self.type) is dict:
+            key_type, value_type = get_args(self.type)
+            type_name = f"Dict[{self.get_class_name(key_type)}, {self.get_class_name(value_type)}]"
+
+        if self.allow_none:
+            type_name = f"Optional[{type_name}]"
+
         return type_name
 
     @staticmethod
