@@ -1,0 +1,104 @@
+from datetime import date, datetime, time, timedelta
+from typing import Any, Dict, Optional, Tuple, cast
+from uuid import UUID
+
+from dataclass_mapper.implementations.utils import parse_version
+from dataclass_mapper.namespace import Namespace
+
+from .base import ClassMeta, DataclassType, FieldMeta
+
+
+def sqlalchemy_version() -> Tuple[int, int, int]:
+    sqlalchemy = __import__("sqlalchemy")
+    return parse_version(cast(str, sqlalchemy.__version__))
+
+
+class SQLAlchemyFieldMeta(FieldMeta):
+    @classmethod
+    def from_sqlalchemy(cls, field: Any, name: str) -> "SQLAlchemyFieldMeta":
+        return cls(
+            name=name,
+            type=cls._extract_sqlalchemy_type(field.type),
+            allow_none=field.nullable,
+            required=not field.nullable,
+            alias=None,
+        )
+
+    @classmethod
+    def _extract_sqlalchemy_type(cls, type_):
+        sqlalchemy = __import__("sqlalchemy")
+        psql = __import__("sqlalchemy.dialects.postgresql")
+
+        if isinstance(type_, psql.ARRAY):
+            item_type = cls._extract_sqlalchemy_type(type_.item_type)
+            return list[item_type]
+
+        if isinstance(type_, sqlalchemy.Enum):
+            return type_.enum_class
+
+        type_mapping = {
+            sqlalchemy.BigInteger: int,
+            sqlalchemy.Boolean: bool,
+            sqlalchemy.Date: date,
+            sqlalchemy.DateTime: datetime,
+            sqlalchemy.Float: float,
+            sqlalchemy.Integer: int,
+            sqlalchemy.Interval: timedelta,
+            sqlalchemy.LargeBinary: bytes,
+            sqlalchemy.SmallInteger: int,
+            sqlalchemy.String: str,
+            sqlalchemy.Text: str,
+            sqlalchemy.Time: time,
+            sqlalchemy.Unicode: str,
+            sqlalchemy.UnicodeText: str,
+            psql.UUID: UUID,
+        }
+
+        for sqlalchemy_cls, mapped_type in type_mapping.items():
+            if isinstance(type_, sqlalchemy_cls):
+                return mapped_type
+
+        raise NotImplementedError(f"type '{type_}' is not supported")
+
+
+class SQLAlchemyClassMeta(ClassMeta):
+    _type = DataclassType.PYDANTIC
+
+    def __init__(
+        self,
+        name: str,
+        fields: Dict[str, FieldMeta],
+        alias_name: Optional[str] = None,
+    ) -> None:
+        super().__init__(name=name, fields=fields, alias_name=alias_name)
+
+    def get_assignment_name(self, field: FieldMeta) -> str:
+        return field.name
+
+    @staticmethod
+    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+        sqlalchemy = __import__("sqlalchemy")
+        return {
+            field.name: SQLAlchemyFieldMeta.from_sqlalchemy(field, field.name)
+            for field in sqlalchemy.inspect(clazz).columns
+        }
+
+    @staticmethod
+    def applies(clz: Any) -> bool:
+        try:
+            sqlalchemy = __import__("sqlalchemy")
+            try:
+                sqlalchemy.inspect(clz)
+                return (2, 0, 0) <= sqlalchemy_version() < (3, 0, 0)
+            except sqlalchemy.exc.NoInspectionAvailable:
+                pass
+        except ImportError:
+            pass
+        return False
+
+    @classmethod
+    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "SQLAlchemyClassMeta":
+        return cls(
+            name=cast(str, clazz.__name__),
+            fields=cls._fields(clazz, namespace=namespace),
+        )
