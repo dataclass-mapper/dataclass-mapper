@@ -1,5 +1,5 @@
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
 from dataclass_mapper.implementations.utils import parse_version
@@ -16,11 +16,12 @@ def sqlalchemy_version() -> Tuple[int, int, int]:
 class SQLAlchemyFieldMeta(FieldMeta):
     @classmethod
     def from_sqlalchemy(cls, field: Any, name: str) -> "SQLAlchemyFieldMeta":
+        # TODO: disable "GENERATED ALWAYS columns" (e.g. Column(Identity(always=True)))
         return cls(
             name=name,
             type=cls._extract_sqlalchemy_type(field.type),
             allow_none=field.nullable,
-            required=not field.nullable,
+            required=cls._is_required(field),
             alias=None,
         )
 
@@ -31,7 +32,7 @@ class SQLAlchemyFieldMeta(FieldMeta):
 
         if isinstance(type_, psql.ARRAY):
             item_type = cls._extract_sqlalchemy_type(type_.item_type)
-            return list[item_type]
+            return List[item_type]  # type: ignore[valid-type]
 
         if isinstance(type_, sqlalchemy.Enum):
             return type_.enum_class
@@ -60,6 +61,15 @@ class SQLAlchemyFieldMeta(FieldMeta):
 
         raise NotImplementedError(f"type '{type_}' is not supported")
 
+    @staticmethod
+    def _is_required(field: Any) -> bool:
+        if field.default is not None or field.server_default is not None:
+            return False
+        if field.primary_key and field.autoincrement in ("auto", True):
+            return False
+
+        return True
+
 
 class SQLAlchemyClassMeta(ClassMeta):
     _type = DataclassType.PYDANTIC
@@ -84,6 +94,25 @@ class SQLAlchemyClassMeta(ClassMeta):
         }
 
     @staticmethod
+    def _relationship_fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+        sqlalchemy = __import__("sqlalchemy")
+        fields: Dict[str, FieldMeta] = {}
+        for relationship in sqlalchemy.inspect(clazz).relationships:
+            type_ = relationship.mapper.class_
+            if relationship.collection_class is list:
+                type_ = List[type_]
+            if relationship.collection_class is set:
+                type_ = Set[type_]
+            name = relationship._dependency_processor.key
+            fields[name] = SQLAlchemyFieldMeta(
+                name=name,
+                type=type_,
+                allow_none=False,  # TODO: !!!
+                required=False,  # TODO: !!!
+            )
+        return fields
+
+    @staticmethod
     def applies(clz: Any) -> bool:
         try:
             sqlalchemy = __import__("sqlalchemy")
@@ -98,7 +127,6 @@ class SQLAlchemyClassMeta(ClassMeta):
 
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "SQLAlchemyClassMeta":
-        return cls(
-            name=cast(str, clazz.__name__),
-            fields=cls._fields(clazz, namespace=namespace),
-        )
+        column_fields = cls._fields(clazz, namespace=namespace)
+        relationship_fields = cls._relationship_fields(clazz, namespace=namespace)
+        return cls(name=cast(str, clazz.__name__), fields={**column_fields, **relationship_fields})
