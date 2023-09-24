@@ -66,7 +66,7 @@ However tox can only work with Python versions that it can find, so you need to 
    mypy
 
    # run everything with Python 3.8
-   # similar for 3.9, 3.10 and 3.11
+   # similar for 3.9, 3.10, 3.11 and 3.12
    tox -e py38
 
    # run everything in all supported Python versions
