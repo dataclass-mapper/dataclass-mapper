@@ -13,7 +13,18 @@ documentation = "https://dataclass-mapper.readthedocs.io"
 
 keywords = ['dataclass', 'pydantic', 'python', 'automation']
 
-classifiers = ["Topic :: Software Development :: Code Generators"]
+classifiers = [
+  "Topic :: Software Development :: Code Generators",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.12",
+  "Framework :: Pydantic",
+  "Framework :: Pydantic :: 1",
+  "Framework :: Pydantic :: 2",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
