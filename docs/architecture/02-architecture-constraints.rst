@@ -13,7 +13,7 @@ Technical Constraints
 
    *  -  Python version
       -  The library should be on usable on all officially supported versions since 3.8 (see `Status of Python Versions <https://devguide.python.org/versions/>`_).
-         Therefore the library needs to be written wirh Python 3.8 compatible code.
+         Therefore the library needs to be written with Python 3.8 compatible code.
 
 Organizational Constraints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
