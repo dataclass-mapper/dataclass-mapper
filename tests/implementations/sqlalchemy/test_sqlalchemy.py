@@ -1,15 +1,16 @@
 # mypy: disable-error-code="attr-defined"
 
+from dataclasses import dataclass
 from typing import Optional, cast
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import String
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
-from dataclass_mapper.mapper import map_to, mapper
+from dataclass_mapper.mapper import map_to, mapper, mapper_from
 
 if sqlalchemy_version() < (2, 0, 0):
     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
@@ -50,3 +51,32 @@ def test_simple_sqlalchemy_mapper():
     user_source = UserSource(id=user_id, name="Test", age=None)
     expected_user = User(id=user_id, name="Test", age=None)
     assert equal(map_to(user_source, User), expected_user)
+
+
+class Parent(Base):
+    __tablename__ = "parent"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+
+class Child(Base):
+    __tablename__ = "child"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    parent_id: Mapped[int] = mapped_column(ForeignKey("parent.id"))
+    parent: Mapped[Parent] = relationship()
+
+
+def test_map_sqlalchemy_relation_to_dataclass():
+    @mapper_from(Parent)
+    @dataclass
+    class ParentDC:
+        id: int
+
+    @mapper_from(Child)
+    @dataclass
+    class ChildDC:
+        id: int
+        parent: ParentDC
+
+    child = Child(id=1, parent=Parent(id=2))
+    expected_child_dc = ChildDC(id=1, parent=ParentDC(id=2))
+    assert map_to(child, ChildDC) == expected_child_dc
