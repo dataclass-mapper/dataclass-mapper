@@ -84,17 +84,8 @@ def test_sqlalchemy_relationship_field() -> None:
     child_fields = get_class_meta(Child, namespace=empty_namespace).fields
     assert child_fields == {
         "id": SQLAlchemyFieldMeta(name="id", type=int, allow_none=False, required=False, alias=None),
-        "parent_id": SQLAlchemyFieldMeta(
-            name="parent_id", type=int, allow_none=False, required=False, alias=None, paired_relationship_field="parent"
-        ),
-        "parent": SQLAlchemyFieldMeta(
-            name="parent",
-            type=Parent,
-            allow_none=False,
-            required=False,
-            alias=None,
-            paired_relationship_field="parent_id",
-        ),
+        "parent_id": SQLAlchemyFieldMeta(name="parent_id", type=int, allow_none=False, required=False, alias=None),
+        "parent": SQLAlchemyFieldMeta(name="parent", type=Parent, allow_none=False, required=False, alias=None),
     }
 
     parents_fields = get_class_meta(Parent, namespace=empty_namespace).fields

@@ -1,13 +1,11 @@
 import warnings
 from copy import copy
-from typing import Any, Dict, Set
+from typing import Any, Dict
 
 from .mapping_method import (
-    AssumeNotNone,
     CurrentStringFieldMapping,
     FieldMeta,
     InitWithDefault,
-    ProvideWithExtra,
     Spezial,
     StringFieldMapping,
 )
@@ -68,21 +66,3 @@ def normalize_deprecated_mappings(mapping: StringFieldMapping) -> CurrentStringF
             normalized_mapping[target_field_name] = raw_source
 
     return normalized_mapping
-
-
-def assigned_fields(mapping: CurrentStringFieldMapping) -> Set[str]:
-    filled_fields: Set[str] = set()
-    for target_field_name, raw_source in mapping.items():
-        if isinstance(raw_source, str):
-            filled_fields.add(target_field_name)
-        elif isinstance(raw_source, AssumeNotNone):
-            filled_fields.add(target_field_name)
-        elif isinstance(raw_source, ProvideWithExtra):
-            filled_fields.add(target_field_name)
-        elif isinstance(raw_source, InitWithDefault):
-            pass
-        elif callable(raw_source):
-            filled_fields.add(target_field_name)
-        else:
-            assert False, "no other options"
-    return filled_fields
