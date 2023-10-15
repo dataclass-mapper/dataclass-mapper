@@ -1,7 +1,7 @@
 # mypy: disable-error-code="attr-defined"
 
 from dataclasses import dataclass
-from typing import Optional, cast
+from typing import List, Optional, cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -83,7 +83,7 @@ def test_map_sqlalchemy_relation_to_dataclass():
     assert map_to(child, ChildDC) == expected_child_dc
 
 
-def test_map_sqlalchemy_relation_from_dataclass():
+def test_map_sqlalchemy_relation_from_dataclass_list():
     @mapper(Parent)
     @dataclass
     class ParentDC:
@@ -103,3 +103,38 @@ def test_map_sqlalchemy_relation_from_dataclass():
     assert mapped_child.id == expected_child.id
     assert isinstance(mapped_child.parent, Parent)
     assert mapped_child.parent.id == expected_child.parent.id
+
+
+def test_map_sqlalchemy_relation_from_dataclass():
+    class ParentTable(Base):
+        __tablename__ = "parent_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildTable"]] = relationship()
+
+    class ChildTable(Base):
+        __tablename__ = "child_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_table.id"))
+
+    @mapper(ChildTable, {"parent_id": init_with_default()})
+    @dataclass
+    class ChildDC:
+        id: int
+
+    @mapper(ParentTable)
+    @dataclass
+    class ParentDC:
+        id: int
+        children: List[ChildDC]
+
+    parent_dc = ParentDC(id=1, children=[ChildDC(id=2), ChildDC(id=3)])
+    expected_parent = ParentTable(id=1, children=[ChildTable(id=2), ChildTable(id=3)])
+    mapped_parent = map_to(parent_dc, ParentTable)
+
+    assert isinstance(mapped_parent, ParentTable)
+    assert mapped_parent.id == expected_parent.id
+    assert len(mapped_parent.children) == len(expected_parent.children)
+    assert isinstance(mapped_parent.children[0], ChildTable)
+    assert mapped_parent.children[0].id == expected_parent.children[0].id
+    assert isinstance(mapped_parent.children[1], ChildTable)
+    assert mapped_parent.children[1].id == expected_parent.children[1].id

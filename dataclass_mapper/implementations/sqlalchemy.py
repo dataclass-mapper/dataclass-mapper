@@ -72,6 +72,8 @@ class SQLAlchemyFieldMeta(FieldMeta):
             return False
         if field.primary_key and field.autoincrement in ("auto", True):
             return False
+        if field.foreign_keys:  # TODO: is this always the case?
+            return False
 
         return True
 

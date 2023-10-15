@@ -73,19 +73,19 @@ def test_sqlalchemy_relationship_field() -> None:
     class Parent(Base):
         __tablename__ = "relationship_parent"
         id: Mapped[int] = mapped_column(primary_key=True)
-        children: Mapped[list["Child"]] = relationship()
+        children: Mapped[list["Child"]] = relationship(back_populates="parent")
 
     class Child(Base):
         __tablename__ = "relationship_child"
         id: Mapped[int] = mapped_column(primary_key=True)
         parent_id: Mapped[int] = mapped_column(ForeignKey("relationship_parent.id"))
-        parent: Mapped[Parent] = relationship(overlaps="children")
+        parent: Mapped[Parent] = relationship(back_populates="children")
 
     child_fields = get_class_meta(Child, namespace=empty_namespace).fields
     assert child_fields == {
         "id": SQLAlchemyFieldMeta(name="id", type=int, allow_none=False, required=False, alias=None),
         "parent_id": SQLAlchemyFieldMeta(
-            name="parent_id", type=int, allow_none=False, required=True, alias=None, paired_relationship_field="parent"
+            name="parent_id", type=int, allow_none=False, required=False, alias=None, paired_relationship_field="parent"
         ),
         "parent": SQLAlchemyFieldMeta(
             name="parent",
