@@ -9,6 +9,7 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from dataclass_mapper import init_with_default
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
 from dataclass_mapper.mapper import map_to, mapper, mapper_from
 
@@ -80,3 +81,25 @@ def test_map_sqlalchemy_relation_to_dataclass():
     child = Child(id=1, parent=Parent(id=2))
     expected_child_dc = ChildDC(id=1, parent=ParentDC(id=2))
     assert map_to(child, ChildDC) == expected_child_dc
+
+
+def test_map_sqlalchemy_relation_from_dataclass():
+    @mapper(Parent)
+    @dataclass
+    class ParentDC:
+        id: int
+
+    @mapper(Child, {"parent_id": init_with_default()})
+    @dataclass
+    class ChildDC:
+        id: int
+        parent: ParentDC
+
+    child_dc = ChildDC(id=1, parent=ParentDC(id=2))
+    expected_child = Child(id=1, parent=Parent(id=2))
+    mapped_child = map_to(child_dc, Child)
+
+    assert isinstance(mapped_child, Child)
+    assert mapped_child.id == expected_child.id
+    assert isinstance(mapped_child.parent, Parent)
+    assert mapped_child.parent.id == expected_child.parent.id

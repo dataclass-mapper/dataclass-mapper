@@ -3,6 +3,8 @@ from importlib import import_module
 from itertools import zip_longest
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, cast
 
+from dataclass_mapper.implementations.sqlalchemy import SQLAlchemyFieldMeta
+
 from .assignments import get_map_to_func_name
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
@@ -14,6 +16,7 @@ from .mapping_method import (
     StringFieldMapping,
 )
 from .mapping_preparation import (
+    assigned_fields,
     generate_missing_mappings,
     normalize_deprecated_mappings,
     raise_if_mapping_doesnt_match_target,
@@ -36,6 +39,7 @@ def _make_mapper(
         mapping, source_cls=source_cls, target_cls=target_cls, actual_target_fields=actual_target_fields
     )
     normalized_mapping = normalize_deprecated_mappings(mapping)
+    assigned_target_fields = assigned_fields(normalized_mapping)
 
     source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
     for target_field_name, raw_source in normalized_mapping.items():
@@ -65,6 +69,14 @@ def _make_mapper(
             if target_field.required:
                 # leaving the target empty and using the default value/factory is not possible,
                 # as the target doesn't have a default value/factory
+
+                # excpt if the related relationship field is set
+                if (
+                    isinstance(target_field, SQLAlchemyFieldMeta)
+                    and target_field.paired_relationship_field
+                    and target_field.paired_relationship_field in assigned_target_fields
+                ):
+                    continue
                 raise ValueError(
                     f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {raw_source.created_via}, "
                     "as it has no default"

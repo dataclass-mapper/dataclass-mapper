@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
@@ -13,7 +14,11 @@ def sqlalchemy_version() -> Tuple[int, int, int]:
     return parse_version(cast(str, sqlalchemy.__version__))
 
 
+@dataclass
 class SQLAlchemyFieldMeta(FieldMeta):
+    # for relationships
+    paired_relationship_field: Optional[str] = None
+
     @classmethod
     def from_sqlalchemy(cls, field: Any, name: str) -> "SQLAlchemyFieldMeta":
         # TODO: disable "GENERATED ALWAYS columns" (e.g. Column(Identity(always=True)))
@@ -86,7 +91,7 @@ class SQLAlchemyClassMeta(ClassMeta):
         return field.name
 
     @staticmethod
-    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, SQLAlchemyFieldMeta]:
         sqlalchemy = __import__("sqlalchemy")
         return {
             field.name: SQLAlchemyFieldMeta.from_sqlalchemy(field, field.name)
@@ -94,21 +99,39 @@ class SQLAlchemyClassMeta(ClassMeta):
         }
 
     @staticmethod
-    def _relationship_fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+    def _relationship_fields(
+        clazz: Any, column_fields: dict[str, SQLAlchemyFieldMeta], namespace: Namespace
+    ) -> Dict[str, FieldMeta]:
         sqlalchemy = __import__("sqlalchemy")
         fields: Dict[str, FieldMeta] = {}
         for relationship in sqlalchemy.inspect(clazz).relationships:
             type_ = relationship.mapper.class_
             if relationship.collection_class is list:
-                type_ = List[type_]
+                type_ = List[type_]  # type: ignore[valid-type]
             if relationship.collection_class is set:
-                type_ = Set[type_]
+                type_ = Set[type_]  # type: ignore[valid-type]
             name = relationship._dependency_processor.key
+
+            # For a 1:n relationship, both entities can have the relationship property.
+            # A relationship depends of 2 ids that are linked, usually one primary key and one foreign key.
+            # The child entity has the MANYTOONE direction, and one column that marks the foreign key.
+            # The parent entity has the ONETOMANY direction, and the local column of the relationship is
+            # it's own primary key.
+            paired_relationship_field = None
+            if relationship.direction == sqlalchemy.orm.RelationshipDirection.MANYTOONE and relationship.local_columns:
+                if len(relationship.local_columns) > 1:
+                    raise NotImplementedError("Not supported case, SQLAlchemy relationship has multiple local columns")
+                paired_relationship_field = list(relationship.local_columns)[0].name
+
+                # also adjust the foreign key field
+                column_fields[paired_relationship_field].paired_relationship_field = name
+
             fields[name] = SQLAlchemyFieldMeta(
                 name=name,
                 type=type_,
                 allow_none=False,  # TODO: is this always the case?
                 required=False,  # TODO: is this always the case?
+                paired_relationship_field=paired_relationship_field,
             )
             # todo: what if `relationship(viewonly=True)` is set?
         return fields
@@ -129,5 +152,5 @@ class SQLAlchemyClassMeta(ClassMeta):
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "SQLAlchemyClassMeta":
         column_fields = cls._fields(clazz, namespace=namespace)
-        relationship_fields = cls._relationship_fields(clazz, namespace=namespace)
+        relationship_fields = cls._relationship_fields(clazz, column_fields, namespace=namespace)
         return cls(name=cast(str, clazz.__name__), fields={**column_fields, **relationship_fields})
