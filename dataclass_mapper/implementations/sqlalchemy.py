@@ -107,9 +107,10 @@ class SQLAlchemyClassMeta(ClassMeta):
             fields[name] = SQLAlchemyFieldMeta(
                 name=name,
                 type=type_,
-                allow_none=False,  # TODO: !!!
-                required=False,  # TODO: !!!
+                allow_none=False,  # TODO: is this always the case?
+                required=False,  # TODO: is this always the case?
             )
+            # todo: what if `relationship(viewonly=True)` is set?
         return fields
 
     @staticmethod
