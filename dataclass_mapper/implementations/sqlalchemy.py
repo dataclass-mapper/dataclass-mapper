@@ -21,19 +21,19 @@ class SQLAlchemyFieldMeta(FieldMeta):
         # TODO: disable "GENERATED ALWAYS columns" (e.g. Column(Identity(always=True)))
         return cls(
             name=name,
-            type=cls._extract_sqlalchemy_type(field.type),
+            type=cls._extract_sqlalchemy_type(field.type, name),
             allow_none=field.nullable,
             required=cls._is_required(field),
             alias=None,
         )
 
     @classmethod
-    def _extract_sqlalchemy_type(cls, type_):
+    def _extract_sqlalchemy_type(cls, type_, field_name: str):
         sqlalchemy = __import__("sqlalchemy")
         psql = __import__("sqlalchemy.dialects.postgresql")
 
         if isinstance(type_, psql.ARRAY):
-            item_type = cls._extract_sqlalchemy_type(type_.item_type)
+            item_type = cls._extract_sqlalchemy_type(type_.item_type, field_name)
             return List[item_type]  # type: ignore[valid-type]
 
         if isinstance(type_, sqlalchemy.Enum):
@@ -61,7 +61,7 @@ class SQLAlchemyFieldMeta(FieldMeta):
             if isinstance(type_, sqlalchemy_cls):
                 return mapped_type
 
-        raise NotImplementedError(f"type '{type_}' is not supported")
+        raise NotImplementedError(f"type '{type_}' of field '{field_name}' is not supported")
 
     @staticmethod
     def _is_required(field: Any) -> bool:

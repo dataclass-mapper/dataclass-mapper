@@ -41,7 +41,7 @@ Requirements Overview
 
    *  -  F7
       -  Support other dataclasses libraries
-      -  It's possible to map between different dataclass implementations (dataclasses, pydantic).
+      -  It's possible to map between different dataclass implementations (like dataclasses, pydantic).
 
    *  -  F8
       -  Mappings between enum types
