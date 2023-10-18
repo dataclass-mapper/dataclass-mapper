@@ -5,9 +5,9 @@ from typing import List, Optional, cast
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, create_engine
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
 
 from dataclass_mapper import init_with_default
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
@@ -138,3 +138,133 @@ def test_map_sqlalchemy_relation_from_dataclass():
     assert mapped_parent.children[0].id == expected_parent.children[0].id
     assert isinstance(mapped_parent.children[1], ChildTable)
     assert mapped_parent.children[1].id == expected_parent.children[1].id
+
+
+class InMemoryDatabase:
+    def __init__(self):
+        self.engine = create_engine("sqlite+pysqlite:///:memory:", echo=False, future=True)
+        self.session = Session(self.engine)
+
+        class Base(DeclarativeBase):
+            pass
+
+        self.Base = Base
+
+    def create_all(self) -> None:
+        self.Base.metadata.create_all(self.engine)
+
+    def drop_all(self) -> None:
+        self.Base.metadata.drop_all(self.engine)
+
+
+@pytest.fixture()
+def db() -> InMemoryDatabase:
+    return InMemoryDatabase()
+
+
+def test_map_sqlalchemy_one_to_many(db: InMemoryDatabase):
+    class ParentTable(db.Base):
+        __tablename__ = "parent_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildTable"]] = relationship()
+
+    class ChildTable(db.Base):
+        __tablename__ = "child_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_table.id"))
+
+    @mapper(ChildTable, {"id": init_with_default(), "parent_id": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child:
+        pass
+
+    @mapper(ParentTable, {"id": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent:
+        children: List[Child]
+
+    db.create_all()
+
+    parent = Parent(children=[Child(), Child()])
+    parent_entity = map_to(parent, ParentTable)
+    db.session.add(parent_entity)
+    db.session.commit()
+
+    assert db.session.query(ParentTable).count() == 1
+    assert db.session.query(ChildTable).count() == 2
+
+    parent_entity = db.session.query(ParentTable).options(joinedload(ParentTable.children)).one()
+    parent = map_to(parent_entity, Parent)
+
+    assert len(parent.children) == 2
+
+
+def test_map_sqlalchemy_one_to_many_bidirectional(db: InMemoryDatabase):
+    class ParentTable(db.Base):
+        __tablename__ = "parent_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildTable"]] = relationship(back_populates="parent")
+
+    class ChildTable(db.Base):
+        __tablename__ = "child_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_table.id"))
+        parent: Mapped["ParentTable"] = relationship(back_populates="children")
+
+    @mapper(ChildTable, {"id": init_with_default(), "parent_id": init_with_default(), "parent": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child:
+        pass
+
+    @mapper(ParentTable, {"id": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent:
+        children: List[Child]
+
+    db.create_all()
+
+    parent = Parent(children=[Child(), Child()])
+    parent_entity = map_to(parent, ParentTable)
+    db.session.add(parent_entity)
+    db.session.commit()
+
+    assert db.session.query(ParentTable).count() == 1
+    assert db.session.query(ChildTable).count() == 2
+
+    parent_entity = db.session.query(ParentTable).options(joinedload(ParentTable.children)).one()
+    parent = map_to(parent_entity, Parent)
+
+    assert len(parent.children) == 2
+
+    @mapper(ParentTable, {"id": init_with_default(), "children": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent2:
+        pass
+
+    @mapper(ChildTable, {"id": init_with_default(), "parent_id": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child2:
+        parent: Parent2
+
+    db.session.query(ChildTable).delete()
+    db.session.query(ParentTable).delete()
+    db.session.commit()
+
+    child = Child2(parent=Parent2())
+    child_entity = map_to(child, ChildTable)
+    db.session.add(child_entity)
+    db.session.commit()
+
+    assert db.session.query(ParentTable).count() == 1
+    assert db.session.query(ChildTable).count() == 1
+
+    child_entity = db.session.query(ChildTable).options(joinedload(ChildTable.parent)).one()
+    child = map_to(child_entity, Child2)
+
+    assert child.parent is not None
