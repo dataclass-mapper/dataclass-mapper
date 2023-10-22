@@ -61,6 +61,7 @@ class SQLAlchemyFieldMeta(FieldMeta):
             if isinstance(type_, sqlalchemy_cls):
                 return mapped_type
 
+        breakpoint()
         raise NotImplementedError(f"type '{type_}' of field '{field_name}' is not supported")
 
     @staticmethod
@@ -111,10 +112,12 @@ class SQLAlchemyClassMeta(ClassMeta):
                 type_ = Set[type_]  # type: ignore[valid-type]
             name = relationship._dependency_processor.key
 
+            nullable = all(lc.nullable for lc in relationship.local_columns)
+
             fields[name] = SQLAlchemyFieldMeta(
                 name=name,
                 type=type_,
-                allow_none=False,  # TODO: is this always the case?
+                allow_none=nullable,
                 required=False,  # TODO: is this always the case?
             )
             # todo: what if `relationship(viewonly=True)` is set?
