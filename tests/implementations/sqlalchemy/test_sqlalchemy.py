@@ -17,8 +17,26 @@ if sqlalchemy_version() < (2, 0, 0):
     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
 
 
-class Base(DeclarativeBase):
-    pass
+class InMemoryDatabase:
+    def __init__(self):
+        self.engine = create_engine("sqlite+pysqlite:///:memory:", echo=False, future=True)
+        self.session = Session(self.engine)
+
+        class Base(DeclarativeBase):
+            pass
+
+        self.Base = Base
+
+    def create_all(self) -> None:
+        self.Base.metadata.create_all(self.engine)
+
+    def drop_all(self) -> None:
+        self.Base.metadata.drop_all(self.engine)
+
+
+@pytest.fixture()
+def db() -> InMemoryDatabase:
+    return InMemoryDatabase()
 
 
 def equal(obj1, obj2) -> bool:
@@ -33,16 +51,15 @@ def equal(obj1, obj2) -> bool:
     return cast(bool, d1 == d2)
 
 
-class User(Base):
-    __tablename__ = "user"
-    id: Mapped[UUID] = mapped_column(postgresql.UUID, primary_key=True)
-    name: Mapped[str] = mapped_column(String(64))
-    age: Mapped[Optional[int]] = mapped_column(nullable=True)
+def test_simple_sqlalchemy_mapper(db: InMemoryDatabase):
+    class User(db.Base):
+        __tablename__ = "user"
+        id: Mapped[UUID] = mapped_column(postgresql.UUID, primary_key=True)
+        name: Mapped[str] = mapped_column(String(64))
+        age: Mapped[Optional[int]] = mapped_column(nullable=True)
 
-
-def test_simple_sqlalchemy_mapper():
     @mapper(User)
-    class UserSource(Base):
+    class UserSource(db.Base):
         __tablename__ = "user_source"
         id: Mapped[UUID] = mapped_column(postgresql.UUID, primary_key=True)
         name: Mapped[str] = mapped_column(String(64))
@@ -54,19 +71,17 @@ def test_simple_sqlalchemy_mapper():
     assert equal(map_to(user_source, User), expected_user)
 
 
-class Parent(Base):
-    __tablename__ = "parent"
-    id: Mapped[int] = mapped_column(primary_key=True)
+def test_map_sqlalchemy_relation_to_dataclass(db: InMemoryDatabase):
+    class Parent(db.Base):
+        __tablename__ = "parent"
+        id: Mapped[int] = mapped_column(primary_key=True)
 
+    class Child(db.Base):
+        __tablename__ = "child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent.id"))
+        parent: Mapped[Parent] = relationship()
 
-class Child(Base):
-    __tablename__ = "child"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    parent_id: Mapped[int] = mapped_column(ForeignKey("parent.id"))
-    parent: Mapped[Parent] = relationship()
-
-
-def test_map_sqlalchemy_relation_to_dataclass():
     @mapper_from(Parent)
     @dataclass
     class ParentDC:
@@ -83,7 +98,17 @@ def test_map_sqlalchemy_relation_to_dataclass():
     assert map_to(child, ChildDC) == expected_child_dc
 
 
-def test_map_sqlalchemy_relation_from_dataclass_list():
+def test_map_sqlalchemy_relation_from_dataclass_list(db: InMemoryDatabase):
+    class Parent(db.Base):
+        __tablename__ = "parent"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    class Child(db.Base):
+        __tablename__ = "child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent.id"))
+        parent: Mapped[Parent] = relationship()
+
     @mapper(Parent)
     @dataclass
     class ParentDC:
@@ -105,13 +130,13 @@ def test_map_sqlalchemy_relation_from_dataclass_list():
     assert mapped_child.parent.id == expected_child.parent.id
 
 
-def test_map_sqlalchemy_relation_from_dataclass():
-    class ParentTable(Base):
+def test_map_sqlalchemy_relation_from_dataclass(db: InMemoryDatabase):
+    class ParentTable(db.Base):
         __tablename__ = "parent_table"
         id: Mapped[int] = mapped_column(primary_key=True)
         children: Mapped[List["ChildTable"]] = relationship()
 
-    class ChildTable(Base):
+    class ChildTable(db.Base):
         __tablename__ = "child_table"
         id: Mapped[int] = mapped_column(primary_key=True)
         parent_id: Mapped[int] = mapped_column(ForeignKey("parent_table.id"))
@@ -138,28 +163,6 @@ def test_map_sqlalchemy_relation_from_dataclass():
     assert mapped_parent.children[0].id == expected_parent.children[0].id
     assert isinstance(mapped_parent.children[1], ChildTable)
     assert mapped_parent.children[1].id == expected_parent.children[1].id
-
-
-class InMemoryDatabase:
-    def __init__(self):
-        self.engine = create_engine("sqlite+pysqlite:///:memory:", echo=False, future=True)
-        self.session = Session(self.engine)
-
-        class Base(DeclarativeBase):
-            pass
-
-        self.Base = Base
-
-    def create_all(self) -> None:
-        self.Base.metadata.create_all(self.engine)
-
-    def drop_all(self) -> None:
-        self.Base.metadata.drop_all(self.engine)
-
-
-@pytest.fixture()
-def db() -> InMemoryDatabase:
-    return InMemoryDatabase()
 
 
 def test_map_sqlalchemy_one_to_many(db: InMemoryDatabase):
