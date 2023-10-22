@@ -5,7 +5,7 @@ from typing import List, Optional, cast
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import ForeignKey, String, create_engine
+from sqlalchemy import Column, ForeignKey, String, Table, create_engine
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
 
@@ -344,4 +344,114 @@ def test_map_sqlalchemy_many_to_one_nullable(db: InMemoryDatabase):
     assert map_to(db.session.query(ParentTable).where(ParentTable.id == parent1_entity.id).one(), Parent).child is None
     assert (
         map_to(db.session.query(ParentTable).where(ParentTable.id == parent2_entity.id).one(), Parent).child is not None
+    )
+
+
+def test_map_sqlalchemy_one_to_one(db: InMemoryDatabase):
+    class ParentTable(db.Base):
+        __tablename__ = "parent_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        child: Mapped["ChildTable"] = relationship(back_populates="parent")
+
+    class ChildTable(db.Base):
+        __tablename__ = "child_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_table.id"))
+        parent: Mapped["ParentTable"] = relationship(back_populates="child")
+
+    @mapper(ChildTable, {"id": init_with_default(), "parent_id": init_with_default(), "parent": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child:
+        pass
+
+    @mapper(ParentTable, {"id": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent:
+        child: Child
+
+    db.create_all()
+
+    parent = Parent(child=Child())
+    parent_entity = map_to(parent, ParentTable)
+    db.session.add(parent_entity)
+    db.session.commit()
+
+    assert db.session.query(ChildTable).count() == 1
+    assert map_to(db.session.query(ParentTable).one(), Parent).child is not None
+
+    @mapper(ParentTable, {"id": init_with_default(), "child": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent2:
+        pass
+
+    @mapper(ChildTable, {"id": init_with_default(), "parent_id": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child2:
+        parent: Parent2
+
+    child = Child2(parent=Parent2())
+    child_entity = map_to(child, ChildTable)
+    db.session.add(child_entity)
+    db.session.commit()
+
+    assert db.session.query(ParentTable).where(ParentTable.id == child_entity.parent_id).count() == 1
+    assert map_to(db.session.query(ChildTable).where(ChildTable.id == child_entity.id).one(), Child2).parent is not None
+
+
+def test_map_sqlalchemy_many_to_many(db: InMemoryDatabase):
+    association_table = Table(
+        "association_table",
+        db.Base.metadata,
+        Column("parent_id", ForeignKey("parent_table.id")),
+        Column("child_id", ForeignKey("child_table.id")),
+    )
+
+    class ParentTable(db.Base):
+        __tablename__ = "parent_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildTable"]] = relationship(secondary=association_table)
+
+    class ChildTable(db.Base):
+        __tablename__ = "child_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    @mapper(ChildTable, {"id": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child:
+        pass
+
+    @mapper(ParentTable, {"id": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent:
+        children: List[Child]
+
+    db.create_all()
+
+    child1 = Child()
+    child2 = Child()
+    parent1 = Parent(children=[child1, child2])
+
+    parent1_entity = map_to(parent1, ParentTable)
+    db.session.add(parent1_entity)
+    db.session.commit()
+
+    assert db.session.query(ChildTable).count() == 2
+    assert db.session.query(ParentTable).count() == 1
+
+    parent2_entity = ParentTable(children=[parent1_entity.children[0]])
+    db.session.add(parent2_entity)
+    db.session.commit()
+
+    assert db.session.query(ChildTable).count() == 2
+    assert db.session.query(ParentTable).count() == 2
+
+    assert (
+        len(map_to(db.session.query(ParentTable).where(ParentTable.id == parent2_entity.id).one(), Parent).children)
+        == 1
     )
