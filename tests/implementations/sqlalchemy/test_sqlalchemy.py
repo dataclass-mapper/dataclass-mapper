@@ -458,3 +458,67 @@ def test_map_sqlalchemy_many_to_many(db: InMemoryDatabase):
         len(map_to(db.session.query(ParentTable).where(ParentTable.id == parent2_entity.id).one(), Parent).children)
         == 1
     )
+
+
+def test_map_sqlalchemy_many_to_many_with_association_object(db: InMemoryDatabase):
+    class AssociationTable(db.Base):
+        __tablename__ = "association_table"
+        left_id: Mapped[int] = mapped_column(ForeignKey("left_table.id"), primary_key=True)
+        right_id: Mapped[int] = mapped_column(ForeignKey("right_table.id"), primary_key=True)
+        extra_data: Mapped[Optional[str]]
+        child: Mapped["ChildTable"] = relationship(viewonly=True)
+        parent: Mapped["ParentTable"] = relationship(viewonly=True)
+
+    class ParentTable(db.Base):
+        __tablename__ = "left_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildTable"]] = relationship(secondary="association_table", back_populates="parents")
+
+    class ChildTable(db.Base):
+        __tablename__ = "right_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parents: Mapped[List["ParentTable"]] = relationship(secondary="association_table", back_populates="children")
+
+    @mapper(ChildTable, {"id": init_with_default(), "parents": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child:
+        pass
+
+    @mapper(ParentTable, {"id": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent:
+        children: List["Child"]
+
+    db.create_all()
+
+    child1 = Child()
+    child2 = Child()
+    parent1 = Parent(children=[child1, child2])
+
+    parent1_entity = map_to(parent1, ParentTable)
+    child1_entity = parent1_entity.children[0]
+    parent2_entity = ParentTable(children=[child1_entity])
+    db.session.add_all([parent1_entity, parent2_entity])
+    db.session.commit()
+
+    assert db.session.query(ParentTable).count() == 2
+    assert db.session.query(ChildTable).count() == 2
+    assert db.session.query(AssociationTable).count() == 3
+
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent2:
+        pass
+
+    @mapper_from(ChildTable)
+    @dataclass
+    class Child2:
+        parents: List["Parent2"]
+
+    child1_entity = db.session.query(ChildTable).where(ChildTable.id == child1_entity.id).one()
+    assert len(child1_entity.parents) == 2
+
+    child1 = map_to(child1_entity, Child2)
+    assert len(child1.parents) == 2
