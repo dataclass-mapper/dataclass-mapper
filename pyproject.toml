@@ -51,7 +51,7 @@ sphinxcontrib-plantuml = "^0.25"
 sphinx-autobuild = "^2021.3.14"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.0.292"
+ruff = "^0.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
