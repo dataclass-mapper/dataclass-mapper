@@ -1,4 +1,4 @@
-# mypy: disable-error-code="attr-defined"
+# mypy: disable-error-code="attr-defined,name-defined,misc"
 
 from dataclasses import dataclass
 from typing import List, Optional, cast
@@ -520,5 +520,5 @@ def test_map_sqlalchemy_many_to_many_with_association_object(db: InMemoryDatabas
     child1_entity = db.session.query(ChildTable).where(ChildTable.id == child1_entity.id).one()
     assert len(child1_entity.parents) == 2
 
-    child1 = map_to(child1_entity, Child2)
-    assert len(child1.parents) == 2
+    child2_ = map_to(child1_entity, Child2)
+    assert len(child2_.parents) == 2
