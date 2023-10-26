@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional, Type, Union
@@ -102,8 +103,8 @@ class AssignmentOptions:
         )
 
 
-class MappingMethodSourceCode:
-    """Source code of the mapping method"""
+class MappingMethodSourceCode(ABC):
+    """Source code of the methods that are executed during mappings"""
 
     AssignmentClasses: List[Type[Assignment]] = [
         SimpleAssignment,
@@ -115,13 +116,13 @@ class MappingMethodSourceCode:
     def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
-        self.function = cg.Function(
-            "convert",
-            args="self, extra: dict",
-            return_type=self.target_cls.name,
-            body=cg.Block(cg.Assignment(name="d", rhs="{}")),
-        )
+        self.function = self._create_function(target_cls=target_cls)
         self.methods: Dict[str, Callable] = {}
+
+    @staticmethod
+    @abstractmethod
+    def _create_function(target_cls: ClassMeta) -> cg.Function:
+        pass
 
     @classmethod
     def _get_asssigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
@@ -152,10 +153,9 @@ class MappingMethodSourceCode:
         code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
         return code
 
+    @abstractmethod
     def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
-        variable_name = self.target_cls.get_assignment_name(target)
-        lookup = cg.DictLookup(dict_name="d", key=variable_name)
-        return cg.Assignment(name=lookup, rhs=right_side)
+        pass
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if callable(source):
@@ -193,6 +193,50 @@ class MappingMethodSourceCode:
         )
         self.function.body.append(self._get_assignment(target=target, right_side=f'extra["{variable_name}"]'))
 
+    @abstractmethod
+    def __str__(self) -> str:
+        pass
+
+
+class CreateMappingMethodSourceCode(MappingMethodSourceCode):
+    """Source code of the method that is responsible for creating a new object"""
+
+    @staticmethod
+    def _create_function(target_cls: ClassMeta) -> cg.Function:
+        return cg.Function(
+            "convert",
+            args="self, extra: dict",
+            return_type=target_cls.name,
+            body=cg.Block(cg.Assignment(name="d", rhs="{}")),
+        )
+
+    def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
+        variable_name = self.target_cls.get_assignment_name(target)
+        lookup = cg.DictLookup(dict_name="d", key=variable_name)
+        return cg.Assignment(name=lookup, rhs=right_side)
+
     def __str__(self) -> str:
         self.function.body.append(self.target_cls.return_statement())
+        return self.function.to_string(0)
+
+
+class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
+    """Source code of the method that is responsible for updating a new object"""
+
+    @staticmethod
+    def _create_function(target_cls: ClassMeta) -> cg.Function:
+        return cg.Function(
+            "update",
+            args=f'self, target: "{target_cls.name}", extra: dict',
+            return_type="None",
+            body=cg.Block(),
+        )
+
+    def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
+        lookup = cg.AttributeLookup(obj="target", attribute=target.name)
+        return cg.Assignment(name=lookup, rhs=right_side)
+
+    def __str__(self) -> str:
+        if not self.function.body:
+            self.function.body.append(cg.Pass())
         return self.function.to_string(0)

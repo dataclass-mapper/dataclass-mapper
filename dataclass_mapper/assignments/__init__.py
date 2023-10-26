@@ -4,7 +4,7 @@ from .function import CallableWithMax1Parameter, FunctionAssignment
 from .list import ListRecursiveAssignment
 from .recursive import RecursiveAssignment
 from .simple import SimpleAssignment
-from .utils import get_map_to_func_name, get_var_name
+from .utils import get_map_to_func_name, get_mapupdate_to_func_name, get_var_name
 
 __all__ = [
     "Assignment",
@@ -16,4 +16,5 @@ __all__ = [
     "FunctionAssignment",
     "get_var_name",
     "get_map_to_func_name",
+    "get_mapupdate_to_func_name",
 ]

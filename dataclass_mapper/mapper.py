@@ -1,17 +1,19 @@
 from copy import deepcopy
 from importlib import import_module
 from itertools import zip_longest
-from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
-from .assignments import get_map_to_func_name
+from .assignments import get_map_to_func_name, get_mapupdate_to_func_name
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
 from .mapping_method import (
     AssumeNotNone,
+    CreateMappingMethodSourceCode,
     InitWithDefault,
     MappingMethodSourceCode,
     ProvideWithExtra,
     StringFieldMapping,
+    UpdateMappingMethodSourceCode,
 )
 from .mapping_preparation import (
     generate_missing_mappings,
@@ -22,7 +24,11 @@ from .namespace import Namespace, get_namespace
 
 
 def _make_mapper(
-    mapping: StringFieldMapping, source_cls: Any, target_cls: Any, namespace: Namespace
+    mapping: StringFieldMapping,
+    source_cls: Any,
+    target_cls: Any,
+    namespace: Namespace,
+    source_code_type: Type[MappingMethodSourceCode],
 ) -> Tuple[str, Dict[str, Callable], Dict[str, Any]]:
     source_cls_meta = get_class_meta(source_cls, namespace=namespace)
     target_cls_meta = get_class_meta(target_cls, namespace=namespace)
@@ -37,7 +43,7 @@ def _make_mapper(
     )
     normalized_mapping = normalize_deprecated_mappings(mapping)
 
-    source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
+    source_code = source_code_type(source_cls=source_cls_meta, target_cls=target_cls_meta)
     for target_field_name, raw_source in normalized_mapping.items():
         target_field = actual_target_fields[target_field_name]
         if isinstance(raw_source, str):
@@ -111,12 +117,7 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
     namespace = get_namespace()
 
     def wrapped(SourceCls: T) -> T:
-        add_mapper_function(
-            SourceCls=SourceCls,
-            TargetCls=TargetCls,
-            mapping=mapping,
-            namespace=namespace,
-        )
+        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace)
         return SourceCls
 
     return wrapped
@@ -145,25 +146,41 @@ def add_mapper_function(
 ) -> None:
     field_mapping = mapping or cast(StringFieldMapping, {})
 
-    map_code, factories, context = _make_mapper(
+    create_map_code, create_factories, create_context = _make_mapper(
         field_mapping,
         source_cls=SourceCls,
         target_cls=TargetCls,
         namespace=namespace,
+        source_code_type=CreateMappingMethodSourceCode,
     )
+    update_map_code, update_factories, update_context = _make_mapper(
+        field_mapping,
+        source_cls=SourceCls,
+        target_cls=TargetCls,
+        namespace=namespace,
+        source_code_type=UpdateMappingMethodSourceCode,
+    )
+
     module = import_module(SourceCls.__module__)
 
-    d: Dict = {}
+    create_d: Dict = {}
+    update_d: Dict = {}
     setattr(SourceCls, "__zip_longest", zip_longest)
     # Support older versions of python by calling {**a, **b} rather than a|b
-    exec(map_code, {**module.__dict__, **context}, d)
-    map_func_name = get_map_to_func_name(TargetCls)
-    if hasattr(SourceCls, map_func_name):
+    exec(create_map_code, {**module.__dict__, **create_context}, create_d)
+    exec(update_map_code, {**module.__dict__, **update_context}, update_d)
+
+    create_map_func_name = get_map_to_func_name(TargetCls)
+    update_map_func_name = get_mapupdate_to_func_name(TargetCls)
+    if hasattr(SourceCls, create_map_func_name) or hasattr(SourceCls, update_map_func_name):
         raise AttributeError(
             f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
         )
-    setattr(SourceCls, map_func_name, d["convert"])
-    for name, factory in factories.items():
+    setattr(SourceCls, create_map_func_name, create_d["convert"])
+    setattr(SourceCls, update_map_func_name, update_d["update"])
+    for name, factory in create_factories.items():
+        setattr(SourceCls, name, factory)
+    for name, factory in update_factories.items():
         setattr(SourceCls, name, factory)
 
 
@@ -232,20 +249,41 @@ def add_enum_mapper_function(SourceCls: Any, TargetCls: Any, mapping: Optional[E
     setattr(SourceCls, map_func_name, convert_function)
 
 
-def map_to(obj, TargetCls: Type[T], extra: Optional[Dict[str, Any]] = None) -> T:
-    """Maps the given object to an object of type ``TargetCls``, if such a safe mapping was defined for the
-    type of the given object.
-    Raises an ``NotImplementedError`` if no such mapping is defined.
+@overload
+def map_to(obj, target: Type[T], extra: Optional[Dict[str, Any]] = None) -> T:
+    pass
+
+
+@overload
+def map_to(obj, target: T, extra: Optional[Dict[str, Any]] = None) -> T:
+    pass
+
+
+def map_to(obj, target: Union[Type[T], T], extra: Optional[Dict[str, Any]] = None) -> T:
+    """Given a target class, it will create a new object of that type using the defined mapping.
+    Given a target object, it will update that object using the defined mapping.
+
+    If no suitable mapping was defined for the type, it will raise an ``NotImplementedError``.
 
     :param obj: the source object that you want to map to an object of type ``TargetCls``
-    :param TargetCls: the (target) class that you want to map to.
+    :param target: the target or the target class that you want to map to.
     :param extra: dictionary with the values for the `provide_with_extra()` fields
     :return: the mapped object
     """
     if extra is None:
         extra = {}
-    func_name = get_map_to_func_name(TargetCls)
-    if hasattr(obj, func_name):
-        return cast(T, getattr(obj, func_name)(extra))
+
+    if isinstance(target, type):
+        TargetCls = target
+        func_name = get_map_to_func_name(target)
+
+        if hasattr(obj, func_name):
+            return cast(T, getattr(obj, func_name)(extra))
+    else:
+        TargetCls = target.__class__
+        func_name = get_mapupdate_to_func_name(TargetCls)
+
+        if hasattr(obj, func_name):
+            return cast(T, getattr(obj, func_name)(target, extra))
 
     raise NotImplementedError(f"Object of type '{type(obj).__name__}' cannot be mapped to '{TargetCls.__name__}'")

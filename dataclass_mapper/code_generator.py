@@ -18,10 +18,24 @@ class DictLookup(Expression):
         return f'{self.dict_name}["{self.key}"]'
 
 
+@dataclass
+class AttributeLookup(Expression):
+    obj: Union[str, Expression]
+    attribute: Union[str, Expression]
+
+    def __str__(self) -> str:
+        return f"{self.obj}.{self.attribute}"
+
+
 class Statement(ABC):
     @abstractmethod
     def to_string(self, indent: int) -> str:
         ...
+
+
+class Pass(Statement):
+    def to_string(self, indent: int) -> str:
+        return f"{' '*indent}pass"
 
 
 @dataclass
@@ -42,6 +56,9 @@ class Block(Statement):
 
     def to_string(self, indent: int) -> str:
         return "\n".join(statement.to_string(indent) for statement in self.statements)
+
+    def __bool__(self) -> bool:
+        return bool(self.statements)
 
 
 @dataclass
@@ -84,4 +101,4 @@ class Function(Statement):
     body: Block
 
     def to_string(self, indent: int) -> str:
-        return f'{" "*indent}def convert({self.args}) -> "{self.return_type}":\n{self.body.to_string(indent+4)}'
+        return f'{" "*indent}def {self.name}({self.args}) -> "{self.return_type}":\n{self.body.to_string(indent+4)}'
