@@ -68,7 +68,7 @@ def _make_mapper(
         elif isinstance(raw_source, ProvideWithExtra):
             source_code.add_fill_with_extra(target=target_field)
         elif isinstance(raw_source, InitWithDefault):
-            if target_field.required:
+            if source_code_type.all_required_fields_need_initialization and target_field.required:
                 # leaving the target empty and using the default value/factory is not possible,
                 # as the target doesn't have a default value/factory
                 raise ValueError(
@@ -84,7 +84,7 @@ def _make_mapper(
 T = TypeVar("T")
 
 
-def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
+def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
     The mapper method can be called using the ``map_to`` function.
 
@@ -112,75 +112,103 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None) -> Call
           If no source field name is given, it will additionally assume that the source field is also called ``x``.
         - ``{"x": provide_with_extra()}`` means, that you don't fill this field with any field of the source class,
           but with the extra dictionary given by the `map_to` method.
+    :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
+        object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
+        necessary during the creation of a new object.
     """
 
     namespace = get_namespace()
 
     def wrapped(SourceCls: T) -> T:
-        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace)
+        add_mapper_function(
+            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, only_update=only_update
+        )
         return SourceCls
 
     return wrapped
 
 
-def mapper_from(SourceCls: Any, mapping: Optional[StringFieldMapping] = None) -> Callable[[T], T]:
+def mapper_from(
+    SourceCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False
+) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
     The mapper method can be called using the ``map_to`` function.
 
     :param SourceCls: the class (source class) that you want to map an object from to the current (target) class.
     :param mapping: an optional dictionary which which it's possible to describe how each field in the target class
         gets initialized.
+    :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
+        object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
+        necessary during the creation of a new object.
     """
 
     namespace = get_namespace()
 
     def wrapped(TargetCls: T) -> T:
-        add_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace)
+        add_mapper_function(
+            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, only_update=only_update
+        )
         return TargetCls
 
     return wrapped
 
 
 def add_mapper_function(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping], namespace: Namespace
+    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping], namespace: Namespace, only_update: bool
 ) -> None:
     field_mapping = mapping or cast(StringFieldMapping, {})
 
-    create_map_code, create_factories, create_context = _make_mapper(
-        field_mapping,
-        source_cls=SourceCls,
-        target_cls=TargetCls,
-        namespace=namespace,
-        source_code_type=CreateMappingMethodSourceCode,
-    )
-    update_map_code, update_factories, update_context = _make_mapper(
-        field_mapping,
-        source_cls=SourceCls,
-        target_cls=TargetCls,
-        namespace=namespace,
+    if not only_update:
+        create_map_func_name = get_map_to_func_name(TargetCls)
+        add_specific_mapper_function(
+            SourceCls=SourceCls,
+            TargetCls=TargetCls,
+            field_mapping=field_mapping,
+            source_code_type=CreateMappingMethodSourceCode,
+            namespace=namespace,
+            map_func_name=create_map_func_name,
+        )
+
+    update_map_func_name = get_mapupdate_to_func_name(TargetCls)
+    add_specific_mapper_function(
+        SourceCls=SourceCls,
+        TargetCls=TargetCls,
+        field_mapping=field_mapping,
         source_code_type=UpdateMappingMethodSourceCode,
+        namespace=namespace,
+        map_func_name=update_map_func_name,
+    )
+
+
+def add_specific_mapper_function(
+    SourceCls: Any,
+    TargetCls: Any,
+    field_mapping: StringFieldMapping,
+    namespace: Namespace,
+    source_code_type: Type[MappingMethodSourceCode],
+    map_func_name: str,
+) -> None:
+    map_code, factories, context = _make_mapper(
+        field_mapping,
+        source_cls=SourceCls,
+        target_cls=TargetCls,
+        namespace=namespace,
+        source_code_type=source_code_type,
     )
 
     module = import_module(SourceCls.__module__)
 
-    create_d: Dict = {}
-    update_d: Dict = {}
+    d: Dict = {}
     setattr(SourceCls, "__zip_longest", zip_longest)
     # Support older versions of python by calling {**a, **b} rather than a|b
-    exec(create_map_code, {**module.__dict__, **create_context}, create_d)
-    exec(update_map_code, {**module.__dict__, **update_context}, update_d)
+    exec(map_code, {**module.__dict__, **context}, d)
 
-    create_map_func_name = get_map_to_func_name(TargetCls)
-    update_map_func_name = get_mapupdate_to_func_name(TargetCls)
-    if hasattr(SourceCls, create_map_func_name) or hasattr(SourceCls, update_map_func_name):
+    if hasattr(SourceCls, map_func_name):
         raise AttributeError(
             f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
         )
-    setattr(SourceCls, create_map_func_name, create_d["convert"])
-    setattr(SourceCls, update_map_func_name, update_d["update"])
-    for name, factory in create_factories.items():
-        setattr(SourceCls, name, factory)
-    for name, factory in update_factories.items():
+    setattr(SourceCls, map_func_name, d[source_code_type.func_name])
+    for name, factory in factories.items():
         setattr(SourceCls, name, factory)
 
 

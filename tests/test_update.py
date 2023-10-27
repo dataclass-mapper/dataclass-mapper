@@ -26,7 +26,7 @@ def test_simple_update():
 
 
 def test_partial_update():
-    @mapper(Foo, {"x": init_with_default()})
+    @mapper(Foo, {"x": init_with_default()}, only_update=True)
     @dataclass
     class FooUpdate:
         y: str

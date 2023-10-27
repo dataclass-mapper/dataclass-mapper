@@ -113,15 +113,18 @@ class MappingMethodSourceCode(ABC):
         DictRecursiveAssignment,
     ]
 
+    func_name = ""
+    all_required_fields_need_initialization = True
+
     def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
         self.function = self._create_function(target_cls=target_cls)
         self.methods: Dict[str, Callable] = {}
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def _create_function(target_cls: ClassMeta) -> cg.Function:
+    def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
         pass
 
     @classmethod
@@ -201,10 +204,13 @@ class MappingMethodSourceCode(ABC):
 class CreateMappingMethodSourceCode(MappingMethodSourceCode):
     """Source code of the method that is responsible for creating a new object"""
 
-    @staticmethod
-    def _create_function(target_cls: ClassMeta) -> cg.Function:
+    func_name = "convert"
+    all_required_fields_need_initialization = True
+
+    @classmethod
+    def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
         return cg.Function(
-            "convert",
+            cls.func_name,
             args="self, extra: dict",
             return_type=target_cls.name,
             body=cg.Block(cg.Assignment(name="d", rhs="{}")),
@@ -223,10 +229,13 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
 class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
     """Source code of the method that is responsible for updating a new object"""
 
-    @staticmethod
-    def _create_function(target_cls: ClassMeta) -> cg.Function:
+    func_name = "update"
+    all_required_fields_need_initialization = False
+
+    @classmethod
+    def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
         return cg.Function(
-            "update",
+            cls.func_name,
             args=f'self, target: "{target_cls.name}", extra: dict',
             return_type="None",
             body=cg.Block(),
