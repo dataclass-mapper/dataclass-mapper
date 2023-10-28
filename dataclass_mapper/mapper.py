@@ -9,7 +9,7 @@ from .enum import EnumMapping, make_enum_mapper
 from .mapping_method import (
     AssumeNotNone,
     CreateMappingMethodSourceCode,
-    InitWithDefault,
+    Ignore,
     MappingMethodSourceCode,
     ProvideWithExtra,
     StringFieldMapping,
@@ -67,7 +67,7 @@ def _make_mapper(
             source_code.add_mapping(target=target_field, source=source_field)
         elif isinstance(raw_source, ProvideWithExtra):
             source_code.add_fill_with_extra(target=target_field)
-        elif isinstance(raw_source, InitWithDefault):
+        elif isinstance(raw_source, Ignore):
             if source_code_type.all_required_fields_need_initialization and target_field.required:
                 # leaving the target empty and using the default value/factory is not possible,
                 # as the target doesn't have a default value/factory
@@ -102,11 +102,13 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_up
         - ``{"x": lambda self: self.x + 1}`` means, that the field ``x`` will be initialized with the
           incremented value ``x`` of the source object.
         - ``{"x": USE_DEFAULT}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be
-          initialized with the default value / factory of that field.
+          initialized with the default value / factory of that field, or simply ignored during an update.
         - ``{"x": IGNORE_MISSING_MAPPING}`` (deprecated) means, nothing is mapped to the field ``x``, it will just be
-          initialized with the default value / factory of that field.
+          initialized with the default value / factory of that field, or simply ignored during an update.
         - ``{"x": init_with_default()}`` means, nothing is mapped to the field ``x``, it will just be
-          initialized with the default value / factory of that field.
+          initialized with the default value / factory of that field, or simply ignored during an update.
+        - ``{"x": ignore()}`` means, nothing is mapped to the field ``x``, it will just be
+          initialized with the default value / factory of that field, or simply ignored during an update.
         - ``{"x": assume_not_none("y")}`` means, that the target field ``x`` will be initialized with the value of the
           ``y`` source field, and the library will assume that the source field is not ``None``.
           If no source field name is given, it will additionally assume that the source field is also called ``x``.

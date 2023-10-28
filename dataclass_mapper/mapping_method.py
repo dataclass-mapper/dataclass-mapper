@@ -23,13 +23,22 @@ class Spezial(Enum):
 
 
 @dataclass
-class InitWithDefault:
+class Ignore:
     created_via: str
 
 
-def init_with_default() -> InitWithDefault:
+def init_with_default() -> Ignore:
     """Initialize the target field with the default value, or default factory."""
-    return InitWithDefault(created_via="init_with_default()")
+    return Ignore(created_via="init_with_default()")
+
+
+def ignore() -> Ignore:
+    """If the mapping operation creates a new object, it will initialize the target field
+    with the default value, or default factory.
+    If the mapping operation updates a field, it will simply ignore that field and keep the
+    old value.
+    """
+    return Ignore(created_via="ignore()")
 
 
 @dataclass
@@ -58,11 +67,11 @@ def provide_with_extra() -> ProvideWithExtra:
 # the different types that can be used as origin (source) for mapping to a member
 # - str: the name of a different variable in the original class
 # - Callable: a function that produces the value (can use `self` as parameter)
-# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default(): Don't map to this variable
+# - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default()/ignore(): Don't map to this variable
 #   (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
 # - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
-CurrentOrigin = Union[str, CallableWithMax1Parameter, InitWithDefault, AssumeNotNone, ProvideWithExtra]
+CurrentOrigin = Union[str, CallableWithMax1Parameter, Ignore, AssumeNotNone, ProvideWithExtra]
 Origin = Union[CurrentOrigin, Spezial]
 CurrentStringFieldMapping = Dict[str, CurrentOrigin]
 StringFieldMapping = Dict[str, Origin]

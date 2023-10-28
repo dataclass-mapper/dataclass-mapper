@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from dataclass_mapper.mapper import map_to, mapper
-from dataclass_mapper.mapping_method import init_with_default
+from dataclass_mapper.mapping_method import ignore
 
 
 @dataclass
@@ -26,7 +26,7 @@ def test_simple_update():
 
 
 def test_partial_update():
-    @mapper(Foo, {"x": init_with_default()}, only_update=True)
+    @mapper(Foo, {"x": ignore()}, only_update=True)
     @dataclass
     class FooUpdate:
         y: str
@@ -52,7 +52,7 @@ def test_recursive_update_using_overwrite():
         x: int
         y: str
 
-    @mapper(Bar, {"x": init_with_default()}, only_update=True)
+    @mapper(Bar, {"x": ignore()}, only_update=True)
     @dataclass
     class BarUpdate:
         foo: FooUpdate

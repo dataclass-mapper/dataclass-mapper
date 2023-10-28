@@ -5,7 +5,7 @@ from typing import Any, Dict
 from .mapping_method import (
     CurrentStringFieldMapping,
     FieldMeta,
-    InitWithDefault,
+    Ignore,
     Spezial,
     StringFieldMapping,
 )
@@ -58,7 +58,7 @@ def normalize_deprecated_mappings(mapping: StringFieldMapping) -> CurrentStringF
                     f"{raw_source.name} is deprecated, use init_with_default() instead",
                     DeprecationWarning,
                 )
-                normalized_mapping[target_field_name] = InitWithDefault(created_via=raw_source.name)
+                normalized_mapping[target_field_name] = Ignore(created_via=raw_source.name)
             else:
                 assert False, "only those two values are possible"
 
