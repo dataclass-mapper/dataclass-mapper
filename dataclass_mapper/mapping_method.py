@@ -128,7 +128,7 @@ class MappingMethodSourceCode(ABC):
         pass
 
     @classmethod
-    def _get_asssigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
+    def _get_assigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
         for AssignmentCls in cls.AssignmentClasses:
             if (assignment := AssignmentCls(source=source, target=target)).applicable():
                 return assignment
@@ -173,7 +173,7 @@ class MappingMethodSourceCode(ABC):
             options = AssignmentOptions.from_Metas(
                 source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
             )
-            if assignment := self._get_asssigment(source=source, target=target):
+            if assignment := self._get_assigment(source=source, target=target):
                 self.function.body.append(
                     self._field_assignment(
                         source=source,

@@ -82,6 +82,30 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
     assert str(code) == expected_code
 
 
+def test_provide_with_extra_code_list_update(code: UpdateMappingMethodSourceCode):
+    @dataclass
+    class FooTarget:
+        pass
+
+    @mapper(FooTarget)
+    @dataclass
+    class FooSource:
+        pass
+
+    code.add_mapping(
+        target=FieldMeta(name="target_x", type=FooTarget, allow_none=False, required=True),
+        source=FieldMeta(name="source_x", type=FooSource, allow_none=False, required=True),
+    )
+    footarget_id = id(FooTarget)
+    expected_code = prepare_expected_code(
+        f"""
+        def update(self, target: "Target", extra: dict) -> "None":
+            target.target_x = self.source_x._map_to_FooTarget_{footarget_id}(extra.get("target_x", {{}}))
+        """  # noqa: E501
+    )
+    assert str(code) == expected_code
+
+
 def test_provide_with_extra_code_check(code: UpdateMappingMethodSourceCode):
     code.add_fill_with_extra(target=FieldMeta(name="target_x", type=int, allow_none=False, required=True))
     expected_code = prepare_expected_code(
@@ -113,8 +137,7 @@ def test_provide_with_extra_code_list(code: UpdateMappingMethodSourceCode):
     expected_code = prepare_expected_code(
         f"""
         def update(self, target: "Target", extra: dict) -> "None":
-            TODO: HOW SHOULD THIS LOOK LIKE???
-            target.target_x = [x._mapupdate_to_FooTarget_{footarget_id}(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", []), fillvalue=dict())]
+            target.target_x = [x._map_to_FooTarget_{footarget_id}(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", []), fillvalue=dict())]
         """  # noqa: E501
     )
     assert str(code) == expected_code
@@ -138,9 +161,7 @@ def test_provide_with_extra_code_dict(code: UpdateMappingMethodSourceCode):
     expected_code = prepare_expected_code(
         f"""
         def update(self, target: "Target", extra: dict) -> "None":
-            TODO: HOW SHOULD THIS LOOK LIKE???
-            target.target_x = {{k: v._mapupdate_to_FooTarget_{footarget_id}(extra.get("target_x", {{}}).get(k, {{}})) for k, v in self.source_x.items()}}
-            return TargetAlias(**d)
+            target.target_x = {{k: v._map_to_FooTarget_{footarget_id}(extra.get("target_x", {{}}).get(k, {{}})) for k, v in self.source_x.items()}}
         """  # noqa: E501
     )
     assert str(code) == expected_code
