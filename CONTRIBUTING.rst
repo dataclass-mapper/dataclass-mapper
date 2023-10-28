@@ -26,15 +26,15 @@ In a shell activate the virtual environment from poetry with ``poetry shell``, a
 Formatting / Linting
 ^^^^^^^^^^^^^^^^^^^^
 
-Code formatting is done with `Black <https://black.readthedocs.io/en/stable/>`_, linting with `Ruff <https://beta.ruff.rs/>`_.
+Code formatting and linting with `Ruff <https://beta.ruff.rs/>`_.
 
 To get formatting/linting support in your IDE you might need to configure your IDE or install IDE extensions.
 However you can also run them in a shell with:
 
 .. code-block:: sh
 
-   # check code style and fix potential issues
-   black .
+   # check code style and fix formatting issues
+   ruff format .
 
    # lint the code
    ruff .

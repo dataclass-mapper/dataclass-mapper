@@ -54,4 +54,4 @@ Conventions
       -  According to `Arc42 <https://arc42.org/overview>`_.
 
    *  -  Coding guidelines
-      -  Formatting according to ``black``, linting rules according to ``ruff``.
+      -  Formatting according to ``ruff format``, linting rules according to ``ruff``.
