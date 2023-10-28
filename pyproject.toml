@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dataclass-mapper"
-version = "0.0.0"
+version = "1.9.0"
 description = "Autogenerate mappings between dataclasses"
 authors = ["Jakob Kogler <jakob.kogler@gmail.com>"]
 
@@ -28,9 +28,11 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 pydantic = { version = ">=1.9.0", optional = true }
+SQLAlchemy = { version = ">= 2.0.0", optional = true }
 
 [tool.poetry.extras]
 pydantic = ["pydantic"]
+SQLAlchemy = ["SQLAlchemy"]
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.0"
@@ -49,7 +51,7 @@ sphinxcontrib-plantuml = "^0.25"
 sphinx-autobuild = "^2021.3.14"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.0.292"
+ruff = "^0.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -90,6 +92,6 @@ filterwarnings = ["error"]
 exclude_lines = ["pragma: no cover", "@abstractmethod"]
 
 [tool.poetry-dynamic-versioning]
-enable = true
+enable = false
 vcs = "git"
 style = "semver"

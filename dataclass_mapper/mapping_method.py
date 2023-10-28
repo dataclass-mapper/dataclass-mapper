@@ -23,12 +23,12 @@ class Spezial(Enum):
 
 @dataclass
 class InitWithDefault:
-    pass
+    created_via: str
 
 
 def init_with_default() -> InitWithDefault:
     """Initialize the target field with the default value, or default factory."""
-    return InitWithDefault()
+    return InitWithDefault(created_via="init_with_default()")
 
 
 @dataclass
@@ -61,7 +61,9 @@ def provide_with_extra() -> ProvideWithExtra:
 #   (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
 # - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
-Origin = Union[str, CallableWithMax1Parameter, Spezial, InitWithDefault, AssumeNotNone, ProvideWithExtra]
+CurrentOrigin = Union[str, CallableWithMax1Parameter, InitWithDefault, AssumeNotNone, ProvideWithExtra]
+Origin = Union[CurrentOrigin, Spezial]
+CurrentStringFieldMapping = Dict[str, CurrentOrigin]
 StringFieldMapping = Dict[str, Origin]
 
 

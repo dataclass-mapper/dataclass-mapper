@@ -12,6 +12,7 @@ from dataclass_mapper.utils import is_union_type
 class DataclassType(Enum):
     DATACLASSES = auto()
     PYDANTIC = auto()
+    SQLAlchemy = auto()
 
 
 @dataclass

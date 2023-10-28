@@ -1,4 +1,3 @@
-import warnings
 from copy import deepcopy
 from importlib import import_module
 from itertools import zip_longest
@@ -12,8 +11,12 @@ from .mapping_method import (
     InitWithDefault,
     MappingMethodSourceCode,
     ProvideWithExtra,
-    Spezial,
     StringFieldMapping,
+)
+from .mapping_preparation import (
+    generate_missing_mappings,
+    normalize_deprecated_mappings,
+    raise_if_mapping_doesnt_match_target,
 )
 from .namespace import Namespace, get_namespace
 
@@ -25,74 +28,49 @@ def _make_mapper(
     target_cls_meta = get_class_meta(target_cls, namespace=namespace)
     actual_source_fields = source_cls_meta.fields
     actual_target_fields = target_cls_meta.fields
+
+    mapping = generate_missing_mappings(
+        mapping, actual_source_fields=actual_source_fields, actual_target_fields=actual_target_fields
+    )
+    raise_if_mapping_doesnt_match_target(
+        mapping, source_cls=source_cls, target_cls=target_cls, actual_target_fields=actual_target_fields
+    )
+    normalized_mapping = normalize_deprecated_mappings(mapping)
+
     source_code = MappingMethodSourceCode(source_cls=source_cls_meta, target_cls=target_cls_meta)
-
-    for target_field_name, target_field in actual_target_fields.items():
-        # mapping exists
-        if target_field_name in mapping:
-            raw_source = mapping[target_field_name]
-            if isinstance(raw_source, str):
-                source_field_name = raw_source
-                if source_field_name not in actual_source_fields:
-                    raise ValueError(
-                        f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
-                        f"in '{source_cls.__name__}'"
-                    )
-                source_code.add_mapping(target=target_field, source=actual_source_fields[source_field_name])
-            elif isinstance(raw_source, AssumeNotNone):
-                source_field_name = raw_source.field_name or target_field.name
-                if source_field_name not in actual_source_fields:
-                    raise ValueError(
-                        f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
-                        f"in '{source_cls.__name__}'"
-                    )
-                source_field = deepcopy(actual_source_fields[source_field_name])
-                # pretend like the source field isn't optional
-                source_field.allow_none = False
-                source_code.add_mapping(target=target_field, source=source_field)
-            elif isinstance(raw_source, ProvideWithExtra):
-                source_code.add_fill_with_extra(target=target_field)
-            elif isinstance(raw_source, (Spezial, InitWithDefault)):
-                if raw_source in (
-                    Spezial.USE_DEFAULT,
-                    Spezial.IGNORE_MISSING_MAPPING,
-                ) or isinstance(raw_source, InitWithDefault):
-                    if raw_source is Spezial.USE_DEFAULT:
-                        warnings.warn(
-                            "USE_DEFAULT is deprecated, use init_with_default() instead",
-                            DeprecationWarning,
-                        )
-                    if raw_source is Spezial.IGNORE_MISSING_MAPPING:
-                        warnings.warn(
-                            "IGNORE_MISSING_MAPPING is deprecated, use init_with_default() instead",
-                            DeprecationWarning,
-                        )
-
-                    if target_field.required:
-                        # leaving the target empty and using the default value/factory is not possible,
-                        # as the target doesn't have a default value/factory
-                        setting_name = raw_source.name if isinstance(raw_source, Spezial) else "init_with_default()"
-                        raise ValueError(
-                            f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {setting_name}, "
-                            "as it has no default"
-                        )
-                else:
-                    raise NotImplementedError
-            else:
-                source_code.add_mapping(target=target_field, source=raw_source)
-        # there's a variable with the same name in the source
-        elif target_field_name in actual_source_fields:
-            source_code.add_mapping(target=target_field, source=actual_source_fields[target_field_name])
-        # not possible to map
+    for target_field_name, raw_source in normalized_mapping.items():
+        target_field = actual_target_fields[target_field_name]
+        if isinstance(raw_source, str):
+            source_field_name = raw_source
+            if source_field_name not in actual_source_fields:
+                raise ValueError(
+                    f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
+                    f"in '{source_cls.__name__}'"
+                )
+            source_code.add_mapping(target=target_field, source=actual_source_fields[source_field_name])
+        elif isinstance(raw_source, AssumeNotNone):
+            source_field_name = raw_source.field_name or target_field.name
+            if source_field_name not in actual_source_fields:
+                raise ValueError(
+                    f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
+                    f"in '{source_cls.__name__}'"
+                )
+            source_field = deepcopy(actual_source_fields[source_field_name])
+            # pretend like the source field isn't optional
+            source_field.allow_none = False
+            source_code.add_mapping(target=target_field, source=source_field)
+        elif isinstance(raw_source, ProvideWithExtra):
+            source_code.add_fill_with_extra(target=target_field)
+        elif isinstance(raw_source, InitWithDefault):
+            if target_field.required:
+                # leaving the target empty and using the default value/factory is not possible,
+                # as the target doesn't have a default value/factory
+                raise ValueError(
+                    f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {raw_source.created_via}, "
+                    "as it has no default"
+                )
         else:
-            raise ValueError(
-                f"'{target_field_name}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
-            )
-
-    for target_field_name in mapping.keys() - actual_target_fields.keys():
-        raise ValueError(
-            f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
-        )
+            source_code.add_mapping(target=target_field, source=raw_source)
 
     return str(source_code), source_code.methods, {target_cls_meta.alias_name: target_cls}
 
