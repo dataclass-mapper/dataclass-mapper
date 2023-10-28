@@ -30,7 +30,7 @@ Mapping from ORM models
    >>> from sqlalchemy import Date, ForeignKey, SmallInteger, String, create_engine
    >>> from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
    >>>
-   >>> from dataclass_mapper import map_to, mapper, mapper_from, init_with_default
+   >>> from dataclass_mapper import map_to, mapper, mapper_from, init_with_default, ignore
    >>>
    >>> engine = create_engine("sqlite+pysqlite:///:memory:", echo=False, future=True)
    >>> session = Session(engine)
@@ -101,13 +101,13 @@ If you do it the other way round, you might need to ignore the occational primar
 
 .. doctest::
 
-   >>> @mapper(ChildORM, {"parent_id": init_with_default(), "id": init_with_default()})
+   >>> @mapper(ChildORM, {"parent_id": ignore(), "id": ignore()})
    ... @dataclass
    ... class CreateChild:
    ...     name: str
    ...     date_of_birth: date
    >>>
-   >>> @mapper(ParentORM, {"id": init_with_default()})
+   >>> @mapper(ParentORM, {"id": ignore()})
    ... @dataclass
    ... class CreateParent:
    ...     name: str
@@ -115,10 +115,24 @@ If you do it the other way round, you might need to ignore the occational primar
    ...     children: List[CreateChild]
    >>>
    >>> new_child = CreateChild(name="Amelia", date_of_birth=date(2023, 10, 14))
-   >>> new_parent = CreateParent(name="Emma", age=23, children=[new_child])
+   >>> new_parent = CreateParent(name="Emma", age=33, children=[new_child])
    >>> parent_orm = map_to(new_parent, ParentORM)
    >>> session.add(parent_orm)
    >>> session.commit()
    >>>
    >>> session.query(ChildORM).where(ChildORM.name == "Amelia").one().date_of_birth
    datetime.date(2023, 10, 14)
+
+As with other classes, you can update existing models.
+
+   >>> @mapper(ParentORM, {"id": ignore(), "name": ignore(), "children": ignore()}, only_update=True)
+   ... @dataclass
+   ... class ParentUpdate:
+   ...     age: int
+   >>>
+   >>> parent_update = ParentUpdate(age=34)
+   >>> map_to(parent_update, parent_orm)
+   >>> session.commit()
+   >>>
+   >>> session.query(ParentORM).where(ParentORM.name == "Emma").one().age
+   34

@@ -5,7 +5,7 @@ import pytest
 from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
 from dataclass_mapper.implementations.pydantic_v2 import PydanticV2ClassMeta
-from dataclass_mapper.mapping_method import MappingMethodSourceCode
+from dataclass_mapper.mapping_method import CreateMappingMethodSourceCode
 
 
 def prepare_expected_code(code: str) -> str:
@@ -14,8 +14,8 @@ def prepare_expected_code(code: str) -> str:
 
 
 @pytest.fixture
-def code() -> MappingMethodSourceCode:
-    return MappingMethodSourceCode(
+def code() -> CreateMappingMethodSourceCode:
+    return CreateMappingMethodSourceCode(
         source_cls=DataclassClassMeta(
             name="Source",
             fields={},
@@ -30,7 +30,7 @@ def code() -> MappingMethodSourceCode:
 
 
 def test_bypass_validators_option_for_pydantic() -> None:
-    code = MappingMethodSourceCode(
+    code = CreateMappingMethodSourceCode(
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
@@ -55,7 +55,7 @@ def test_bypass_validators_option_for_pydantic() -> None:
 
 
 def test_dont_bypass_validators_option_for_pydantic() -> None:
-    code = MappingMethodSourceCode(
+    code = CreateMappingMethodSourceCode(
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
@@ -80,7 +80,7 @@ def test_dont_bypass_validators_option_for_pydantic() -> None:
 
 
 def test_pydantic_alias() -> None:
-    code = MappingMethodSourceCode(
+    code = CreateMappingMethodSourceCode(
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
@@ -110,7 +110,7 @@ def test_pydantic_alias() -> None:
 
 
 def test_pydantic_alias_allow_population_by_fields() -> None:
-    code = MappingMethodSourceCode(
+    code = CreateMappingMethodSourceCode(
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},

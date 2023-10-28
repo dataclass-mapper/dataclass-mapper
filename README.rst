@@ -127,7 +127,7 @@ Features
 
 The current version has support for:
 
-* Python's ``dataclass`` (with recursive models, custom initializers, optional types, extra-context, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/latest/features.html>`_ for the full list and examples
+* Python's ``dataclass`` (with recursive models, update existing models, custom initializers, optional types, extra-context, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/latest/features.html>`_ for the full list and examples
 * Mappings between Enum classes:  see `Enum mappings <https://dataclass-mapper.readthedocs.io/en/latest/enums.html>`_
 * Pydantic models:  see `Pydantic models <https://dataclass-mapper.readthedocs.io/en/latest/pydantic.html>`_
 * SQLAlchemy ORM models:  see `SQLAlchemy ORM models <https://dataclass-mapper.readthedocs.io/en/latest/sqlalchemy.html>`_

@@ -10,7 +10,11 @@ Register mappings
 
 .. autofunction:: dataclass_mapper.init_with_default
 
+.. autofunction:: dataclass_mapper.ignore
+
 .. autofunction:: dataclass_mapper.assume_not_none
+
+.. autofunction:: dataclass_mapper.provide_with_extra
 
 Register enum mappings
 ----------------------
