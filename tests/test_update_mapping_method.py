@@ -21,11 +21,13 @@ def code() -> UpdateMappingMethodSourceCode:
         source_cls=DataclassClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             alias_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             alias_name="TargetAlias",
         ),
     )
@@ -65,11 +67,13 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
         source_cls=DataclassClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             alias_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             alias_name="TargetAlias",
         ),
     )

@@ -19,11 +19,13 @@ def code() -> CreateMappingMethodSourceCode:
         source_cls=DataclassClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             alias_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             alias_name="TargetAlias",
         ),
     )
@@ -34,12 +36,14 @@ def test_bypass_validators_option_for_pydantic() -> None:
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             use_construct=False,
             alias_name="Source",
         ),
         target_cls=PydanticV2ClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             use_construct=True,
             alias_name="TargetAlias",
         ),
@@ -59,12 +63,14 @@ def test_dont_bypass_validators_option_for_pydantic() -> None:
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             use_construct=False,
             alias_name="Source",
         ),
         target_cls=PydanticV2ClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             use_construct=False,
             alias_name="TargetAlias",
         ),
@@ -84,12 +90,14 @@ def test_pydantic_alias() -> None:
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             use_construct=False,
             alias_name="Source",
         ),
         target_cls=PydanticV2ClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             use_construct=False,
             alias_name="TargetAlias",
         ),
@@ -114,12 +122,14 @@ def test_pydantic_alias_allow_population_by_fields() -> None:
         source_cls=PydanticV2ClassMeta(
             name="Source",
             fields={},
+            clazz=None,
             use_construct=False,
             alias_name="Source",
         ),
         target_cls=PydanticV2ClassMeta(
             name="Target",
             fields={},
+            clazz=None,
             use_construct=False,
             populate_by_name=True,
             alias_name="TargetAlias",

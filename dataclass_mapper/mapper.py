@@ -12,10 +12,11 @@ from .mapping_method import (
     Ignore,
     MappingMethodSourceCode,
     ProvideWithExtra,
-    StringFieldMapping,
+    StringSqlAlchemyFieldMapping,
     UpdateMappingMethodSourceCode,
 )
 from .mapping_preparation import (
+    convert_sqlalchemy_fields,
     generate_missing_mappings,
     normalize_deprecated_mappings,
     raise_if_mapping_doesnt_match_target,
@@ -24,7 +25,7 @@ from .namespace import Namespace, get_namespace
 
 
 def _make_mapper(
-    mapping: StringFieldMapping,
+    mapping: StringSqlAlchemyFieldMapping,
     source_cls: Any,
     target_cls: Any,
     namespace: Namespace,
@@ -35,13 +36,16 @@ def _make_mapper(
     actual_source_fields = source_cls_meta.fields
     actual_target_fields = target_cls_meta.fields
 
-    mapping = generate_missing_mappings(
-        mapping, actual_source_fields=actual_source_fields, actual_target_fields=actual_target_fields
+    string_field_mapping = convert_sqlalchemy_fields(
+        mapping, source_cls_meta=source_cls_meta, target_cls_meta=target_cls_meta
+    )
+    string_field_mapping = generate_missing_mappings(
+        string_field_mapping, actual_source_fields=actual_source_fields, actual_target_fields=actual_target_fields
     )
     raise_if_mapping_doesnt_match_target(
-        mapping, source_cls=source_cls, target_cls=target_cls, actual_target_fields=actual_target_fields
+        string_field_mapping, source_cls=source_cls, target_cls=target_cls, actual_target_fields=actual_target_fields
     )
-    normalized_mapping = normalize_deprecated_mappings(mapping)
+    normalized_mapping = normalize_deprecated_mappings(string_field_mapping)
 
     source_code = source_code_type(source_cls=source_cls_meta, target_cls=target_cls_meta)
     for target_field_name, raw_source in normalized_mapping.items():
@@ -82,7 +86,7 @@ def _make_mapper(
 
 
 def create_mapper(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False
+    SourceCls: Any, TargetCls: Any, mapping: Optional[StringSqlAlchemyFieldMapping] = None, only_update: bool = False
 ) -> None:
     """Creates a private mapper method, that maps the ``SourceCls`` to the ``TargetCls``.
     The mapper method can be called using the :func:`map_to` function.
@@ -128,7 +132,9 @@ def create_mapper(
 T = TypeVar("T")
 
 
-def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False) -> Callable[[T], T]:
+def mapper(
+    TargetCls: Any, mapping: Optional[StringSqlAlchemyFieldMapping] = None, only_update: bool = False
+) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
     The mapper method can be called using the :func:`map_to` function.
 
@@ -152,7 +158,7 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_up
 
 
 def mapper_from(
-    SourceCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False
+    SourceCls: Any, mapping: Optional[StringSqlAlchemyFieldMapping] = None, only_update: bool = False
 ) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
     The mapper method can be called using the :func:`map_to` function.
@@ -177,9 +183,13 @@ def mapper_from(
 
 
 def add_mapper_function(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping], namespace: Namespace, only_update: bool
+    SourceCls: Any,
+    TargetCls: Any,
+    mapping: Optional[StringSqlAlchemyFieldMapping],
+    namespace: Namespace,
+    only_update: bool,
 ) -> None:
-    field_mapping = mapping or cast(StringFieldMapping, {})
+    field_mapping = mapping or cast(StringSqlAlchemyFieldMapping, {})
 
     if not only_update:
         create_map_func_name = get_map_to_func_name(TargetCls)
@@ -206,7 +216,7 @@ def add_mapper_function(
 def add_specific_mapper_function(
     SourceCls: Any,
     TargetCls: Any,
-    field_mapping: StringFieldMapping,
+    field_mapping: StringSqlAlchemyFieldMapping,
     namespace: Namespace,
     source_code_type: Type[MappingMethodSourceCode],
     map_func_name: str,

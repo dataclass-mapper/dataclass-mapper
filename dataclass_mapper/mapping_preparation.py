@@ -2,12 +2,16 @@ import warnings
 from copy import copy
 from typing import Any, Dict
 
+from .implementations.base import ClassMeta
+from .implementations.sqlalchemy import InstrumentedAttribute, extract_instrumented_attribute_name_and_class
 from .mapping_method import (
     CurrentStringFieldMapping,
     FieldMeta,
     Ignore,
+    Origin,
     Spezial,
     StringFieldMapping,
+    StringSqlAlchemyFieldMapping,
 )
 
 
@@ -66,3 +70,40 @@ def normalize_deprecated_mappings(mapping: StringFieldMapping) -> CurrentStringF
             normalized_mapping[target_field_name] = raw_source
 
     return normalized_mapping
+
+
+def convert_sqlalchemy_fields(
+    mapping: StringSqlAlchemyFieldMapping, source_cls_meta: ClassMeta, target_cls_meta: ClassMeta
+) -> StringFieldMapping:
+    """Replace the deprecated options with their modern counterparts."""
+    new_mapping: StringFieldMapping = dict()
+
+    for target_field_name, raw_source in mapping.items():
+        new_target_field_name: str
+
+        if isinstance(target_field_name, InstrumentedAttribute):
+            name, clazz = extract_instrumented_attribute_name_and_class(target_field_name)
+            if clazz != target_cls_meta.clazz:
+                raise ValueError(
+                    f"The target field '{name}' in the mapping doesn't belong "
+                    f"to target class '{target_cls_meta.name}'."
+                )
+            new_target_field_name = name
+        else:
+            new_target_field_name = target_field_name
+
+        new_raw_source: Origin
+        if isinstance(raw_source, InstrumentedAttribute):
+            name, clazz = extract_instrumented_attribute_name_and_class(raw_source)
+            if clazz != source_cls_meta.clazz:
+                raise ValueError(
+                    f"The source field '{name}' in the mapping doesn't belong "
+                    f"to source class '{source_cls_meta.name}'."
+                )
+            new_raw_source = name
+        else:
+            new_raw_source = raw_source
+
+        new_mapping[new_target_field_name] = new_raw_source
+
+    return new_mapping

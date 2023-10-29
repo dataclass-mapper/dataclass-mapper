@@ -31,11 +31,12 @@ class PydanticV1ClassMeta(ClassMeta):
         self,
         name: str,
         fields: Dict[str, FieldMeta],
+        clazz: Any,
         use_construct: bool,
         allow_population_by_field_name: bool = False,
         alias_name: Optional[str] = None,
     ) -> None:
-        super().__init__(name=name, fields=fields, alias_name=alias_name)
+        super().__init__(name=name, fields=fields, alias_name=alias_name, clazz=clazz)
         self.use_construct = use_construct
         self.allow_population_by_field_name = allow_population_by_field_name
 
@@ -75,6 +76,7 @@ class PydanticV1ClassMeta(ClassMeta):
         return cls(
             name=cast(str, clazz.__name__),
             fields=cls._fields(clazz, namespace=namespace),
+            clazz=clazz,
             use_construct=not cls.has_validators(clazz),
             allow_population_by_field_name=getattr(clazz.Config, "allow_population_by_field_name", False),
         )

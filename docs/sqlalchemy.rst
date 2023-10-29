@@ -124,6 +124,8 @@ If you do it the other way round, you might need to ignore the occasional primar
 
 As with other classes, you can update existing models.
 
+.. doctest::
+
    >>> @mapper(ParentORM, {"id": ignore(), "name": ignore(), "children": ignore()}, only_update=True)
    ... @dataclass
    ... class ParentUpdate:
@@ -135,3 +137,19 @@ As with other classes, you can update existing models.
    >>>
    >>> session.query(ParentORM).where(ParentORM.name == "Emma").one().age
    34
+
+Mapping using ORM attributes
+----------------------------
+
+In SQLAlchemy the specified columns and relationships are also class attributes (e.g. in order to use them for querying).
+That also allows us to use them when you specify mappings, and you don't need to rely on strings.
+
+This is not possible with ``dataclasses`` or ``pydantic``.
+
+.. doctest::
+
+   >>> @mapper(ChildORM, {ChildORM.parent_id: ignore(), ChildORM.id: ignore()})
+   ... @dataclass
+   ... class CreateChild:
+   ...     name: str
+   ...     date_of_birth: date

@@ -32,11 +32,12 @@ class PydanticV2ClassMeta(ClassMeta):
         self,
         name: str,
         fields: Dict[str, FieldMeta],
+        clazz: Any,
         use_construct: bool,
         populate_by_name: bool = False,
         alias_name: Optional[str] = None,
     ) -> None:
-        super().__init__(name=name, fields=fields, alias_name=alias_name)
+        super().__init__(name=name, fields=fields, alias_name=alias_name, clazz=clazz)
         self.use_construct = use_construct
         self.populate_by_name = populate_by_name
 
@@ -81,6 +82,7 @@ class PydanticV2ClassMeta(ClassMeta):
         return cls(
             name=cast(str, clazz.__name__),
             fields=cls._fields(clazz, namespace=namespace),
+            clazz=clazz,
             use_construct=not cls.has_validators(clazz),
             populate_by_name=clazz.model_config.get("populate_by_name", False),
         )

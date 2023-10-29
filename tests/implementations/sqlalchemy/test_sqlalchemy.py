@@ -11,7 +11,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_
 
 from dataclass_mapper import init_with_default
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
-from dataclass_mapper.mapper import map_to, mapper, mapper_from
+from dataclass_mapper.mapper import create_mapper, map_to, mapper, mapper_from
 
 if sqlalchemy_version() < (2, 0, 0):
     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
@@ -522,3 +522,68 @@ def test_map_sqlalchemy_many_to_many_with_association_object(db: InMemoryDatabas
 
     child2_ = map_to(child1_entity, Child2)
     assert len(child2_.parents) == 2
+
+
+def test_map_sqlalchemy_with_attributes(db: InMemoryDatabase):
+    class ParentTargetTable(db.Base):
+        __tablename__ = "parent_target_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildTargetTable"]] = relationship()
+
+    class ChildTargetTable(db.Base):
+        __tablename__ = "child_target_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_target_table.id"))
+        name: Mapped[str] = mapped_column(String(64))
+
+    class ParentSourceTable(db.Base):
+        __tablename__ = "parent_source_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[List["ChildSourceTable"]] = relationship()
+
+    class ChildSourceTable(db.Base):
+        __tablename__ = "child_source_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_source_table.id"))
+        child_name: Mapped[str] = mapped_column(String(64))
+
+    with pytest.raises(ValueError) as excinfo:
+        create_mapper(
+            ChildSourceTable,
+            ChildTargetTable,
+            {
+                ChildSourceTable.id: init_with_default(),
+                ChildTargetTable.parent_id: init_with_default(),
+                ChildTargetTable.name: ChildSourceTable.child_name,
+            },
+        )
+
+    assert ("The target field 'id' in the mapping doesn't belong to target class 'ChildTargetTable'.") in str(
+        excinfo.value
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        create_mapper(
+            ChildSourceTable,
+            ChildTargetTable,
+            {
+                ChildTargetTable.id: init_with_default(),
+                ChildTargetTable.parent_id: init_with_default(),
+                ChildTargetTable.name: ChildTargetTable.name,
+            },
+        )
+
+    assert ("The source field 'name' in the mapping doesn't belong to source class 'ChildSourceTable'.") in str(
+        excinfo.value
+    )
+
+    create_mapper(
+        ChildSourceTable,
+        ChildTargetTable,
+        {
+            ChildTargetTable.id: init_with_default(),
+            ChildTargetTable.parent_id: init_with_default(),
+            ChildTargetTable.name: ChildSourceTable.child_name,
+        },
+    )
+    create_mapper(ParentSourceTable, ParentTargetTable, {ParentTargetTable.id: init_with_default()})

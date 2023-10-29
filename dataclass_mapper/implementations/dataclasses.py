@@ -40,4 +40,4 @@ class DataclassClassMeta(ClassMeta):
 
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "DataclassClassMeta":
-        return cls(name=cast(str, clazz.__name__), fields=cls._fields(clazz, namespace))
+        return cls(name=cast(str, clazz.__name__), fields=cls._fields(clazz, namespace), clazz=clazz)

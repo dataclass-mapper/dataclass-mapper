@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, cast, runtime_checkable
 from uuid import UUID
 
 from dataclass_mapper.implementations.utils import parse_version
@@ -14,7 +14,7 @@ def sqlalchemy_version() -> Tuple[int, int, int]:
     return parse_version(cast(str, sqlalchemy.__version__))
 
 
-@dataclass
+@dataclass(repr=False)
 class SQLAlchemyFieldMeta(FieldMeta):
     @classmethod
     def from_sqlalchemy(cls, field: Any, name: str) -> "SQLAlchemyFieldMeta":
@@ -61,7 +61,6 @@ class SQLAlchemyFieldMeta(FieldMeta):
             if isinstance(type_, sqlalchemy_cls):
                 return mapped_type
 
-        breakpoint()
         raise NotImplementedError(f"type '{type_}' of field '{field_name}' is not supported")
 
     @staticmethod
@@ -83,9 +82,10 @@ class SQLAlchemyClassMeta(ClassMeta):
         self,
         name: str,
         fields: Dict[str, FieldMeta],
+        clazz: Any,
         alias_name: Optional[str] = None,
     ) -> None:
-        super().__init__(name=name, fields=fields, alias_name=alias_name)
+        super().__init__(name=name, fields=fields, clazz=clazz, alias_name=alias_name)
 
     def get_assignment_name(self, field: FieldMeta) -> str:
         return field.name
@@ -140,4 +140,25 @@ class SQLAlchemyClassMeta(ClassMeta):
     def from_clazz(cls, clazz: Any, namespace: Namespace) -> "SQLAlchemyClassMeta":
         column_fields = cls._fields(clazz, namespace=namespace)
         relationship_fields = cls._relationship_fields(clazz, column_fields, namespace=namespace)
-        return cls(name=cast(str, clazz.__name__), fields={**column_fields, **relationship_fields})
+        return cls(name=cast(str, clazz.__name__), fields={**column_fields, **relationship_fields}, clazz=clazz)
+
+
+@runtime_checkable
+class InstrumentedAttribute(Protocol):
+    class_: Any
+
+    @property
+    def property(self) -> Any:
+        ...
+
+
+def extract_instrumented_attribute_name_and_class(attribute: InstrumentedAttribute) -> Tuple[str, Any]:
+    try:
+        sqlalchemy = __import__("sqlalchemy")
+    except ModuleNotFoundError:
+        raise ValueError("Unknown field")
+
+    if not isinstance(attribute, sqlalchemy.orm.attributes.InstrumentedAttribute):
+        raise ValueError("Unknown field")
+
+    return (attribute.property.key, attribute.class_)

@@ -76,10 +76,11 @@ class FieldMeta:
 class ClassMeta(ABC):
     _type: DataclassType
 
-    def __init__(self, name: str, fields: Dict[str, FieldMeta], alias_name: Optional[str] = None) -> None:
+    def __init__(self, name: str, fields: Dict[str, FieldMeta], clazz: Any, alias_name: Optional[str] = None) -> None:
         self.name = name
         self.fields = fields
         self.alias_name = alias_name or f"_{uuid4().hex}"
+        self.clazz = clazz
 
     def return_statement(self) -> cg.Return:
         """The code for creating the object and returning it"""

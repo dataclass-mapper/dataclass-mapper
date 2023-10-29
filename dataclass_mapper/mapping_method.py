@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional, Type, Union
 
+from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
+
 from . import code_generator as cg
 from .assignments import (
     Assignment,
@@ -75,6 +77,7 @@ CurrentOrigin = Union[str, CallableWithMax1Parameter, Ignore, AssumeNotNone, Pro
 Origin = Union[CurrentOrigin, Spezial]
 CurrentStringFieldMapping = Dict[str, CurrentOrigin]
 StringFieldMapping = Dict[str, Origin]
+StringSqlAlchemyFieldMapping = Dict[Union[str, InstrumentedAttribute], Union[Origin, InstrumentedAttribute]]
 
 
 @dataclass
