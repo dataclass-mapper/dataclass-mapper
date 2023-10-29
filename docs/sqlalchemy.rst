@@ -4,12 +4,10 @@ SQLAlchemy ORM models
 The library can also handle (some) SQLAlchemy's ORM models, and map to them and from them.
 
 .. warning::
-   SQLAlchemy support is still experimental.
-   (SQLAlchemy and databases in general are pretty huge.)
-   The basic things work, although there are many advanced features that's not supported as of now.
+   SQLAlchemy is a pretty big library.
+   The basic things work, although there might be advanced features that are not supported as of now.
 
-Supported features
-------------------
+At the moment it has support for:
 
 * Default SQLAlchemy Types (``BigInteger``, ``Boolean``, ``Date``, ``DateTime``, ``Float``,
   ``Integer``, ``Interval``, ``LargeBinary``, ``SmallInteger``,
@@ -17,6 +15,7 @@ Supported features
 * Enums (``Enum(MyEnumType)``)
 * Some PostgreSQL specific types: (``UUID``, ``ARRAY``)
 * Relationships (1:n, n:1, 1:1, n:n)
+* Association Objects
 
 Mapping from ORM models
 -----------------------
@@ -97,7 +96,7 @@ If we now query the database, we can map the result to the dataclass models.
 Mapping to ORM models
 ---------------------
 
-If you do it the other way round, you might need to ignore the occational primary key or foreign key fields.
+If you do it the other way round, you might need to ignore the occasional primary key or foreign key fields.
 
 .. doctest::
 

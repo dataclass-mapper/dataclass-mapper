@@ -1,15 +1,17 @@
 Define mappings
 ---------------
 
-Mapping by field names
+Define a basic mapping
 ^^^^^^^^^^^^^^^^^^^^^^
+
+You can define a new mapping using the :func:`~dataclass_mapper.create_mapper` function.
 
 .. testsetup:: *
 
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra, create_mapper
    >>> from pydantic import BaseModel, Field
    >>> from uuid import UUID
    >>> uuid4 = lambda: UUID('38fc07e1-677e-40ef-830c-00e284056dd8')
@@ -21,58 +23,71 @@ Mapping by field names
    ...     name: str
    ...     age: int
    >>>
-   >>> @mapper(Person, {"name": "surname"})
-   ... @dataclass
+   >>> @dataclass
    ... class Contact:
-   ...     surname: str
-   ...     first_name: str
+   ...     name: str
    ...     age: int
    >>>
-   >>> contact = Contact(first_name="Jesse", surname="Cross", age=50)
+   >>> create_mapper(Contact, Person)
+   >>>
+   >>> contact = Contact(name="Jesse Cross", age=50)
    >>> map_to(contact, Person)
-   Person(name='Cross', age=50)
+   Person(name='Jesse Cross', age=50)
 
-With the ``mapping`` parameter it's possible to define how the fields in the target class are filled.
 Here we defining a mapper function from the ``Contact`` class to the `Person` class.
-By specifying the mapping ``{'"name": "surname"}`` (in the order ``{"target_field": "source_field"}``) the field ``name`` in the target class ``Person`` will be filled with the value of the ``surname`` of the source class ``Contact``.
-The ``age`` will be mapped automatically, as the field name ``age`` and the type ``int`` are identically in both classes.
-The additional field ``first_name`` in the ``Contact`` class will just be ignored.
+The library will analyze both dataclasses and their fields, and will create mapper function(s) that you can use use later to convert / overwrite an object using :func:`~dataclass_mapper.map_to`.
+Fields with the same name and type are mapped automatically.
+
+.. doctest::
+
+   >>> contact = Contact(name="Jesse Cross", age=50)
+   >>> map_to(contact, Person)
+   Person(name='Jesse Cross', age=50)
 
 .. note::
    A mapping is not bidirectional.
    Here you can only map from ``Contact`` instances to ``Person`` instances, but not the other way.
-   To also have a mapping from ``Person`` to ``Contact``, we would need to add a ``@mapper(Contact)`` decorator to ``Person``, or a ``@mapper_from`` to ``Contact`` (see `Mapping from another class`_).
+   To also have a mapping from ``Person`` to ``Contact``, we would need to create another mapping from ``Person`` to ``Contact``.
 
 .. note::
    It is checked if the types of the fields are compatible, i.e. if the target field allows all the type options of the source field.
    E.g. it is allowed to map from a ``str`` field to a ``Union[str, int]`` field or to an ``Optional[str]`` field, but not the other way around.
-   You can loosen up those checks or disable them with the methods described in `Optional source fields`_ and `Custom conversion functions`_.
+   Although you can loosen up those checks or disable them with the methods described in :ref:`OptionalSourceFields` and :ref:`CustomConversionFunctions`.
 
-Mapping from another class
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Define mappings via decorators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Instead of using the :func:`~dataclass_mapper.create_mapper` function, you can also use the :func:`~dataclass_mapper.mapper` and :func:`~dataclass_mapper.mapper_from` decorators as shortcuts.
+They take the same parameters, and are equivalent to the :func:`~dataclass_mapper.create_mapper` function.
+
+With :func:`~dataclass_mapper.mapper` you define a mapping from the current class to the specified class.
 
 .. doctest::
 
-   >>> @dataclass
-   ... class OrderItem:
-   ...     name: str
-   ...     cnt: int
-   >>>
-   >>> @mapper_from(OrderItem, {"description": "name"})
+   >>> @mapper(Person)
    ... @dataclass
-   ... class Item:
-   ...     description: str
-   ...     cnt: int
+   ... class Contact:
+   ...     name: str
+   ...     age: int
    >>>
-   >>> order_item = OrderItem(name="fruit", cnt=5)
-   >>> map_to(order_item, Item)
-   Item(description='fruit', cnt=5)
+   >>> contact = Contact(name="Jesse Cross", age=50)
+   >>> map_to(contact, Person)
+   Person(name='Jesse Cross', age=50)
 
-Here we added a decorator ``@mapper_from(OrderItem)`` to the ``Item`` class.
-That defines a mapper from ``OrderItem`` instances to ``Order`` instances.
-The order of the mapping parameters is the same, it's ``{"target_field": "source_field"}``,
-only difference is that the target class is now the class that is decorated.
+With :func:`~dataclass_mapper.mapper_from` you define a mapping from the passed class to the current class.
 
+.. doctest::
+
+   >>> @mapper_from(Person)
+   ... @dataclass
+   ... class Contact:
+   ...     name: str
+   ...     age: int
+   >>>
+   >>> person = Person(name="Jesse Cross", age=50)
+   >>> map_to(person, Contact)
+   Contact(name='Jesse Cross', age=50)
+   
 .. note::
    It's also possible to add multiple decorators to one dataclass.
-   E.g. it is possible to add a ``mapper`` and a ``mapper_from`` in order to have mappers in both directions.
+   E.g. it is possible to add a ``mapper`` and a ``mapper_from`` in order to have mappers in both directions, or even create mappings to/from multiple classes.

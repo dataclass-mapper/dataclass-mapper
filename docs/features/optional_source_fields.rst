@@ -1,3 +1,5 @@
+.. _OptionalSourceFields:
+
 Optional source fields
 ----------------------
 

@@ -4,6 +4,8 @@ dataclass-mapper
 Register mappings
 -----------------
 
+.. autofunction:: dataclass_mapper.create_mapper
+
 .. autofunction:: dataclass_mapper.mapper
 
 .. autofunction:: dataclass_mapper.mapper_from
@@ -18,6 +20,8 @@ Register mappings
 
 Register enum mappings
 ----------------------
+
+.. autofunction:: dataclass_mapper.create_enum_mapper
 
 .. autofunction:: dataclass_mapper.enum_mapper
 

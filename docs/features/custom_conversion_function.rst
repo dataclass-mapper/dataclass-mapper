@@ -1,3 +1,5 @@
+.. _CustomConversionFunctions:
+
 Custom conversion functions
 ---------------------------
 

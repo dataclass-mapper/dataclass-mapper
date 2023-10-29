@@ -5,6 +5,7 @@ Supported features
    :maxdepth: 1
 
    ./features/define_mappings.rst
+   ./features/field_mappings.rst
    ./features/custom_conversion_function.rst
    ./features/recursive_mappings.rst
    ./features/update_models.rst

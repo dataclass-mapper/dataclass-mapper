@@ -81,13 +81,13 @@ def _make_mapper(
     return str(source_code), source_code.methods, {target_cls_meta.alias_name: target_cls}
 
 
-T = TypeVar("T")
+def create_mapper(
+    SourceCls: Any, TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False
+) -> None:
+    """Creates a private mapper method, that maps the ``SourceCls`` to the ``TargetCls``.
+    The mapper method can be called using the :func:`map_to` function.
 
-
-def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False) -> Callable[[T], T]:
-    """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
-    The mapper method can be called using the ``map_to`` function.
-
+    :param SourceCls: the class (source class) that you want to map an object from to the current (target) class.
     :param TargetCls: The class (target class) that you want to map an object of the current (source) class to.
     :param mapping: An optional dictionary which which it's possible to describe how each field in the target
         class gets initialized.
@@ -113,7 +113,28 @@ def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_up
           ``y`` source field, and the library will assume that the source field is not ``None``.
           If no source field name is given, it will additionally assume that the source field is also called ``x``.
         - ``{"x": provide_with_extra()}`` means, that you don't fill this field with any field of the source class,
-          but with the extra dictionary given by the `map_to` method.
+          but with the extra dictionary given by the :func:`map_to` method.
+    :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
+        object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
+        necessary during the creation of a new object.
+    """
+
+    namespace = get_namespace()
+    add_mapper_function(
+        SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, only_update=only_update
+    )
+
+
+T = TypeVar("T")
+
+
+def mapper(TargetCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False) -> Callable[[T], T]:
+    """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
+    The mapper method can be called using the :func:`map_to` function.
+
+    :param TargetCls: The class (target class) that you want to map an object of the current (source) class to.
+    :param mapping: an optional dictionary which which it's possible to describe how each field in the target class
+        gets initialized (see  :func:`create_mapper`)
     :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
         object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
         necessary during the creation of a new object.
@@ -134,11 +155,11 @@ def mapper_from(
     SourceCls: Any, mapping: Optional[StringFieldMapping] = None, only_update: bool = False
 ) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
-    The mapper method can be called using the ``map_to`` function.
+    The mapper method can be called using the :func:`map_to` function.
 
     :param SourceCls: the class (source class) that you want to map an object from to the current (target) class.
     :param mapping: an optional dictionary which which it's possible to describe how each field in the target class
-        gets initialized.
+        gets initialized (see  :func:`create_mapper`)
     :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
         object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
         necessary during the creation of a new object.
@@ -214,10 +235,12 @@ def add_specific_mapper_function(
         setattr(SourceCls, name, factory)
 
 
-def enum_mapper(TargetCls: Any, mapping: Optional[EnumMapping] = None) -> Callable[[T], T]:
-    """Class decorator that adds a private mapper method, that maps the current enum class to the
-    enum class ``TargetCls``. The mapper method can be called using the ``map_to`` function.
+def create_enum_mapper(SourceCls: Any, TargetCls: Any, mapping: Optional[EnumMapping] = None) -> None:
+    """Creates a private mapper method, that maps the enum class ``SourceCls`` to the
+    enum class ``TargetCls``. The mapper method can be called using the :func:`map_to` function.
 
+    :param SourceCls: The enum class (source class) that you want to map an object of the current
+        (source) enum class to.
     :param TargetCls: The enum class (source class) that you want to map members from to the current
         (target) enum class to.
     :param mapping: An optional dictionary which which it's possible to describe to which member of the
@@ -230,6 +253,19 @@ def enum_mapper(TargetCls: Any, mapping: Optional[EnumMapping] = None) -> Callab
 
         - ``{"x": "y"}`` means, that the member ``x`` of the source enum will get mapped to the
           member ``y`` in the target object.
+    """
+
+    add_enum_mapper_function(SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping)
+
+
+def enum_mapper(TargetCls: Any, mapping: Optional[EnumMapping] = None) -> Callable[[T], T]:
+    """Class decorator that adds a private mapper method, that maps the current enum class to the
+    enum class ``TargetCls``. The mapper method can be called using the :func:`map_to` function.
+
+    :param TargetCls: The enum class (source class) that you want to map members from to the current
+        (target) enum class to.
+    :param mapping: An optional dictionary which which it's possible to describe to which member of the
+        target class a member of the source class is mapped to (see :func:`create_enum_mapper`).
     """
 
     def wrapped(SourceCls: T) -> T:
@@ -246,12 +282,12 @@ def enum_mapper(TargetCls: Any, mapping: Optional[EnumMapping] = None) -> Callab
 def enum_mapper_from(SourceCls: Any, mapping: Optional[EnumMapping] = None) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps members of the enum class ``SourceCls`` to
     members of the current enum class.
-    The mapper method can be called using the ``map_to`` function.
+    The mapper method can be called using the :func:`map_to` function.
 
     :param SourceCls: The enum class (source class) that you want to map an object of the current
         (source) enum class to.
     :param mapping: An optional dictionary which which it's possible to describe to which member of the
-        target class a member of the source class is mapped to.
+        target class a member of the source class is mapped to (see :func:`create_enum_mapper`).
     """
 
     def wrapped(TargetCls: T) -> T:
