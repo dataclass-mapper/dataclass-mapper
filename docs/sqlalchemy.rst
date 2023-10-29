@@ -22,6 +22,10 @@ Mapping from ORM models
 
 .. testsetup:: *
 
+   >>> import pytest
+   >>> from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
+   >>> if sqlalchemy_version() < (2, 0, 0):
+   ...     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
    >>> from dataclasses import dataclass
    >>> from datetime import date
    >>> from typing import List, Optional

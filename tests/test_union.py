@@ -2,9 +2,14 @@ import sys
 from typing import Optional, Union
 
 import pytest
-from pydantic import BaseModel
 
 from dataclass_mapper import map_to, mapper
+from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
+
+if pydantic_version()[0] == 0:
+    pytest.skip("Pydantic tests", allow_module_level=True)
+
+from pydantic import BaseModel
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")

@@ -4,15 +4,14 @@ import sys
 from typing import List, Optional
 
 import pytest
-from pydantic import BaseModel, Field
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
 from dataclass_mapper.implementations.pydantic_v2 import PydanticV2FieldMeta, pydantic_version
 
-if pydantic_version() < (2, 0, 0):
+if pydantic_version()[0] != 2:
     pytest.skip("V2 validators syntax", allow_module_level=True)
 
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 empty_namespace = Namespace(locals={}, globals={})
 

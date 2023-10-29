@@ -1,16 +1,15 @@
 # mypy: disable-error-code="attr-defined"
 import pytest
-from pydantic import BaseModel
 
 from dataclass_mapper.implementations.pydantic_v2 import PydanticV2ClassMeta, pydantic_version
 from dataclass_mapper.namespace import Namespace
 
 empty_namespace = Namespace(locals={}, globals={})
 
-if pydantic_version() < (2, 0, 0):
+if pydantic_version()[0] != 2:
     pytest.skip("V2 validators syntax", allow_module_level=True)
 
-from pydantic import field_validator, model_validator  # noqa: E402
+from pydantic import BaseModel, field_validator, model_validator  # noqa: E402
 
 
 def test_pydantic_has_no_validators():

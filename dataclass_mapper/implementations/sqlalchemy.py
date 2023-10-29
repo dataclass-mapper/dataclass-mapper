@@ -10,8 +10,11 @@ from .base import ClassMeta, DataclassType, FieldMeta
 
 
 def sqlalchemy_version() -> Tuple[int, int, int]:
-    sqlalchemy = __import__("sqlalchemy")
-    return parse_version(cast(str, sqlalchemy.__version__))
+    try:
+        sqlalchemy = __import__("sqlalchemy")
+        return parse_version(cast(str, sqlalchemy.__version__))
+    except ModuleNotFoundError:
+        return (0, 0, 0)
 
 
 @dataclass(repr=False)
@@ -100,7 +103,7 @@ class SQLAlchemyClassMeta(ClassMeta):
 
     @staticmethod
     def _relationship_fields(
-        clazz: Any, column_fields: dict[str, SQLAlchemyFieldMeta], namespace: Namespace
+        clazz: Any, column_fields: Dict[str, SQLAlchemyFieldMeta], namespace: Namespace
     ) -> Dict[str, FieldMeta]:
         sqlalchemy = __import__("sqlalchemy")
         fields: Dict[str, FieldMeta] = {}

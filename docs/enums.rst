@@ -12,7 +12,6 @@ You can define a mapping between two Enum classes using the :func:`~dataclass_ma
    >>> from enum import Enum, auto
    >>> from typing import Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, create_enum_mapper
-   >>> from pydantic import BaseModel, Field, validator
 
 .. doctest::
 

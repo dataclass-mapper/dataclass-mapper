@@ -4,10 +4,6 @@ from typing import List, Optional
 from uuid import UUID
 
 import pytest
-from sqlalchemy import ForeignKey, Identity, Integer, String, text
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.schema import Sequence
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
 from dataclass_mapper.implementations.sqlalchemy import SQLAlchemyFieldMeta, sqlalchemy_version
@@ -15,6 +11,10 @@ from dataclass_mapper.implementations.sqlalchemy import SQLAlchemyFieldMeta, sql
 if sqlalchemy_version() < (2, 0, 0):
     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
 
+from sqlalchemy import ForeignKey, Identity, Integer, String, text
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.schema import Sequence
 
 empty_namespace = Namespace(locals={}, globals={})
 
@@ -73,7 +73,7 @@ def test_sqlalchemy_relationship_field() -> None:
     class Parent(Base):
         __tablename__ = "relationship_parent"
         id: Mapped[int] = mapped_column(primary_key=True)
-        children: Mapped[list["Child"]] = relationship(back_populates="parent")
+        children: Mapped[List["Child"]] = relationship(back_populates="parent")
 
     class Child(Base):
         __tablename__ = "relationship_child"

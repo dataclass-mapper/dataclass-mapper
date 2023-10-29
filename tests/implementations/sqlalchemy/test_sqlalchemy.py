@@ -5,9 +5,6 @@ from typing import List, Optional, cast
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import Column, ForeignKey, String, Table, create_engine
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
 
 from dataclass_mapper import init_with_default
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
@@ -15,6 +12,10 @@ from dataclass_mapper.mapper import create_mapper, map_to, mapper, mapper_from
 
 if sqlalchemy_version() < (2, 0, 0):
     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
+
+from sqlalchemy import Column, ForeignKey, String, Table, create_engine
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
 
 
 class InMemoryDatabase:

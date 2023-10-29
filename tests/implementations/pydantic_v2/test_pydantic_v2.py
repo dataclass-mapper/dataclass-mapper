@@ -2,15 +2,14 @@
 from typing import Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel, Field
 
 from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper
 
-if pydantic_version() < (2, 0, 0):
+if pydantic_version()[0] != 2:
     pytest.skip("V2 validators syntax", allow_module_level=True)
 
-from pydantic import ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Bar(BaseModel):

@@ -10,27 +10,28 @@ With ``provide_with_extra`` you can mark fields, so that no mapping is generated
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra
-   >>> from pydantic import BaseModel, Field
-   >>> from uuid import UUID
-   >>> uuid4 = lambda: UUID('38fc07e1-677e-40ef-830c-00e284056dd8')
 
 .. doctest::
 
-   >>> class TargetItem(BaseModel):
+   >>> @dataclass
+   ... class TargetItem:
    ...     x: int
    >>>
    >>> @mapper(TargetItem, {"x": provide_with_extra()})
-   ... class SourceItem(BaseModel):
+   ... @dataclass
+   ... class SourceItem:
    ...     pass
    >>>
-   >>> class TargetCollection(BaseModel):
+   >>> @dataclass
+   ... class TargetCollection:
    ...     x: int
    ...     item: TargetItem
    ...     optional_item: Optional[TargetItem]
    ...     items: List[TargetItem]
    >>>
    >>> @mapper(TargetCollection, {"x": provide_with_extra()})
-   ... class SourceCollection(BaseModel):
+   ... @dataclass
+   ... class SourceCollection:
    ...     item: SourceItem
    ...     optional_item: Optional[SourceItem]
    ...     items: List[SourceItem]

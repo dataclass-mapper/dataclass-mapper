@@ -10,7 +10,6 @@ All these checks already happen during the definition of the mapper, they are no
    >>> from enum import Enum, auto
    >>> from typing import Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default
-   >>> from pydantic import BaseModel, Field, validator
 
 Missing fields check
 --------------------

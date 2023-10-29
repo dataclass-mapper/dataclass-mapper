@@ -9,8 +9,11 @@ from .base import ClassMeta, DataclassType, FieldMeta
 
 
 def pydantic_version() -> Tuple[int, int, int]:
-    pydantic = __import__("pydantic")
-    return parse_version(cast(str, pydantic.__version__))
+    try:
+        pydantic = __import__("pydantic")
+        return parse_version(cast(str, pydantic.__version__))
+    except ModuleNotFoundError:
+        return (0, 0, 0)
 
 
 class PydanticV2FieldMeta(FieldMeta):

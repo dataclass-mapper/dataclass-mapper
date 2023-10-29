@@ -1,8 +1,14 @@
 from dataclasses import dataclass
 
-from pydantic import BaseModel
+import pytest
 
 from dataclass_mapper import map_to, mapper
+from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
+
+if pydantic_version()[0] == 0:
+    pytest.skip("Pydantic tests", allow_module_level=True)
+
+from pydantic import BaseModel
 
 
 def test_support_dataclass_type_strings():

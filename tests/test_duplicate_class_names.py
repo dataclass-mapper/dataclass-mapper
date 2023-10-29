@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+import pytest
+
+from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper_from
 
 
@@ -52,6 +55,7 @@ def test_duplicate_class_name_in_different_scopes():
     )
 
 
+@pytest.mark.skipif(pydantic_version()[0] == 0, reason="Requires Pydantic")
 def test_duplicate_class_name_in_different_modules():
     from tests.models import base, display, technical
 

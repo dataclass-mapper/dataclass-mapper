@@ -12,11 +12,11 @@ Additionally it can work with ``alias`` fields, and also with the ``allow_popula
    >>> from enum import Enum, auto
    >>> from typing import Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none
-   >>> from pydantic import BaseModel, Field, validator
    >>> import pytest
    >>> from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
-   >>> if pydantic_version() >= (2, 0, 0):
+   >>> if pydantic_version()[1] != 1:
    ...     pytest.skip("V1 validators syntax", allow_module_level=True)
+   >>> from pydantic import BaseModel, Field, validator
 
 .. doctest::
 

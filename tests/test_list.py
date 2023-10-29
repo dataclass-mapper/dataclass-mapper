@@ -3,9 +3,14 @@ from dataclasses import dataclass
 from typing import List
 
 import pytest
-from pydantic import BaseModel
 
+from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper
+
+if pydantic_version()[0] == 0:
+    pytest.skip("Pydantic tests", allow_module_level=True)
+
+from pydantic import BaseModel
 
 
 class BarPydantic(BaseModel):
