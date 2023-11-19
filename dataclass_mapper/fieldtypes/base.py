@@ -1,5 +1,6 @@
-from typing import Any, List, Optional, Type
 from abc import ABC, abstractmethod
+from typing import Any, List, Optional, Type
+
 
 class FieldType(ABC):
     all_field_types: List[Type["FieldType"]] = []
@@ -29,9 +30,10 @@ class FieldType(ABC):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(type={self._type}, inner={repr(self.inner)})"
 
-    def __eq__(self, other: "FieldType") -> bool:
+    def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return False
+        assert isinstance(other, FieldType)
         return self.inner == other.inner
 
 

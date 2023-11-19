@@ -54,12 +54,22 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
 
 
 if version_info >= (3, 9):
-    TEST_DATA.extend([
-        (int | float, UnionFieldType(..., [ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
-        (int | float | None, OptionalFieldType(..., [UnionFieldType(..., [ClassFieldType(int), ClassFieldType(float)])]), "Union[int, float, None]"),
-        (dict[Foo, Bar], DictFieldType(..., [ClassFieldType(Foo), ClassFieldType(Bar)]), "Dict[Foo, Bar]"),
-        (list[Foo | None], ListFieldType(..., [OptionalFieldType(..., [ClassFieldType(Foo)])]), "List[Optional[Foo]]"),
-    ])
+    TEST_DATA.extend(
+        [
+            (int | float, UnionFieldType(..., [ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
+            (
+                int | float | None,
+                OptionalFieldType(..., [UnionFieldType(..., [ClassFieldType(int), ClassFieldType(float)])]),
+                "Union[int, float, None]",
+            ),
+            (dict[Foo, Bar], DictFieldType(..., [ClassFieldType(Foo), ClassFieldType(Bar)]), "Dict[Foo, Bar]"),
+            (
+                list[Foo | None],
+                ListFieldType(..., [OptionalFieldType(..., [ClassFieldType(Foo)])]),
+                "List[Optional[Foo]]",
+            ),
+        ]
+    )
 
 
 @pytest.mark.parametrize(["type_", "expected_parsed", "expected_str"], TEST_DATA)

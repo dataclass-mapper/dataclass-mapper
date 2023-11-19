@@ -1,6 +1,6 @@
-from sqlalchemy.dialects.postgresql import Any
+from typing import Any, cast, get_origin
+
 from .base import FieldType
-from typing import cast, get_origin, Any
 
 
 class ClassFieldType(FieldType):
@@ -18,7 +18,8 @@ class ClassFieldType(FieldType):
         except Exception:
             return str(self._type)
 
-    def __eq__(self, other: "FieldType") -> bool:
+    def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return False
-        return self._type == other._type
+        assert isinstance(other, ClassFieldType)
+        return cast(bool, self._type == other._type)

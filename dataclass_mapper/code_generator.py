@@ -8,6 +8,29 @@ class Expression(ABC):
     def __str__(self) -> str:
         ...
 
+    def equals(self, other: "Expression") -> "Expression":
+        return Equals(self, other)
+
+
+@dataclass
+class Equals(Expression):
+    left: Expression
+    right: Expression
+
+    def __str__(self) -> str:
+        return f"{self.left} == {self.right}"
+
+
+@dataclass
+class Variable(Expression):
+    name: str
+
+    def __str__(self) -> str:
+        return self.name
+
+
+NONE = Variable("None")
+
 
 @dataclass
 class DictLookup(Expression):
@@ -25,6 +48,40 @@ class AttributeLookup(Expression):
 
     def __str__(self) -> str:
         return f"{self.obj}.{self.attribute}"
+
+
+@dataclass
+class TernaryOperator(Expression):
+    condition: Expression
+    true_case: Expression
+    false_case: Expression
+
+    def __str__(self) -> str:
+        return f"{self.true_case} if {self.condition} else {self.false_case}"
+
+
+@dataclass
+class ListComprehension(Expression):
+    expr: Expression
+    iter_var: Variable
+    container: Expression
+
+    def __str__(self) -> str:
+        return f"[{self.expr} for {self.iter_var} in {self.container}]"
+
+
+@dataclass
+class DictComprehension(Expression):
+    key_expr: Expression
+    value_expr: Expression
+    key_var: Variable
+    value_var: Variable
+    container: Expression
+
+    def __str__(self) -> str:
+        return (
+            f"{{{self.key_expr}: {self.value_expr} for {self.key_var}, {self.value_var} in {self.container}.items()}}"
+        )
 
 
 class Statement(ABC):

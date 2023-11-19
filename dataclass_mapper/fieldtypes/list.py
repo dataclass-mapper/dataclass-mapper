@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, get_args, get_origin
+
 from .base import FieldType, compute_field_type
-from typing import get_args, get_origin, Any
 
 
 class ListFieldType(FieldType):

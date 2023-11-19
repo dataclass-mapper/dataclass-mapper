@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Any, get_args
+
 from .base import FieldType, compute_field_type
-from typing import get_args, get_origin, Any
-from .utils import is_union_type, is_optional
+from .utils import is_optional, is_union_type
 
 
 class UnionFieldType(FieldType):

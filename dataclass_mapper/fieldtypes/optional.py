@@ -1,9 +1,8 @@
 from typing import Any
 
 from dataclass_mapper.utils import is_optional, remove_NoneType
+
 from .base import FieldType, compute_field_type
-from typing import get_args, get_origin, Any
-from .utils import is_union_type
 from .union import UnionFieldType
 
 
