@@ -15,7 +15,7 @@ class DifferentClassExpressionConverter(ExpressionConverter):
             and is_mappable_to(source.cls_type, target.cls_type)
         )
 
-    def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:
+    def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int) -> Expression:
         assert isinstance(target, ClassFieldType)
         extra_variable = Variable("extra")
         return MethodCall(source_exp, get_map_to_func_name(target.cls_type), [extra_variable])

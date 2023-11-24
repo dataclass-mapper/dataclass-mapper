@@ -12,5 +12,5 @@ class ClassToUnionExpressionConverter(ExpressionConverter):
             isinstance(source, ClassFieldType) and isinstance(target, UnionFieldType) and source in target.inner_types
         )
 
-    def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:
+    def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int) -> Expression:
         return source_exp

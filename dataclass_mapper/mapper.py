@@ -232,7 +232,6 @@ def add_specific_mapper_function(
     )
 
     module = import_module(SourceCls.__module__)
-    print(map_code)
 
     d: Dict = {}
     setattr(SourceCls, "__zip_longest", zip_longest)

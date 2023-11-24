@@ -14,6 +14,9 @@ class Expression(ABC):
     def is_(self, other: "Expression") -> "Expression":
         return Is(self, other)
 
+    def is_not(self, other: "Expression") -> "Expression":
+        return IsNot(self, other)
+
 
 @dataclass
 class Equals(Expression):
@@ -31,6 +34,15 @@ class Is(Expression):
 
     def __str__(self) -> str:
         return f"{self.left} is {self.right}"
+
+
+@dataclass
+class IsNot(Expression):
+    left: Expression
+    right: Expression
+
+    def __str__(self) -> str:
+        return f"{self.left} is not {self.right}"
 
 
 @dataclass

@@ -5,6 +5,7 @@ import pytest
 from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
 from dataclass_mapper.mapping_method import CreateMappingMethodSourceCode
+from dataclass_mapper.fieldtypes import ClassFieldType
 
 
 def prepare_expected_code(code: str) -> str:
@@ -32,8 +33,8 @@ def code() -> CreateMappingMethodSourceCode:
 
 def test_code_gen_add_normal_assignment(code: CreateMappingMethodSourceCode) -> None:
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True),
-        source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
+        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True),
+        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
     )
     expected_code = prepare_expected_code(
         """

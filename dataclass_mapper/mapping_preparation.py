@@ -75,7 +75,7 @@ def normalize_deprecated_mappings(mapping: StringFieldMapping) -> CurrentStringF
 def convert_sqlalchemy_fields(
     mapping: StringSqlAlchemyFieldMapping, source_cls_meta: ClassMeta, target_cls_meta: ClassMeta
 ) -> StringFieldMapping:
-    """Replace the deprecated options with their modern counterparts."""
+    """Replace the SqlAlchemy custom field types with their field names."""
     new_mapping: StringFieldMapping = dict()
 
     for target_field_name, raw_source in mapping.items():

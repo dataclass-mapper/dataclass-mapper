@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional, Type, Union
+from dataclass_mapper.exceptions import ConvertingNotPossibleError
 
 from dataclass_mapper.expression_converters import map_expression
+from dataclass_mapper.fieldtypes.optional import OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
 
 from . import code_generator as cg
@@ -152,6 +155,8 @@ class MappingMethodSourceCode(ABC):
         target: FieldMeta,
         right_side: cg.Expression,
         # options: AssignmentOptions,
+        source_variable: cg.Expression,
+        only_if_not_None: bool
     ) -> cg.Statement:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
@@ -162,14 +167,14 @@ class MappingMethodSourceCode(ABC):
         #     right_side = f"None if {get_var_name(source)} is None else {right_side}"
         code: cg.Statement = self._get_assignment(target, right_side)
 
-        # if options.only_if_not_None:
-        #     code = cg.IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
+        if only_if_not_None:
+            code = cg.IfElse(condition=source_variable.is_not(cg.NONE), if_block=code)
 
         code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
         return code
 
     @abstractmethod
-    def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
+    def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
         pass
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
@@ -194,13 +199,28 @@ class MappingMethodSourceCode(ABC):
             #             options=options,
             #         )
             #     )
+
+            source = deepcopy(source)
+            only_if_not_None = False
+            # use the default value instead
+            # TODO: do we even want this?
+            if isinstance(source.type, OptionalFieldType) and not isinstance(target.type, OptionalFieldType) and not target.required:
+                source.type = source.type.inner_type
+                only_if_not_None = True
+
             source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
-            expression = map_expression(source.type, target.type, source_variable)
+            try:
+                expression = map_expression(source.type, target.type, source_variable, 0)
+            except ConvertingNotPossibleError as e:
+                raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'")
             self.function.body.append(
                 self._field_assignment(
                     source=source,
                     target=target,
                     right_side=expression,
+                    source_variable=source_variable,
+                    only_if_not_None=only_if_not_None
+
                     # options=options,
                 )
             )
@@ -263,7 +283,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
             body=cg.Block(),
         )
 
-    def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
+    def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
         lookup = cg.AttributeLookup(obj="target", attribute=target.name)
         return cg.Assignment(name=lookup, rhs=right_side)
 

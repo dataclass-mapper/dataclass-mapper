@@ -89,4 +89,4 @@ TEST_CASES: List[Scenario] = [
 def test_expression_converter(test_case: Scenario):
     source = AttributeLookup("src", "x")
 
-    assert str(map_expression(test_case.source, test_case.target, source)) == test_case.expected_code
+    assert str(map_expression(test_case.source, test_case.target, source, 0)) == test_case.expected_code

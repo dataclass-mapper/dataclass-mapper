@@ -103,9 +103,8 @@ Type checks
    ...     full_time: str  # "y" or "n"
    ...     salary: Optional[int]
    Traceback (most recent call last):
-     File "dataclass_mapper/mapping_method.py", line 154, in add_mapping
-       raise TypeError(
-   TypeError: 'full_time' of type 'str' of 'EmploymentAgreement' cannot be converted to 'full_time' of type 'bool'
+       ...
+   TypeError: 'full_time' of type 'str' of 'EmploymentAgreement' cannot be converted to 'full_time' of type 'bool' of 'Contract'
 
 Here both classes use different types for the fields.
 The library cannot map the field ``full_time`` of type ``str`` to a ``bool``.
@@ -118,9 +117,8 @@ The library cannot map the field ``full_time`` of type ``str`` to a ``bool``.
    ...     full_time: bool
    ...     salary: Optional[int]
    Traceback (most recent call last):
-     File "dataclass_mapper/mapping_method.py", line 154, in add_mapping
-       raise TypeError(
-   TypeError: 'salary' of type 'Optional[int]' of 'EmploymentAgreement' cannot be converted to 'salary' of type 'int'
+       ...
+   TypeError: 'salary' of type 'Optional[int]' of 'EmploymentAgreement' cannot be converted to 'salary' of type 'int' of 'Contract'
 
 Here the library complains about the mapping an optional field to an non-optional one.
 The other way around would be fine however.
