@@ -7,22 +7,28 @@ from .union import UnionFieldType
 
 
 class OptionalFieldType(FieldType):
+    def __init__(self, inner_type: FieldType):
+        self.inner_type = inner_type
+
     @staticmethod
     def is_applicable(type_: Any) -> bool:
         return is_optional(type_)
 
     @classmethod
     def from_type(cls, type_: Any) -> FieldType:
-        inner = [compute_field_type(remove_NoneType(type_))]
-        return cls(type_=type_, inner=inner)
+        inner = compute_field_type(remove_NoneType(type_))
+        return cls(inner)
 
     def __str__(self) -> str:
-        assert self.inner, "a optional type cannot be empty"
-
         # Nicer Output for Union[int, str, None], which would be OptionalFieldType[UnionFieldType[...]]
-        if isinstance(self.inner[0], UnionFieldType):
-            assert self.inner[0].inner, "a union type cannot be empty"
-            ts = ", ".join(str(t) for t in self.inner[0].inner)
+        if isinstance(self.inner_type, UnionFieldType):
+            ts = ", ".join(str(t) for t in self.inner_type.inner_types)
             return f"Union[{ts}, None]"
         else:
-            return f"Optional[{str(self.inner[0])}]"
+            return f"Optional[{str(self.inner_type)}]"
+
+    def __eq__(self, other: object) -> bool:
+        if type(self) is not type(other):
+            return False
+        assert isinstance(other, OptionalFieldType)
+        return self.inner_type == other.inner_type

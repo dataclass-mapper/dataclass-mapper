@@ -1,13 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Type
+from typing import Any, List, Type
 
 
 class FieldType(ABC):
     all_field_types: List[Type["FieldType"]] = []
-
-    def __init__(self, type_: Any, inner: Optional[List["FieldType"]] = None) -> None:
-        self._type = type_
-        self.inner = inner
 
     def __init_subclass__(cls: Type["FieldType"]) -> None:
         super().__init_subclass__()
@@ -27,14 +23,14 @@ class FieldType(ABC):
     def __str__(self) -> str:
         pass
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(type={self._type}, inner={repr(self.inner)})"
+    # def __repr__(self) -> str:
+    #     return f"{type(self).__name__}(type={self._type}, inner={repr(self.inner)})"
 
-    def __eq__(self, other: object) -> bool:
-        if type(self) is not type(other):
-            return False
-        assert isinstance(other, FieldType)
-        return self.inner == other.inner
+    # def __eq__(self, other: object) -> bool:
+    #     if type(self) is not type(other):
+    #         return False
+    #     assert isinstance(other, FieldType)
+    #     return self.inner == other.inner
 
 
 def compute_field_type(type_: Any) -> FieldType:

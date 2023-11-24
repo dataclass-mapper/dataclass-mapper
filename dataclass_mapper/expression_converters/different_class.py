@@ -10,7 +10,7 @@ class DifferentClassExpressionConverter(ExpressionConverter):
         return (
             isinstance(source, ClassFieldType)
             and isinstance(target, ClassFieldType)
-            and source._type is not target._type
+            and source.cls_type is not target.cls_type
         )
 
     def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:

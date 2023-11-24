@@ -4,6 +4,9 @@ from .base import FieldType
 
 
 class ClassFieldType(FieldType):
+    def __init__(self, cls_type: Any):
+        self.cls_type = cls_type
+
     @staticmethod
     def is_applicable(type_: Any) -> bool:
         return get_origin(type_) is None
@@ -14,12 +17,12 @@ class ClassFieldType(FieldType):
 
     def __str__(self) -> str:
         try:
-            return cast(str, self._type.__name__)
+            return cast(str, self.cls_type.__name__)
         except Exception:
-            return str(self._type)
+            return str(self.cls_type)
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return False
         assert isinstance(other, ClassFieldType)
-        return cast(bool, self._type == other._type)
+        return cast(bool, self.cls_type == other.cls_type)

@@ -25,28 +25,25 @@ class Bar:
 TEST_DATA: List[Tuple[Any, FieldType, str]] = [
     (int, ClassFieldType(int), "int"),
     (float, ClassFieldType(float), "float"),
-    (Optional[int], OptionalFieldType(..., inner=[ClassFieldType(int)]), "Optional[int]"),
-    (Union[int, float], UnionFieldType(..., inner=[ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
+    (Optional[int], OptionalFieldType(ClassFieldType(int)), "Optional[int]"),
+    (Union[int, float], UnionFieldType([ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
     (
         Optional[Union[int, float]],
-        OptionalFieldType(..., inner=[UnionFieldType(..., inner=[ClassFieldType(int), ClassFieldType(float)])]),
+        OptionalFieldType(UnionFieldType([ClassFieldType(int), ClassFieldType(float)])),
         "Union[int, float, None]",
     ),
     (
         Union[int, float, None],
-        OptionalFieldType(..., inner=[UnionFieldType(..., inner=[ClassFieldType(int), ClassFieldType(float)])]),
+        OptionalFieldType(UnionFieldType([ClassFieldType(int), ClassFieldType(float)])),
         "Union[int, float, None]",
     ),
     (Bar, ClassFieldType(Bar), "Bar"),
-    (List[Bar], ListFieldType(..., inner=[ClassFieldType(Bar)]), "List[Bar]"),
+    (List[Bar], ListFieldType(ClassFieldType(Bar)), "List[Bar]"),
     (
         Dict[Bar, Optional[List[Optional[Foo]]]],
         DictFieldType(
-            ...,
-            [
-                ClassFieldType(Bar),
-                OptionalFieldType(..., [ListFieldType(..., [OptionalFieldType(..., [ClassFieldType(Foo)])])]),
-            ],
+            ClassFieldType(Bar),
+            OptionalFieldType(ListFieldType(OptionalFieldType(ClassFieldType(Foo)))),
         ),
         "Dict[Bar, Optional[List[Optional[Foo]]]]",
     ),
@@ -56,16 +53,16 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
 if version_info >= (3, 9):
     TEST_DATA.extend(
         [
-            (int | float, UnionFieldType(..., [ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
+            (int | float, UnionFieldType([ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
             (
                 int | float | None,
-                OptionalFieldType(..., [UnionFieldType(..., [ClassFieldType(int), ClassFieldType(float)])]),
+                OptionalFieldType(UnionFieldType([ClassFieldType(int), ClassFieldType(float)])),
                 "Union[int, float, None]",
             ),
-            (dict[Foo, Bar], DictFieldType(..., [ClassFieldType(Foo), ClassFieldType(Bar)]), "Dict[Foo, Bar]"),
+            (dict[Foo, Bar], DictFieldType(ClassFieldType(Foo), ClassFieldType(Bar)), "Dict[Foo, Bar]"),
             (
                 list[Foo | None],
-                ListFieldType(..., [OptionalFieldType(..., [ClassFieldType(Foo)])]),
+                ListFieldType(OptionalFieldType(ClassFieldType(Foo))),
                 "List[Optional[Foo]]",
             ),
         ]

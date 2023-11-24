@@ -9,9 +9,6 @@ class OptionalToOptionalExpressionConverter(ExpressionConverter):
         return isinstance(source, OptionalFieldType) and isinstance(target, OptionalFieldType)
 
     def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:
-        assert source.inner
-        non_optional_source = source.inner[0]
-        assert target.inner
-        non_optional_target = target.inner[0]
-        recursive = map_expression(non_optional_source, non_optional_target, source_exp)
+        assert isinstance(source, OptionalFieldType) and isinstance(target, OptionalFieldType)
+        recursive = map_expression(source.inner_type, target.inner_type, source_exp)
         return TernaryOperator(source_exp.equals(NONE), NONE, recursive)

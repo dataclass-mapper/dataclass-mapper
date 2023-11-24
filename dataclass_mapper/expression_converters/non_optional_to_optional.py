@@ -9,7 +9,6 @@ class NonOptionalToOptionalExpressionConverter(ExpressionConverter):
         return not isinstance(source, OptionalFieldType) and isinstance(target, OptionalFieldType)
 
     def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:
-        assert target.inner
-        non_optional_target = target.inner[0]
-        recursive = map_expression(source, non_optional_target, source_exp)
+        assert isinstance(target, OptionalFieldType)
+        recursive = map_expression(source, target.inner_type, source_exp)
         return recursive
