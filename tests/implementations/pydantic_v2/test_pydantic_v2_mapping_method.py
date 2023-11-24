@@ -2,6 +2,7 @@ from textwrap import dedent
 
 import pytest
 
+from dataclass_mapper.fieldtypes import ClassFieldType
 from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
 from dataclass_mapper.implementations.pydantic_v2 import PydanticV2ClassMeta
@@ -103,8 +104,8 @@ def test_pydantic_alias() -> None:
         ),
     )
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"),
-        source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
+        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True, alias="TARGET_VARIABLE_X"),
+        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
     )
     expected_code = prepare_expected_code(
         """
@@ -136,8 +137,8 @@ def test_pydantic_alias_allow_population_by_fields() -> None:
         ),
     )
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"),
-        source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
+        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True, alias="TARGET_VARIABLE_X"),
+        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
     )
     expected_code = prepare_expected_code(
         """

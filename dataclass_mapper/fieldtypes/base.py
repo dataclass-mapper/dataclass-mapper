@@ -38,4 +38,4 @@ def compute_field_type(type_: Any) -> FieldType:
         if field_type.is_applicable(type_):
             return field_type.from_type(type_)
 
-    raise NotImplementedError(f"Field type '{str(type_)}' is not supported.")
+    raise TypeError(f"Field type '{str(type_)}' is not supported.")

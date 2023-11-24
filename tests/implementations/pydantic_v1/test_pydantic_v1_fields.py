@@ -6,6 +6,7 @@ from typing import List, Optional
 import pytest
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
+from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType, compute_field_type
 from dataclass_mapper.implementations.pydantic_v1 import PydanticV1FieldMeta, pydantic_version
 
 if pydantic_version()[0] != 1:
@@ -24,9 +25,9 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
-        "x": PydanticV1FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
-        "y": PydanticV1FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
-        "z": PydanticV1FieldMeta(name="z", type=List[int], allow_none=False, required=True, alias="z"),
+        "x": PydanticV1FieldMeta(name="x", type=compute_field_type(int), required=True, alias="x"),
+        "y": PydanticV1FieldMeta(name="y", type=compute_field_type(str), required=True, alias="y"),
+        "z": PydanticV1FieldMeta(name="z", type=compute_field_type(List[int]), required=True, alias="z"),
     }
 
 
@@ -36,11 +37,8 @@ def test_pydantic_optional_fields() -> None:
         y: Optional[List[int]]
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "typing.List[int]"
-    assert fields["y"].allow_none
+    assert fields["x"].type is OptionalFieldType(ClassFieldType(int))
+    assert fields["y"].type == OptionalFieldType(ListFieldType(ClassFieldType(int)))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
@@ -49,9 +47,7 @@ def test_pydantic_optional_fields_with_union():
         x: int | None
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
+    assert fields["x"].type is OptionalFieldType(ClassFieldType(int))
 
 
 def test_pydantic_defaults_field() -> None:

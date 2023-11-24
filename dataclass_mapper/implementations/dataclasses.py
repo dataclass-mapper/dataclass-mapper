@@ -2,8 +2,8 @@ from dataclasses import MISSING, fields, is_dataclass
 from dataclasses import Field as DataclassField
 from typing import Any, Dict, cast, get_type_hints
 
+from dataclass_mapper.fieldtypes.base import compute_field_type
 from dataclass_mapper.namespace import Namespace
-from dataclass_mapper.utils import is_optional, remove_NoneType
 
 from .base import ClassMeta, DataclassType, FieldMeta
 
@@ -14,8 +14,8 @@ class DataclassesFieldMeta(FieldMeta):
         has_default = field.default is not MISSING or field.default_factory is not MISSING
         return cls(
             name=field.name,
-            type=remove_NoneType(real_type),
-            allow_none=is_optional(real_type),
+            type=compute_field_type(real_type),
+            # allow_none=is_optional(real_type),
             required=not has_default,
         )
 

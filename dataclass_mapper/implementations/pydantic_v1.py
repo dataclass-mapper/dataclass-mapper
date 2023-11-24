@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional, Tuple, cast
 
 import dataclass_mapper.code_generator as cg
+from dataclass_mapper.fieldtypes import OptionalFieldType, compute_field_type
 from dataclass_mapper.implementations.utils import parse_version
 from dataclass_mapper.namespace import Namespace
 
@@ -18,10 +19,13 @@ def pydantic_version() -> Tuple[int, int, int]:
 class PydanticV1FieldMeta(FieldMeta):
     @classmethod
     def from_pydantic(cls, field: Any) -> "PydanticV1FieldMeta":
+        type_ = field.outer_type_
+        if field.allow_none:
+            type_ = Optional[type_]
         return cls(
             name=field.name,
-            type=field.outer_type_,
-            allow_none=field.allow_none,
+            type=compute_field_type(type_),
+            # allow_none=field.allow_none,
             required=field.required,
             alias=field.alias,
         )
@@ -88,8 +92,8 @@ class PydanticV1ClassMeta(ClassMeta):
     def only_if_set(cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta) -> bool:
         # maintain Pydantic's unset property
         return (
-            source_field.allow_none
-            and target_field.allow_none
+            isinstance(source_field.type, OptionalFieldType)
+            and isinstance(target_field.type, OptionalFieldType)
             and not target_field.required
             and source_cls._type == DataclassType.PYDANTIC
         )

@@ -27,5 +27,4 @@ def map_expression(source: FieldType, target: FieldType, source_exp: Expression)
         if expression_converter().is_applicable_to_outer(source, target):
             return expression_converter().map_expression(source, target, source_exp)
 
-    # TODO: write message
-    raise NotImplementedError()
+    raise TypeError(f"Mapping from field type '{source}' to field type '{target}' is not supported.")

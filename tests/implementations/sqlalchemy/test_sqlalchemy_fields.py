@@ -6,6 +6,7 @@ from uuid import UUID
 import pytest
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
+from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import SQLAlchemyFieldMeta, sqlalchemy_version
 
 if sqlalchemy_version() < (2, 0, 0):
@@ -33,10 +34,10 @@ def test_sqlalchemy_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
-        "x": SQLAlchemyFieldMeta(name="x", type=UUID, allow_none=False, required=True, alias=None),
-        "y": SQLAlchemyFieldMeta(name="y", type=str, allow_none=False, required=True, alias=None),
-        "z": SQLAlchemyFieldMeta(name="z", type=int, allow_none=True, required=True, alias=None),
-        "a": SQLAlchemyFieldMeta(name="a", type=List[int], allow_none=False, required=True, alias=None),
+        "x": SQLAlchemyFieldMeta(name="x", type=ClassFieldType(UUID), required=True, alias=None),
+        "y": SQLAlchemyFieldMeta(name="y", type=ClassFieldType(str), required=True, alias=None),
+        "z": SQLAlchemyFieldMeta(name="z", type=OptionalFieldType(ClassFieldType(int)), required=True, alias=None),
+        "a": SQLAlchemyFieldMeta(name="a", type=ListFieldType(ClassFieldType(int)), required=True, alias=None),
     }
 
 
@@ -83,15 +84,15 @@ def test_sqlalchemy_relationship_field() -> None:
 
     child_fields = get_class_meta(Child, namespace=empty_namespace).fields
     assert child_fields == {
-        "id": SQLAlchemyFieldMeta(name="id", type=int, allow_none=False, required=False, alias=None),
-        "parent_id": SQLAlchemyFieldMeta(name="parent_id", type=int, allow_none=False, required=False, alias=None),
-        "parent": SQLAlchemyFieldMeta(name="parent", type=Parent, allow_none=False, required=False, alias=None),
+        "id": SQLAlchemyFieldMeta(name="id", type=ClassFieldType(int), required=False, alias=None),
+        "parent_id": SQLAlchemyFieldMeta(name="parent_id", type=ClassFieldType(int), required=False, alias=None),
+        "parent": SQLAlchemyFieldMeta(name="parent", type=ClassFieldType(Parent), required=False, alias=None),
     }
 
     parents_fields = get_class_meta(Parent, namespace=empty_namespace).fields
     assert parents_fields == {
-        "id": SQLAlchemyFieldMeta(name="id", type=int, allow_none=False, required=False, alias=None),
+        "id": SQLAlchemyFieldMeta(name="id", type=ClassFieldType(int), required=False, alias=None),
         "children": SQLAlchemyFieldMeta(
-            name="children", type=List[Child], allow_none=False, required=False, alias=None
+            name="children", type=ListFieldType(ClassFieldType(Child)), required=False, alias=None
         ),
     }

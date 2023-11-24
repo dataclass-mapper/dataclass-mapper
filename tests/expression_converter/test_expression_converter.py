@@ -65,22 +65,22 @@ TEST_CASES: List[Scenario] = [
     Scenario(
         source=ClassFieldType(Foo),
         target=ClassFieldType(Bar),
-        expected_code=f"src.x._map_to_Bar_{id(Bar)}()",
+        expected_code=f"src.x._map_to_Bar_{id(Bar)}(extra)",
     ),
     Scenario(
         source=ListFieldType(ClassFieldType(Foo)),
         target=ListFieldType(ClassFieldType(Bar)),
-        expected_code=f"[x._map_to_Bar_{id(Bar)}() for x in src.x]",
+        expected_code=f"[x._map_to_Bar_{id(Bar)}(extra) for x in src.x]",
     ),
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), ClassFieldType(Foo)),
         target=DictFieldType(ClassFieldType(Bar), ClassFieldType(Bar)),
-        expected_code=f"{{k._map_to_Bar_{id(Bar)}(): v._map_to_Bar_{id(Bar)}() for k, v in src.x.items()}}",
+        expected_code=f"{{k._map_to_Bar_{id(Bar)}(extra): v._map_to_Bar_{id(Bar)}(extra) for k, v in src.x.items()}}",
     ),
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), OptionalFieldType(ClassFieldType(Foo))),
         target=DictFieldType(ClassFieldType(Bar), OptionalFieldType(ClassFieldType(Bar))),
-        expected_code=f"{{k._map_to_Bar_{id(Bar)}(): None if v is None else v._map_to_Bar_{id(Bar)}() for k, v in src.x.items()}}",  # noqa: E501
+        expected_code=f"{{k._map_to_Bar_{id(Bar)}(extra): None if v is None else v._map_to_Bar_{id(Bar)}(extra) for k, v in src.x.items()}}",  # noqa: E501
     ),
 ]
 

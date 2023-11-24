@@ -1,4 +1,4 @@
-from dataclass_mapper.code_generator import Expression, MethodCall
+from dataclass_mapper.code_generator import Expression, MethodCall, Variable
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
 from dataclass_mapper.utils import get_map_to_func_name, is_mappable_to
@@ -17,4 +17,5 @@ class DifferentClassExpressionConverter(ExpressionConverter):
 
     def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:
         assert isinstance(target, ClassFieldType)
-        return MethodCall(source_exp, get_map_to_func_name(target.cls_type), [])
+        extra_variable = Variable("extra")
+        return MethodCall(source_exp, get_map_to_func_name(target.cls_type), [extra_variable])

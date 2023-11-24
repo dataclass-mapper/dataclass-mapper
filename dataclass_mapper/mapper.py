@@ -3,6 +3,8 @@ from importlib import import_module
 from itertools import zip_longest
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
+from dataclass_mapper.fieldtypes.optional import OptionalFieldType
+
 from .assignments import get_map_to_func_name, get_mapupdate_to_func_name
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
@@ -11,7 +13,6 @@ from .mapping_method import (
     CreateMappingMethodSourceCode,
     Ignore,
     MappingMethodSourceCode,
-    ProvideWithExtra,
     StringSqlAlchemyFieldMapping,
     UpdateMappingMethodSourceCode,
 )
@@ -67,10 +68,11 @@ def _make_mapper(
                 )
             source_field = deepcopy(actual_source_fields[source_field_name])
             # pretend like the source field isn't optional
-            source_field.allow_none = False
+            if isinstance(source_field.type, OptionalFieldType):
+                source_field.type = source_field.type.inner_type
             source_code.add_mapping(target=target_field, source=source_field)
-        elif isinstance(raw_source, ProvideWithExtra):
-            source_code.add_fill_with_extra(target=target_field)
+        # elif isinstance(raw_source, ProvideWithExtra):
+        #     source_code.add_fill_with_extra(target=target_field)
         elif isinstance(raw_source, Ignore):
             if source_code_type.all_required_fields_need_initialization and target_field.required:
                 # leaving the target empty and using the default value/factory is not possible,
@@ -230,6 +232,7 @@ def add_specific_mapper_function(
     )
 
     module = import_module(SourceCls.__module__)
+    print(map_code)
 
     d: Dict = {}
     setattr(SourceCls, "__zip_longest", zip_longest)

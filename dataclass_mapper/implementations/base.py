@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Optional, cast, get_args, get_origin
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 import dataclass_mapper.code_generator as cg
+from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.namespace import Namespace
-from dataclass_mapper.utils import is_union_type
 
 
 class DataclassType(Enum):
@@ -27,50 +27,17 @@ class FieldMeta:
     """
 
     name: str
-    type: Any
-    allow_none: bool
+    type: FieldType
+    # allow_none: bool
     required: bool
     alias: Optional[str] = None
 
-    @property
-    def disallow_none(self) -> bool:
-        return not self.allow_none
-
-    @property
-    def type_string(self) -> str:
-        try:
-            type_name = cast(str, self.type.__name__)
-        except Exception:
-            type_name = str(self.type)
-
-        if is_union_type(self.type):
-            ts = ", ".join(self.get_class_name(t) for t in get_args(self.type))
-            if self.allow_none:
-                ts += ", NoneType"
-            type_name = f"Union[{ts}]"
-            return type_name
-
-        if get_origin(self.type) is list:
-            type_name = f"List[{self.get_class_name(get_args(self.type)[0])}]"
-
-        if get_origin(self.type) is dict:
-            key_type, value_type = get_args(self.type)
-            type_name = f"Dict[{self.get_class_name(key_type)}, {self.get_class_name(value_type)}]"
-
-        if self.allow_none:
-            type_name = f"Optional[{type_name}]"
-
-        return type_name
-
-    @staticmethod
-    def get_class_name(clazz: Any) -> str:
-        try:
-            return str(clazz.__name__)
-        except AttributeError:
-            return str(clazz)
+    # @property
+    # def disallow_none(self) -> bool:
+    #     return not self.allow_none
 
     def __repr__(self) -> str:
-        return f"'{self.name}' of type '{self.type_string}'"
+        return f"'{self.name}' of type '{self.type}'"
 
 
 class ClassMeta(ABC):

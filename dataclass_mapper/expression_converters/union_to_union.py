@@ -1,7 +1,6 @@
 from dataclass_mapper.code_generator import Expression
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.union import UnionFieldType
-from dataclass_mapper.utils import is_union_subtype
 
 from .expression_converter import ExpressionConverter
 
@@ -11,7 +10,7 @@ class UnionToUnionExpressionConverter(ExpressionConverter):
         return (
             isinstance(source, UnionFieldType)
             and isinstance(target, UnionFieldType)
-            and is_union_subtype(source.inner_types, target.inner_types)
+            and all(source_subtype in target.inner_types for source_subtype in source.inner_types)
         )
 
     def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression) -> Expression:

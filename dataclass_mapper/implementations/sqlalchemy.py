@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, cast, runtime_checkable
 from uuid import UUID
 
+from dataclass_mapper.fieldtypes import compute_field_type
 from dataclass_mapper.implementations.utils import parse_version
 from dataclass_mapper.namespace import Namespace
 
@@ -22,10 +23,13 @@ class SQLAlchemyFieldMeta(FieldMeta):
     @classmethod
     def from_sqlalchemy(cls, field: Any, name: str) -> "SQLAlchemyFieldMeta":
         # TODO: disable "GENERATED ALWAYS columns" (e.g. Column(Identity(always=True)))
+        type_ = cls._extract_sqlalchemy_type(field.type, name)
+        if field.nullable:
+            type_ = Optional[type_]
         return cls(
             name=name,
-            type=cls._extract_sqlalchemy_type(field.type, name),
-            allow_none=field.nullable,
+            type=compute_field_type(type_),
+            # allow_none=field.nullable,
             required=cls._is_required(field),
             alias=None,
         )
@@ -117,10 +121,13 @@ class SQLAlchemyClassMeta(ClassMeta):
 
             nullable = all(lc.nullable for lc in relationship.local_columns)
 
+            if nullable:
+                type_ = Optional[type_]
+
             fields[name] = SQLAlchemyFieldMeta(
                 name=name,
-                type=type_,
-                allow_none=nullable,
+                type=compute_field_type(type_),
+                # allow_none=nullable,
                 required=False,  # TODO: is this always the case?
             )
             # todo: what if `relationship(viewonly=True)` is set?

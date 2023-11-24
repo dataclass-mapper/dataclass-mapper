@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional, Type, Union
 
+from dataclass_mapper.expression_converters import map_expression
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
 
 from . import code_generator as cg
@@ -14,7 +15,6 @@ from .assignments import (
     ListRecursiveAssignment,
     RecursiveAssignment,
     SimpleAssignment,
-    get_var_name,
 )
 from .implementations.base import ClassMeta, FieldMeta
 
@@ -80,39 +80,39 @@ StringFieldMapping = Dict[str, Origin]
 StringSqlAlchemyFieldMapping = Dict[Union[str, InstrumentedAttribute], Union[Origin, InstrumentedAttribute]]
 
 
-@dataclass
-class AssignmentOptions:
-    """
-    Options for creating an assignment code (target = right_side).
-    :param only_if_set: only set the target to the right_side if the source set
-        (for Optional fields in Pydantic classes)
-    :param only_if_not_None: don't assign the right side, if the value is None
-        (for Optional -> non-Optional mappings with defaults in target fields)
-    :param if_None: only assign the right side if it is not None (for Optional, recursive fields),
-        otherwise set it to None
-    """
+# @dataclass
+# class AssignmentOptions:
+#     """
+#     Options for creating an assignment code (target = right_side).
+#     :param only_if_set: only set the target to the right_side if the source set
+#         (for Optional fields in Pydantic classes)
+#     :param only_if_not_None: don't assign the right side, if the value is None
+#         (for Optional -> non-Optional mappings with defaults in target fields)
+#     :param if_None: only assign the right side if it is not None (for Optional, recursive fields),
+#         otherwise set it to None
+#     """
 
-    only_if_not_None: bool = False
-    if_None: bool = False
+#     only_if_not_None: bool = False
+#     if_None: bool = False
 
-    @classmethod
-    def from_Metas(
-        cls, source_cls: ClassMeta, target_cls: ClassMeta, source: FieldMeta, target: FieldMeta
-    ) -> "AssignmentOptions":
-        # handle optional to non-optional mappings
-        only_if_not_None = False
-        if source.allow_none and target.disallow_none:
-            if not target.required:
-                only_if_not_None = True
-            else:
-                raise TypeError(f"{source} of '{source_cls.name}' cannot be converted to {target}")
+#     @classmethod
+#     def from_Metas(
+#         cls, source_cls: ClassMeta, target_cls: ClassMeta, source: FieldMeta, target: FieldMeta
+#     ) -> "AssignmentOptions":
+#         # handle optional to non-optional mappings
+#         only_if_not_None = False
+#         if source.allow_none and target.disallow_none:
+#             if not target.required:
+#                 only_if_not_None = True
+#             else:
+#                 raise TypeError(f"{source} of '{source_cls.name}' cannot be converted to {target}")
 
-        if_None = source.allow_none
+#         if_None = source.allow_none
 
-        return cls(
-            only_if_not_None=only_if_not_None,
-            if_None=if_None,
-        )
+#         return cls(
+#             only_if_not_None=only_if_not_None,
+#             if_None=if_None,
+#         )
 
 
 class MappingMethodSourceCode(ABC):
@@ -150,20 +150,20 @@ class MappingMethodSourceCode(ABC):
         self,
         source: FieldMeta,
         target: FieldMeta,
-        right_side: str,
-        options: AssignmentOptions,
+        right_side: cg.Expression,
+        # options: AssignmentOptions,
     ) -> cg.Statement:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
 
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
         """
-        if options.if_None and not options.only_if_not_None:
-            right_side = f"None if {get_var_name(source)} is None else {right_side}"
+        # if options.if_None and not options.only_if_not_None:
+        #     right_side = f"None if {get_var_name(source)} is None else {right_side}"
         code: cg.Statement = self._get_assignment(target, right_side)
 
-        if options.only_if_not_None:
-            code = cg.IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
+        # if options.only_if_not_None:
+        #     code = cg.IfElse(condition=f"{get_var_name(source)} is not None", if_block=code)
 
         code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
         return code
@@ -182,20 +182,30 @@ class MappingMethodSourceCode(ABC):
         else:
             assert isinstance(source, FieldMeta)
 
-            options = AssignmentOptions.from_Metas(
-                source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
-            )
-            if assignment := self._get_assigment(source=source, target=target):
-                self.function.body.append(
-                    self._field_assignment(
-                        source=source,
-                        target=target,
-                        right_side=assignment.right_side(),
-                        options=options,
-                    )
+            # options = AssignmentOptions.from_Metas(
+            #     source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
+            # )
+            # if assignment := self._get_assigment(source=source, target=target):
+            #     self.function.body.append(
+            #         self._field_assignment(
+            #             source=source,
+            #             target=target,
+            #             right_side=assignment.right_side(),
+            #             options=options,
+            #         )
+            #     )
+            source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
+            expression = map_expression(source.type, target.type, source_variable)
+            self.function.body.append(
+                self._field_assignment(
+                    source=source,
+                    target=target,
+                    right_side=expression,
+                    # options=options,
                 )
-            else:  # impossible
-                raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target}")
+            )
+            # else:  # impossible
+            #     raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target}")
 
     def add_fill_with_extra(self, target: FieldMeta) -> None:
         variable_name = self.target_cls.get_assignment_name(target)

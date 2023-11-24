@@ -1,9 +1,9 @@
 from typing import Any, Dict, Optional, Tuple, cast
 
 import dataclass_mapper.code_generator as cg
+from dataclass_mapper.fieldtypes import OptionalFieldType, compute_field_type
 from dataclass_mapper.implementations.utils import parse_version
 from dataclass_mapper.namespace import Namespace
-from dataclass_mapper.utils import is_optional, remove_NoneType
 
 from .base import ClassMeta, DataclassType, FieldMeta
 
@@ -21,8 +21,8 @@ class PydanticV2FieldMeta(FieldMeta):
     def from_pydantic(cls, field: Any, name: str) -> "PydanticV2FieldMeta":
         return cls(
             name=name,
-            type=remove_NoneType(field.annotation),
-            allow_none=is_optional(field.annotation),
+            type=compute_field_type(field.annotation),
+            # allow_none=is_optional(field.annotation),
             required=field.is_required(),
             alias=field.alias,
         )
@@ -94,8 +94,8 @@ class PydanticV2ClassMeta(ClassMeta):
     def only_if_set(cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta) -> bool:
         # maintain Pydantic's unset property
         return (
-            source_field.allow_none
-            and target_field.allow_none
+            isinstance(source_field.type, OptionalFieldType)
+            and isinstance(target_field.type, OptionalFieldType)
             and not target_field.required
             and source_cls._type == DataclassType.PYDANTIC
         )
