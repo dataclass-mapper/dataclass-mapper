@@ -1,12 +1,12 @@
-from .expression_converter import ExpressionConverter, map_expression
-from .same_class import SameClassExpressionConverter
-from .dict import DictComprehension
-from .list import ListComprehension
 from .class_to_union import ClassToUnionExpressionConverter
+from .dict import DictComprehension
 from .different_class import DifferentClassExpressionConverter
+from .expression_converter import ExpressionConverter, map_expression
+from .list import ListComprehension
 from .non_optional_to_optional import NonOptionalToOptionalExpressionConverter
-from .union_to_union import UnionToUnionExpressionConverter
 from .optional_to_optional import OptionalToOptionalExpressionConverter
+from .same_class import SameClassExpressionConverter
+from .union_to_union import UnionToUnionExpressionConverter
 
 __all__ = [
     "ExpressionConverter",
@@ -18,5 +18,5 @@ __all__ = [
     "NonOptionalToOptionalExpressionConverter",
     "UnionToUnionExpressionConverter",
     "OptionalToOptionalExpressionConverter",
-    "DifferentClassExpressionConverter"
+    "DifferentClassExpressionConverter",
 ]

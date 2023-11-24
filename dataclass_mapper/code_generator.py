@@ -11,6 +11,9 @@ class Expression(ABC):
     def equals(self, other: "Expression") -> "Expression":
         return Equals(self, other)
 
+    def is_(self, other: "Expression") -> "Expression":
+        return Is(self, other)
+
 
 @dataclass
 class Equals(Expression):
@@ -19,6 +22,15 @@ class Equals(Expression):
 
     def __str__(self) -> str:
         return f"{self.left} == {self.right}"
+
+
+@dataclass
+class Is(Expression):
+    left: Expression
+    right: Expression
+
+    def __str__(self) -> str:
+        return f"{self.left} is {self.right}"
 
 
 @dataclass
@@ -82,6 +94,28 @@ class DictComprehension(Expression):
         return (
             f"{{{self.key_expr}: {self.value_expr} for {self.key_var}, {self.value_var} in {self.container}.items()}}"
         )
+        # TODO: does {{ }} work if you use it multiple times in f-strings
+
+
+@dataclass
+class FunctionCall(Expression):
+    function_name: str
+    parameters: List[Expression]
+
+    def __str__(self) -> str:
+        parameters = ", ".join(str(param) for param in self.parameters)
+        return f"{self.function_name}({parameters})"
+
+
+@dataclass
+class MethodCall(Expression):
+    object_name: Expression
+    method_name: str
+    parameters: List[Expression]
+
+    def __str__(self) -> str:
+        parameters = ", ".join(str(param) for param in self.parameters)
+        return f"{self.object_name}.{self.method_name}({parameters})"
 
 
 class Statement(ABC):
