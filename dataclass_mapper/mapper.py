@@ -81,8 +81,10 @@ def _make_mapper(
                     f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {raw_source.created_via}, "
                     "as it has no default"
                 )
+        elif callable(raw_source):
+            source_code.add_callable(target=target_field, source=raw_source)
         else:
-            source_code.add_mapping(target=target_field, source=raw_source)
+            assert False, "impossible to reach"
 
     return str(source_code), source_code.methods, {target_cls_meta.alias_name: target_cls}
 

@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from textwrap import dedent
-from dataclass_mapper.mapper import mapper
 
 import pytest
 
 from dataclass_mapper.fieldtypes import ClassFieldType, OptionalFieldType
 from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
+from dataclass_mapper.mapper import mapper
 from dataclass_mapper.mapping_method import FromExtra, UpdateMappingMethodSourceCode
 
 
@@ -111,7 +111,9 @@ def test_provide_with_extra_code_list_update(code: UpdateMappingMethodSourceCode
 
 
 def test_provide_with_extra_code_check(code: UpdateMappingMethodSourceCode):
-    code.add_from_extra(target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True), source=FromExtra("external_x"))
+    code.add_from_extra(
+        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True), source=FromExtra("external_x")
+    )
     expected_code = prepare_expected_code(
         """
         def update(self, target: "Target", extra: dict) -> "None":

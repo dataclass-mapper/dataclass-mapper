@@ -24,7 +24,6 @@ class Expression(ABC):
         return NotIn(self, other)
 
 
-
 @dataclass
 class Equals(Expression):
     left: Expression
@@ -98,7 +97,7 @@ class DictLookup(Expression):
         if isinstance(self.key, str):
             return f'{self.dict_name}["{self.key}"]'
         else:
-            return f'{self.dict_name}[{self.key}]'
+            return f"{self.dict_name}[{self.key}]"
 
 
 @dataclass
@@ -142,7 +141,6 @@ class DictComprehension(Expression):
         return (
             f"{{{self.key_expr}: {self.value_expr} for {self.key_var}, {self.value_var} in {self.container}.items()}}"
         )
-        # TODO: does {{ }} work if you use it multiple times in f-strings
 
 
 @dataclass

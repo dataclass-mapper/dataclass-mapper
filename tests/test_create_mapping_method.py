@@ -90,7 +90,9 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
 
 
 def test_provide_with_extra_code_check(code: CreateMappingMethodSourceCode):
-    code.add_from_extra(target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True), source=FromExtra("external_x"))
+    code.add_from_extra(
+        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True), source=FromExtra("external_x")
+    )
     expected_code = prepare_expected_code(
         """
         def convert(self, extra: dict) -> "Target":

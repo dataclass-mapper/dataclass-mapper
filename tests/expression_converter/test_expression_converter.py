@@ -74,7 +74,7 @@ TEST_CASES: List[Scenario] = [
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), ClassFieldType(Foo)),
         target=DictFieldType(ClassFieldType(Bar), ClassFieldType(Bar)),
-        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",
+        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",  # noqa: E501
     ),
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), OptionalFieldType(ClassFieldType(Foo))),

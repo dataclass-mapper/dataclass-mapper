@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 import pytest
 
-from dataclass_mapper import map_to, mapper, from_extra
+from dataclass_mapper import from_extra, map_to, mapper
 
 
 @dataclass

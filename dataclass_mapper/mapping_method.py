@@ -79,41 +79,6 @@ StringFieldMapping = Dict[str, Origin]
 StringSqlAlchemyFieldMapping = Dict[Union[str, InstrumentedAttribute], Union[Origin, InstrumentedAttribute]]
 
 
-# @dataclass
-# class AssignmentOptions:
-#     """
-#     Options for creating an assignment code (target = right_side).
-#     :param only_if_set: only set the target to the right_side if the source set
-#         (for Optional fields in Pydantic classes)
-#     :param only_if_not_None: don't assign the right side, if the value is None
-#         (for Optional -> non-Optional mappings with defaults in target fields)
-#     :param if_None: only assign the right side if it is not None (for Optional, recursive fields),
-#         otherwise set it to None
-#     """
-
-#     only_if_not_None: bool = False
-#     if_None: bool = False
-
-#     @classmethod
-#     def from_Metas(
-#         cls, source_cls: ClassMeta, target_cls: ClassMeta, source: FieldMeta, target: FieldMeta
-#     ) -> "AssignmentOptions":
-#         # handle optional to non-optional mappings
-#         only_if_not_None = False
-#         if source.allow_none and target.disallow_none:
-#             if not target.required:
-#                 only_if_not_None = True
-#             else:
-#                 raise TypeError(f"{source} of '{source_cls.name}' cannot be converted to {target}")
-
-#         if_None = source.allow_none
-
-#         return cls(
-#             only_if_not_None=only_if_not_None,
-#             if_None=if_None,
-#         )
-
-
 class MappingMethodSourceCode(ABC):
     """Source code of the methods that are executed during mappings"""
 
@@ -136,7 +101,6 @@ class MappingMethodSourceCode(ABC):
         source: FieldMeta,
         target: FieldMeta,
         right_side: cg.Expression,
-        # options: AssignmentOptions,
         source_variable: cg.Expression,
         only_if_not_None: bool,
     ) -> cg.Statement:
@@ -145,8 +109,6 @@ class MappingMethodSourceCode(ABC):
 
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
         """
-        # if options.if_None and not options.only_if_not_None:
-        #     right_side = f"None if {get_var_name(source)} is None else {right_side}"
         code: cg.Statement = self._get_assignment(target, right_side)
 
         if only_if_not_None:
@@ -159,57 +121,54 @@ class MappingMethodSourceCode(ABC):
     def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
         pass
 
-    def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
-        if callable(source):
-            if (parameter_cnt := len(signature(source).parameters)) >= 2:
-                # can only happen, if the typing annotation fails (e.g. because mypy is not installed)
-                raise ValueError(
-                    f"'{target.name}' of '{self.target_cls.name}' cannot be mapped "
-                    "using a factory with more than one parameter"
-                )
-
-            method_name = f"_{uuid4().hex}"
-            if parameter_cnt == 0:
-                self.methods[method_name] = cast(Callable, staticmethod(cast(Callable, source)))
-            else:
-                self.methods[method_name] = source
-
-            right_side = cg.MethodCall(cg.Variable("self"), method_name, [])
-            self.function.body.append(self._get_assignment(target, right_side))
-        else:
-            assert isinstance(source, FieldMeta)
-
-            source = deepcopy(source)
-            only_if_not_None = False
-            # use the default value instead
-            # TODO: do we even want this?
-            if (
-                isinstance(source.type, OptionalFieldType)
-                and not isinstance(target.type, OptionalFieldType)
-                and not target.required
-            ):
-                source.type = source.type.inner_type
-                only_if_not_None = True
-
-            source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
-            try:
-                expression = map_expression(source.type, target.type, source_variable, 0)
-            except ConvertingNotPossibleError:
-                raise TypeError(
-                    f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
-                )
-            self.function.body.append(
-                self._field_assignment(
-                    source=source,
-                    target=target,
-                    right_side=expression,
-                    source_variable=source_variable,
-                    only_if_not_None=only_if_not_None,
-                    # options=options,
-                )
+    def add_callable(self, target: FieldMeta, source: Callable) -> None:
+        if (parameter_cnt := len(signature(source).parameters)) >= 2:
+            # can only happen, if the typing annotation fails (e.g. because mypy is not installed)
+            raise ValueError(
+                f"'{target.name}' of '{self.target_cls.name}' cannot be mapped "
+                "using a factory with more than one parameter"
             )
-            # else:  # impossible
-            #     raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target}")
+
+        method_name = f"_{uuid4().hex}"
+        if parameter_cnt == 0:
+            self.methods[method_name] = cast(Callable, staticmethod(cast(Callable, source)))
+        else:
+            self.methods[method_name] = source
+
+        right_side = cg.MethodCall(cg.Variable("self"), method_name, [])
+        self.function.body.append(self._get_assignment(target, right_side))
+
+    def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
+        assert isinstance(source, FieldMeta)
+
+        source = deepcopy(source)
+        only_if_not_None = False
+        # use the default value instead
+        # TODO: do we even want this?
+        if (
+            isinstance(source.type, OptionalFieldType)
+            and not isinstance(target.type, OptionalFieldType)
+            and not target.required
+        ):
+            source.type = source.type.inner_type
+            only_if_not_None = True
+
+        source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
+        try:
+            expression = map_expression(source.type, target.type, source_variable, 0)
+        except ConvertingNotPossibleError:
+            raise TypeError(
+                f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
+            )
+        self.function.body.append(
+            self._field_assignment(
+                source=source,
+                target=target,
+                right_side=expression,
+                source_variable=source_variable,
+                only_if_not_None=only_if_not_None,
+            )
+        )
 
     def add_from_extra(self, target: FieldMeta, source: FromExtra) -> None:
         exception_msg = (
