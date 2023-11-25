@@ -9,7 +9,7 @@ With ``map_to`` you can simply overwrite the attributes that the normal mapping 
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra, ignore
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, ignore
    >>> id = lambda _: 139772781422736
 
 .. doctest::

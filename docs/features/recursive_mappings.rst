@@ -6,7 +6,7 @@ Recursive models
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none
 
 Given the following simple classes together with their mappings, you can build more powerful recusive mappings.
 

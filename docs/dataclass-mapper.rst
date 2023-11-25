@@ -16,7 +16,7 @@ Register mappings
 
 .. autofunction:: dataclass_mapper.assume_not_none
 
-.. autofunction:: dataclass_mapper.provide_with_extra
+.. autofunction:: dataclass_mapper.from_extra
 
 Register enum mappings
 ----------------------

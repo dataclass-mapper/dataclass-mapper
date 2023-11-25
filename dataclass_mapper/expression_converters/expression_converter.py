@@ -4,7 +4,6 @@ from typing import List, Type
 from dataclass_mapper.code_generator import Expression
 from dataclass_mapper.exceptions import ConvertingNotPossibleError
 from dataclass_mapper.fieldtypes import FieldType
-from dataclass_mapper.implementations.base import FieldMeta
 
 
 class ExpressionConverter(ABC):
@@ -20,7 +19,9 @@ class ExpressionConverter(ABC):
         type ``Optional[List[int]]``, while the :class:`ListExpressionConverter` isn't."""
 
     @abstractmethod
-    def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int) -> Expression:
+    def map_expression(
+        self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
+    ) -> Expression:
         """Creates the expression (that converts from source type to target type)."""
 
 

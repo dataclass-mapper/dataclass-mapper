@@ -8,7 +8,7 @@ With the ``mapping`` parameter it's possible to define how the fields in the tar
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra, create_mapper
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, create_mapper
 
 .. doctest::
 

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from dataclass_mapper.fieldtypes import FieldType
 
 

@@ -11,7 +11,7 @@ You can define a new mapping using the :func:`~dataclass_mapper.create_mapper` f
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra, create_mapper
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, create_mapper
 
 .. doctest::
 

@@ -17,6 +17,13 @@ class Expression(ABC):
     def is_not(self, other: "Expression") -> "Expression":
         return IsNot(self, other)
 
+    def in_(self, other: "Expression") -> "Expression":
+        return In(self, other)
+
+    def not_in_(self, other: "Expression") -> "Expression":
+        return NotIn(self, other)
+
+
 
 @dataclass
 class Equals(Expression):
@@ -46,6 +53,24 @@ class IsNot(Expression):
 
 
 @dataclass
+class In(Expression):
+    left: Expression
+    right: Expression
+
+    def __str__(self) -> str:
+        return f"{self.left} in {self.right}"
+
+
+@dataclass
+class NotIn(Expression):
+    left: Expression
+    right: Expression
+
+    def __str__(self) -> str:
+        return f"{self.left} not in {self.right}"
+
+
+@dataclass
 class Variable(Expression):
     name: str
 
@@ -57,12 +82,23 @@ NONE = Variable("None")
 
 
 @dataclass
+class StringValue(Expression):
+    value: str
+
+    def __str__(self) -> str:
+        return f'"{self.value}"'
+
+
+@dataclass
 class DictLookup(Expression):
     dict_name: Union[str, Expression]
     key: Union[str, Expression]
 
     def __str__(self) -> str:
-        return f'{self.dict_name}["{self.key}"]'
+        if isinstance(self.key, str):
+            return f'{self.dict_name}["{self.key}"]'
+        else:
+            return f'{self.dict_name}[{self.key}]'
 
 
 @dataclass

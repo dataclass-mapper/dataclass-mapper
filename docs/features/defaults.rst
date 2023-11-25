@@ -10,7 +10,7 @@ The two marks ``init_with_default`` and ``ignore`` are equivalent.
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, provide_with_extra, ignore
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, ignore
    >>> from uuid import UUID
    >>> uuid4 = lambda: UUID('38fc07e1-677e-40ef-830c-00e284056dd8')
 

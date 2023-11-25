@@ -13,5 +13,7 @@ class SameClassExpressionConverter(ExpressionConverter):
             and source.cls_type is target.cls_type
         )
 
-    def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int) -> Expression:
+    def map_expression(
+        self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
+    ) -> Expression:
         return source_exp

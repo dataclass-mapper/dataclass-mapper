@@ -2,23 +2,16 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Callable, Dict, List, Optional, Type, Union
-from dataclass_mapper.exceptions import ConvertingNotPossibleError
+from inspect import signature
+from typing import Any, Callable, Dict, Optional, Union, cast
+from uuid import uuid4
 
+from dataclass_mapper.exceptions import ConvertingNotPossibleError
 from dataclass_mapper.expression_converters import map_expression
 from dataclass_mapper.fieldtypes.optional import OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
 
 from . import code_generator as cg
-from .assignments import (
-    Assignment,
-    CallableWithMax1Parameter,
-    DictRecursiveAssignment,
-    FunctionAssignment,
-    ListRecursiveAssignment,
-    RecursiveAssignment,
-    SimpleAssignment,
-)
 from .implementations.base import ClassMeta, FieldMeta
 
 
@@ -60,13 +53,16 @@ def assume_not_none(field_name: Optional[str] = None) -> AssumeNotNone:
 
 
 @dataclass
-class ProvideWithExtra:
-    pass
+class FromExtra:
+    name: str
 
 
-def provide_with_extra() -> ProvideWithExtra:
+def from_extra(name: str) -> FromExtra:
     """Don't map this field using a source class field, fill it with a dictionary called `extra` duing `map_to`."""
-    return ProvideWithExtra()
+    return FromExtra(name)
+
+
+CallableWithMax1Parameter = Union[Callable[[], Any], Callable[[Any], Any]]
 
 
 # the different types that can be used as origin (source) for mapping to a member
@@ -75,8 +71,8 @@ def provide_with_extra() -> ProvideWithExtra:
 # - Other.USE_DEFAULT/IGNORE_MISSING_MAPPING/init_with_default()/ignore(): Don't map to this variable
 #   (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
-# - provide_with_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
-CurrentOrigin = Union[str, CallableWithMax1Parameter, Ignore, AssumeNotNone, ProvideWithExtra]
+# - from_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
+CurrentOrigin = Union[str, CallableWithMax1Parameter, Ignore, AssumeNotNone, FromExtra]
 Origin = Union[CurrentOrigin, Spezial]
 CurrentStringFieldMapping = Dict[str, CurrentOrigin]
 StringFieldMapping = Dict[str, Origin]
@@ -121,13 +117,6 @@ StringSqlAlchemyFieldMapping = Dict[Union[str, InstrumentedAttribute], Union[Ori
 class MappingMethodSourceCode(ABC):
     """Source code of the methods that are executed during mappings"""
 
-    AssignmentClasses: List[Type[Assignment]] = [
-        SimpleAssignment,
-        RecursiveAssignment,
-        ListRecursiveAssignment,
-        DictRecursiveAssignment,
-    ]
-
     func_name = ""
     all_required_fields_need_initialization = True
 
@@ -142,13 +131,6 @@ class MappingMethodSourceCode(ABC):
     def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
         pass
 
-    @classmethod
-    def _get_assigment(cls, target: FieldMeta, source: FieldMeta) -> Optional[Assignment]:
-        for AssignmentCls in cls.AssignmentClasses:
-            if (assignment := AssignmentCls(source=source, target=target)).applicable():
-                return assignment
-        return None
-
     def _field_assignment(
         self,
         source: FieldMeta,
@@ -156,7 +138,7 @@ class MappingMethodSourceCode(ABC):
         right_side: cg.Expression,
         # options: AssignmentOptions,
         source_variable: cg.Expression,
-        only_if_not_None: bool
+        only_if_not_None: bool,
     ) -> cg.Statement:
         """Generate code for setting the target field to the right side.
         Only do it for a couple of conditions.
@@ -179,64 +161,68 @@ class MappingMethodSourceCode(ABC):
 
     def add_mapping(self, target: FieldMeta, source: Union[FieldMeta, Callable]) -> None:
         if callable(source):
-            function_assignment = FunctionAssignment(
-                function=source, target=target, methods=self.methods, target_cls_name=self.target_cls.name
-            )
-            right_side = function_assignment.right_side()
+            if (parameter_cnt := len(signature(source).parameters)) >= 2:
+                # can only happen, if the typing annotation fails (e.g. because mypy is not installed)
+                raise ValueError(
+                    f"'{target.name}' of '{self.target_cls.name}' cannot be mapped "
+                    "using a factory with more than one parameter"
+                )
+
+            method_name = f"_{uuid4().hex}"
+            if parameter_cnt == 0:
+                self.methods[method_name] = cast(Callable, staticmethod(cast(Callable, source)))
+            else:
+                self.methods[method_name] = source
+
+            right_side = cg.MethodCall(cg.Variable("self"), method_name, [])
             self.function.body.append(self._get_assignment(target, right_side))
         else:
             assert isinstance(source, FieldMeta)
-
-            # options = AssignmentOptions.from_Metas(
-            #     source_cls=self.source_cls, target_cls=self.target_cls, source=source, target=target
-            # )
-            # if assignment := self._get_assigment(source=source, target=target):
-            #     self.function.body.append(
-            #         self._field_assignment(
-            #             source=source,
-            #             target=target,
-            #             right_side=assignment.right_side(),
-            #             options=options,
-            #         )
-            #     )
 
             source = deepcopy(source)
             only_if_not_None = False
             # use the default value instead
             # TODO: do we even want this?
-            if isinstance(source.type, OptionalFieldType) and not isinstance(target.type, OptionalFieldType) and not target.required:
+            if (
+                isinstance(source.type, OptionalFieldType)
+                and not isinstance(target.type, OptionalFieldType)
+                and not target.required
+            ):
                 source.type = source.type.inner_type
                 only_if_not_None = True
 
             source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
             try:
                 expression = map_expression(source.type, target.type, source_variable, 0)
-            except ConvertingNotPossibleError as e:
-                raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'")
+            except ConvertingNotPossibleError:
+                raise TypeError(
+                    f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
+                )
             self.function.body.append(
                 self._field_assignment(
                     source=source,
                     target=target,
                     right_side=expression,
                     source_variable=source_variable,
-                    only_if_not_None=only_if_not_None
-
+                    only_if_not_None=only_if_not_None,
                     # options=options,
                 )
             )
             # else:  # impossible
             #     raise TypeError(f"{source} of '{self.source_cls.name}' cannot be converted to {target}")
 
-    def add_fill_with_extra(self, target: FieldMeta) -> None:
-        variable_name = self.target_cls.get_assignment_name(target)
+    def add_from_extra(self, target: FieldMeta, source: FromExtra) -> None:
         exception_msg = (
             f"When mapping an object of '{self.source_cls.name}' to '{self.target_cls.name}' "
-            f"the field '{variable_name}' needs to be provided in the `extra` dictionary"
+            f"the item '{source.name}' needs to be provided in the `extra` dictionary"
         )
+
+        extra = cg.Variable("extra")
+        key = cg.StringValue(source.name)
         self.function.body.append(
-            cg.IfElse(condition=f'"{variable_name}" not in extra', if_block=cg.Raise(f'TypeError("{exception_msg}")'))
+            cg.IfElse(condition=key.not_in_(extra), if_block=cg.Raise(f'TypeError("{exception_msg}")'))
         )
-        self.function.body.append(self._get_assignment(target=target, right_side=f'extra["{variable_name}"]'))
+        self.function.body.append(self._get_assignment(target=target, right_side=cg.DictLookup(extra, key)))
 
     @abstractmethod
     def __str__(self) -> str:
@@ -258,7 +244,7 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
             body=cg.Block(cg.Assignment(name="d", rhs="{}")),
         )
 
-    def _get_assignment(self, target: FieldMeta, right_side: str) -> cg.Assignment:
+    def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
         variable_name = self.target_cls.get_assignment_name(target)
         lookup = cg.DictLookup(dict_name="d", key=variable_name)
         return cg.Assignment(name=lookup, rhs=right_side)
