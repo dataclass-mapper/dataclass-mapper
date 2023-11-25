@@ -11,6 +11,6 @@ class ListExpressionConverter(ExpressionConverter):
 
     def map_expression(self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int) -> Expression:
         assert isinstance(source, ListFieldType) and isinstance(target, ListFieldType)
-        iter_var = Variable("x")
+        iter_var = Variable(f"x{recursion_depth}")
         element_expression = map_expression(source.value_type, target.value_type, iter_var, recursion_depth+1)
         return ListComprehension(element_expression, iter_var, source_exp)

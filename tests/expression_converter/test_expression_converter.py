@@ -49,18 +49,17 @@ TEST_CASES: List[Scenario] = [
         source=ListFieldType(int_class_field_type),
         target=ListFieldType(int_class_field_type),
         # TODO: optimization potential for flat copy
-        expected_code="[x for x in src.x]",
+        expected_code="[x0 for x0 in src.x]",
     ),
     Scenario(
         source=ListFieldType(OptionalFieldType(int_class_field_type)),
         target=ListFieldType(OptionalFieldType(int_class_field_type)),
-        expected_code="[None if x is None else x for x in src.x]",
+        expected_code="[None if x0 is None else x0 for x0 in src.x]",
     ),
     Scenario(
         source=ListFieldType(ListFieldType(int_class_field_type)),
         target=ListFieldType(ListFieldType(int_class_field_type)),
-        # TODO: don't reuse the same loop variable
-        expected_code="[[x for x in x] for x in src.x]",
+        expected_code="[[x1 for x1 in x0] for x0 in src.x]",
     ),
     Scenario(
         source=ClassFieldType(Foo),
@@ -70,17 +69,17 @@ TEST_CASES: List[Scenario] = [
     Scenario(
         source=ListFieldType(ClassFieldType(Foo)),
         target=ListFieldType(ClassFieldType(Bar)),
-        expected_code=f"[x._map_to_Bar_{id(Bar)}(extra) for x in src.x]",
+        expected_code=f"[x0._map_to_Bar_{id(Bar)}(extra) for x0 in src.x]",
     ),
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), ClassFieldType(Foo)),
         target=DictFieldType(ClassFieldType(Bar), ClassFieldType(Bar)),
-        expected_code=f"{{k._map_to_Bar_{id(Bar)}(extra): v._map_to_Bar_{id(Bar)}(extra) for k, v in src.x.items()}}",
+        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",
     ),
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), OptionalFieldType(ClassFieldType(Foo))),
         target=DictFieldType(ClassFieldType(Bar), OptionalFieldType(ClassFieldType(Bar))),
-        expected_code=f"{{k._map_to_Bar_{id(Bar)}(extra): None if v is None else v._map_to_Bar_{id(Bar)}(extra) for k, v in src.x.items()}}",  # noqa: E501
+        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): None if v0 is None else v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",  # noqa: E501
     ),
 ]
 
