@@ -86,7 +86,7 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
     assert str(code) == expected_code
 
 
-def test_provide_with_extra_code_list_update(code: UpdateMappingMethodSourceCode):
+def test_recursive_update(code: UpdateMappingMethodSourceCode):
     @dataclass
     class FooTarget:
         pass
@@ -104,7 +104,7 @@ def test_provide_with_extra_code_list_update(code: UpdateMappingMethodSourceCode
     expected_code = prepare_expected_code(
         f"""
         def update(self, target: "Target", extra: dict) -> "None":
-            target.target_x = self.source_x._map_to_FooTarget_{footarget_id}(extra)
+            self.source_x._mapupdate_to_FooTarget_{footarget_id}(target.target_x, extra)
         """  # noqa: E501
     )
     assert str(code) == expected_code

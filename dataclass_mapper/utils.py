@@ -47,6 +47,14 @@ def is_mappable_to(SourceCls: Any, TargetCls: Any) -> bool:
         return False
 
 
+def is_updatable_to(SourceCls: Any, TargetCls: Any) -> bool:
+    try:
+        func_name = get_mapupdate_to_func_name(TargetCls)
+        return hasattr(SourceCls, func_name)
+    except TypeError:
+        return False
+
+
 def get_map_to_func_name(cls: Any) -> str:
     try:
         identifier = f"{cls.__name__}_{id(cls)}"

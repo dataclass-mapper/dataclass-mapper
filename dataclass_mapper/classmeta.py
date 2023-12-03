@@ -14,3 +14,11 @@ def get_class_meta(cls: Any, namespace: Namespace) -> ClassMeta:
     if issubclass(cls, Enum):
         raise ValueError("`mapper` does not support enum classes, use `enum_mapper` instead")
     raise NotImplementedError("only dataclasses, pydantic and sqlalchemy classes are supported")
+
+
+def is_dataclass_supported(cls: Any) -> bool:
+    for class_meta_type in class_meta_types:
+        if class_meta_type.applies(cls):
+            return True
+    return False
+

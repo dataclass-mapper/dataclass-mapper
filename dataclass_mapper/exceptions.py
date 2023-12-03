@@ -8,3 +8,10 @@ class ConvertingNotPossibleError(Exception):
     source: FieldType
     target: FieldType
     recursion_depth: int
+
+
+@dataclass
+class UpdatingNotPossibleError(Exception):
+    source: FieldType
+    target: FieldType
+    recursion_depth: int

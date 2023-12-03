@@ -6,10 +6,12 @@ from inspect import signature
 from typing import Any, Callable, Dict, Optional, Union, cast
 from uuid import uuid4
 
-from dataclass_mapper.exceptions import ConvertingNotPossibleError
+from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotPossibleError
 from dataclass_mapper.expression_converters import map_expression
+from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
 from dataclass_mapper.fieldtypes.optional import OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
+from dataclass_mapper.update_expressions import update_expression
 
 from . import code_generator as cg
 from .implementations.base import ClassMeta, FieldMeta
@@ -88,12 +90,12 @@ class MappingMethodSourceCode(ABC):
     def __init__(self, source_cls: ClassMeta, target_cls: ClassMeta) -> None:
         self.source_cls = source_cls
         self.target_cls = target_cls
-        self.function = self._create_function(target_cls=target_cls)
+        self.function = self._create_function(source_cls=source_cls, target_cls=target_cls)
         self.methods: Dict[str, Callable] = {}
 
     @classmethod
     @abstractmethod
-    def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
+    def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:
         pass
 
     def _field_assignment(
@@ -139,8 +141,6 @@ class MappingMethodSourceCode(ABC):
         self.function.body.append(self._get_assignment(target, right_side))
 
     def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
-        assert isinstance(source, FieldMeta)
-
         source = deepcopy(source)
         only_if_not_None = False
         # use the default value instead
@@ -195,7 +195,7 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
     all_required_fields_need_initialization = True
 
     @classmethod
-    def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
+    def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:
         return cg.Function(
             cls.func_name,
             args="self, extra: dict",
@@ -219,8 +219,51 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
     func_name = "update"
     all_required_fields_need_initialization = False
 
+    def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
+        # overwrite method to handle recursive updates
+        source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
+        target_variable = cg.AttributeLookup(obj="target", attribute=target.name)
+        try:
+            expression = update_expression(source.type, target.type, source_variable, target_variable, 0)
+            self.function.body.append(
+                cg.ExpressionStatement(expression)
+            )
+        except UpdatingNotPossibleError:
+            # raise TypeError(
+            #     f"{source} of '{self.source_cls.name}' cannot be updated to {target} of '{self.target_cls.name}'"
+            #     # TODO: fix bad grammar
+            # )
+
+            only_if_not_None = False
+            # use the default value instead
+            # TODO: do we even want this?
+            if (
+                isinstance(source.type, OptionalFieldType)
+                and not isinstance(target.type, OptionalFieldType)
+                and not target.required
+            ):
+                source.type = source.type.inner_type
+                only_if_not_None = True
+            try:
+                expression = map_expression(source.type, target.type, source_variable, 0)
+            except ConvertingNotPossibleError:
+                raise TypeError(
+                    f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
+                )
+            self.function.body.append(
+                self._field_assignment(
+                    source=source,
+                    target=target,
+                    right_side=expression,
+                    source_variable=source_variable,
+                    only_if_not_None=only_if_not_None,
+                )
+            )
+
+        
+
     @classmethod
-    def _create_function(cls, target_cls: ClassMeta) -> cg.Function:
+    def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:
         return cg.Function(
             cls.func_name,
             args=f'self, target: "{target_cls.name}", extra: dict',

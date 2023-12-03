@@ -170,6 +170,14 @@ class Statement(ABC):
         ...
 
 
+@dataclass
+class ExpressionStatement(Statement):
+    expression: Expression
+
+    def to_string(self, indent: int) -> str:
+        return f"{' '*indent}{self.expression}"
+
+
 class Pass(Statement):
     def to_string(self, indent: int) -> str:
         return f"{' '*indent}pass"
