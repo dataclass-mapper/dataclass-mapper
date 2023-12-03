@@ -1,8 +1,8 @@
 from dataclass_mapper.classmeta import is_dataclass_supported
-from dataclass_mapper.code_generator import Expression, MethodCall, Variable
+from dataclass_mapper.code_generator import Expression
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
-from dataclass_mapper.utils import get_mapupdate_to_func_name, is_updatable_to
+from dataclass_mapper.utils import is_updatable_to
 
 from .update_expression import UpdateExpression
 

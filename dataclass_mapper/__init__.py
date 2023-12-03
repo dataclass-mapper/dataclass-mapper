@@ -1,4 +1,5 @@
 from .mapper import create_enum_mapper, create_mapper, enum_mapper, enum_mapper_from, map_to, mapper, mapper_from
+from .mapper_mode import MapperMode
 from .mapping_method import Spezial, assume_not_none, from_extra, ignore, init_with_default
 
 USE_DEFAULT = Spezial.USE_DEFAULT
@@ -18,4 +19,5 @@ __all__ = [
     "ignore",
     "assume_not_none",
     "from_extra",
+    "MapperMode",
 ]

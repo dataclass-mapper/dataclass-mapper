@@ -23,9 +23,13 @@ class UpdateExpression(ABC):
         """Creates the expression (that updates from source type to target type)."""
 
 
-def update_expression(source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int) -> Expression:
+def update_expression(
+    source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
+) -> Expression:
     for update_expression_creator in UpdateExpression.all_update_expressions:
         if update_expression_creator().is_applicable_to_outer(source, target):
-            return update_expression_creator().update_expression(source, target, source_exp, target_exp, recursion_depth)
+            return update_expression_creator().update_expression(
+                source, target, source_exp, target_exp, recursion_depth
+            )
 
     raise UpdatingNotPossibleError(source, target, recursion_depth)

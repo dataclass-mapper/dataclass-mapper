@@ -3,6 +3,7 @@ from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
 from dataclass_mapper.fieldtypes.optional import OptionalFieldType
+from dataclass_mapper.mapper_mode import MapperMode
 
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
@@ -90,7 +91,10 @@ def _make_mapper(
 
 
 def create_mapper(
-    SourceCls: Any, TargetCls: Any, mapping: Optional[StringSqlAlchemyFieldMapping] = None, only_update: bool = False
+    SourceCls: Any,
+    TargetCls: Any,
+    mapping: Optional[StringSqlAlchemyFieldMapping] = None,
+    mapper_mode: MapperMode = MapperMode.CREATE_AND_UPDATE,
 ) -> None:
     """Creates a private mapper method, that maps the ``SourceCls`` to the ``TargetCls``.
     The mapper method can be called using the :func:`map_to` function.
@@ -122,14 +126,14 @@ def create_mapper(
           If no source field name is given, it will additionally assume that the source field is also called ``x``.
         - ``{"x": provide_with_extra()}`` means, that you don't fill this field with any field of the source class,
           but with the extra dictionary given by the :func:`map_to` method.
-    :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
-        object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
-        necessary during the creation of a new object.
+    :param mapper_mode: Per default the mapping is used both for creating a new object, and for updating an existing
+        object. With ``mapper_mode`` you can change it, so that it is only used for only creating new objects
+        or only for updating existing objects.
     """
 
     namespace = get_namespace()
     add_mapper_function(
-        SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, only_update=only_update
+        SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, mapper_mode=mapper_mode
     )
 
 
@@ -137,7 +141,9 @@ T = TypeVar("T")
 
 
 def mapper(
-    TargetCls: Any, mapping: Optional[StringSqlAlchemyFieldMapping] = None, only_update: bool = False
+    TargetCls: Any,
+    mapping: Optional[StringSqlAlchemyFieldMapping] = None,
+    mapper_mode: MapperMode = MapperMode.CREATE_AND_UPDATE,
 ) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps the current class to the ``TargetCls``.
     The mapper method can be called using the :func:`map_to` function.
@@ -145,16 +151,16 @@ def mapper(
     :param TargetCls: The class (target class) that you want to map an object of the current (source) class to.
     :param mapping: an optional dictionary which which it's possible to describe how each field in the target class
         gets initialized (see  :func:`create_mapper`)
-    :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
-        object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
-        necessary during the creation of a new object.
+    :param mapper_mode: Per default the mapping is used both for creating a new object, and for updating an existing
+        object. With ``mapper_mode`` you can change it, so that it is only used for only creating new objects
+        or only for updating existing objects.
     """
 
     namespace = get_namespace()
 
     def wrapped(SourceCls: T) -> T:
         add_mapper_function(
-            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, only_update=only_update
+            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, mapper_mode=mapper_mode
         )
         return SourceCls
 
@@ -162,7 +168,9 @@ def mapper(
 
 
 def mapper_from(
-    SourceCls: Any, mapping: Optional[StringSqlAlchemyFieldMapping] = None, only_update: bool = False
+    SourceCls: Any,
+    mapping: Optional[StringSqlAlchemyFieldMapping] = None,
+    mapper_mode: MapperMode = MapperMode.CREATE_AND_UPDATE,
 ) -> Callable[[T], T]:
     """Class decorator that adds a private mapper method, that maps an object of ``SourceCls`` to the current class.
     The mapper method can be called using the :func:`map_to` function.
@@ -170,16 +178,16 @@ def mapper_from(
     :param SourceCls: the class (source class) that you want to map an object from to the current (target) class.
     :param mapping: an optional dictionary which which it's possible to describe how each field in the target class
         gets initialized (see  :func:`create_mapper`)
-    :param only_update: Per default the mapping is used both for creating a new object, and for updating an existing
-        object. With ``only_update`` you can use it only for updates, which allows ignoring fields that would be
-        necessary during the creation of a new object.
+    :param mapper_mode: Per default the mapping is used both for creating a new object, and for updating an existing
+        object. With ``mapper_mode`` you can change it, so that it is only used for only creating new objects
+        or only for updating existing objects.
     """
 
     namespace = get_namespace()
 
     def wrapped(TargetCls: T) -> T:
         add_mapper_function(
-            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, only_update=only_update
+            SourceCls=SourceCls, TargetCls=TargetCls, mapping=mapping, namespace=namespace, mapper_mode=mapper_mode
         )
         return TargetCls
 
@@ -191,11 +199,11 @@ def add_mapper_function(
     TargetCls: Any,
     mapping: Optional[StringSqlAlchemyFieldMapping],
     namespace: Namespace,
-    only_update: bool,
+    mapper_mode: MapperMode,
 ) -> None:
     field_mapping = mapping or cast(StringSqlAlchemyFieldMapping, {})
 
-    if not only_update:
+    if mapper_mode in (MapperMode.CREATE, MapperMode.CREATE_AND_UPDATE):
         create_map_func_name = get_map_to_func_name(TargetCls)
         add_specific_mapper_function(
             SourceCls=SourceCls,
@@ -206,15 +214,16 @@ def add_mapper_function(
             map_func_name=create_map_func_name,
         )
 
-    update_map_func_name = get_mapupdate_to_func_name(TargetCls)
-    add_specific_mapper_function(
-        SourceCls=SourceCls,
-        TargetCls=TargetCls,
-        field_mapping=field_mapping,
-        source_code_type=UpdateMappingMethodSourceCode,
-        namespace=namespace,
-        map_func_name=update_map_func_name,
-    )
+    if mapper_mode in (MapperMode.UPDATE, MapperMode.CREATE_AND_UPDATE):
+        update_map_func_name = get_mapupdate_to_func_name(TargetCls)
+        add_specific_mapper_function(
+            SourceCls=SourceCls,
+            TargetCls=TargetCls,
+            field_mapping=field_mapping,
+            source_code_type=UpdateMappingMethodSourceCode,
+            namespace=namespace,
+            map_func_name=update_map_func_name,
+        )
 
 
 def add_specific_mapper_function(

@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-import pytest
 from typing import List
 
+import pytest
+
 from dataclass_mapper.mapper import create_mapper, map_to, mapper
+from dataclass_mapper.mapper_mode import MapperMode
 from dataclass_mapper.mapping_method import ignore
 
 
@@ -32,7 +34,7 @@ def test_partial_update():
         x: int
         y: str
 
-    @mapper(Foo, {"x": ignore()}, only_update=True)
+    @mapper(Foo, {"x": ignore()}, mapper_mode=MapperMode.UPDATE)
     @dataclass
     class FooUpdate:
         y: str
@@ -70,12 +72,12 @@ def test_recursive_update_using_overwrite():
         foo: Foo
         x: int
 
-    @mapper(Foo, {"y": ignore()}, only_update=True)
+    @mapper(Foo, {"y": ignore()}, mapper_mode=MapperMode.UPDATE)
     @dataclass
     class FooUpdate:
         x: int
 
-    @mapper(Bar, {"x": ignore()}, only_update=True)
+    @mapper(Bar, {"x": ignore()}, mapper_mode=MapperMode.UPDATE)
     @dataclass
     class BarUpdate:
         foo: FooUpdate
@@ -99,13 +101,14 @@ def test_recursive_update_with_missing_recursive_creator_fails():
         foo: List[Foo]
         x: int
 
-    @mapper(Foo, {"y": ignore()}, only_update=True)
+    @mapper(Foo, {"y": ignore()}, mapper_mode=MapperMode.UPDATE)
     @dataclass
     class FooUpdate:
         x: int
 
     with pytest.raises(TypeError) as excinfo:
-        @mapper(Bar, {"x": ignore()}, only_update=True)
+
+        @mapper(Bar, {"x": ignore()}, mapper_mode=MapperMode.UPDATE)
         @dataclass
         class BarCreator:
             foo: List[FooUpdate]

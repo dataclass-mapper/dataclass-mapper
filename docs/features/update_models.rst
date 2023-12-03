@@ -9,7 +9,7 @@ With ``map_to`` you can simply overwrite the attributes that the normal mapping 
    >>> from dataclasses import dataclass, field
    >>> from enum import Enum, auto
    >>> from typing import List, Optional, Dict
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, ignore
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none, ignore, MapperMode
    >>> id = lambda _: 139772781422736
 
 .. doctest::
@@ -38,11 +38,11 @@ With ``map_to`` you can simply overwrite the attributes that the normal mapping 
 
 Sometimes you only want to overwrite a subset of fields, and leave the other values as is.
 Per default the automapper will complain, if any required fields are ignored in the mapping.
-However you can loosen that check, if you specify that a mapping is only meant for updates with ``only_update=True``, and not for creating new objects.
+However you can loosen that check, if you specify that a mapping is only meant for updates with ``mapper_mode=MapperMode.UPDATE``, and not for creating new objects.
 
 .. doctest::
 
-   >>> @mapper(OrderItem, {"name": ignore()}, only_update=True)
+   >>> @mapper(OrderItem, {"name": ignore()}, mapper_mode=MapperMode.UPDATE)
    ... @dataclass
    ... class OrderItemUpdate:
    ...     cnt: int

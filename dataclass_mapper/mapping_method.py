@@ -8,7 +8,6 @@ from uuid import uuid4
 
 from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotPossibleError
 from dataclass_mapper.expression_converters import map_expression
-from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
 from dataclass_mapper.fieldtypes.optional import OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
 from dataclass_mapper.update_expressions import update_expression
@@ -225,9 +224,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         target_variable = cg.AttributeLookup(obj="target", attribute=target.name)
         try:
             expression = update_expression(source.type, target.type, source_variable, target_variable, 0)
-            self.function.body.append(
-                cg.ExpressionStatement(expression)
-            )
+            self.function.body.append(cg.ExpressionStatement(expression))
         except UpdatingNotPossibleError:
             # raise TypeError(
             #     f"{source} of '{self.source_cls.name}' cannot be updated to {target} of '{self.target_cls.name}'"
@@ -259,8 +256,6 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
                     only_if_not_None=only_if_not_None,
                 )
             )
-
-        
 
     @classmethod
     def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:

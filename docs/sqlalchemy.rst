@@ -33,7 +33,7 @@ Mapping from ORM models
    >>> from sqlalchemy import Date, ForeignKey, SmallInteger, String, create_engine
    >>> from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
    >>>
-   >>> from dataclass_mapper import map_to, mapper, mapper_from, init_with_default, ignore
+   >>> from dataclass_mapper import map_to, mapper, mapper_from, init_with_default, ignore, MapperMode
    >>>
    >>> engine = create_engine("sqlite+pysqlite:///:memory:", echo=False, future=True)
    >>> session = Session(engine)
@@ -130,7 +130,7 @@ As with other classes, you can update existing models.
 
 .. doctest::
 
-   >>> @mapper(ParentORM, {"id": ignore(), "name": ignore(), "children": ignore()}, only_update=True)
+   >>> @mapper(ParentORM, {"id": ignore(), "name": ignore(), "children": ignore()}, mapper_mode=MapperMode.UPDATE)
    ... @dataclass
    ... class ParentUpdate:
    ...     age: int

@@ -21,4 +21,3 @@ def is_dataclass_supported(cls: Any) -> bool:
         if class_meta_type.applies(cls):
             return True
     return False
-
