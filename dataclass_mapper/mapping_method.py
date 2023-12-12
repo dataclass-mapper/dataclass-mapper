@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, auto
 from inspect import signature
@@ -8,7 +7,6 @@ from uuid import uuid4
 
 from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotPossibleError
 from dataclass_mapper.expression_converters import map_expression
-from dataclass_mapper.fieldtypes.optional import OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
 from dataclass_mapper.mapper_mode import MapperMode
 from dataclass_mapper.update_expressions import update_expression
@@ -64,6 +62,19 @@ def from_extra(name: str) -> FromExtra:
     return FromExtra(name)
 
 
+@dataclass
+class UpdateOnlyIfSet:
+    field_name: Optional[str] = None
+
+
+def update_only_if_set(field_name: Optional[str] = None) -> UpdateOnlyIfSet:
+    """Only update the target field, if the source field is not ``None``.
+    Therefore this allows a mapping from ``Optional[T]`` to ``T``.
+    If the field name is not specified, it is assumed that the source field has the same name as the target field.
+    """
+    return UpdateOnlyIfSet(field_name)
+
+
 CallableWithMax1Parameter = Union[Callable[[], Any], Callable[[Any], Any]]
 
 
@@ -74,7 +85,7 @@ CallableWithMax1Parameter = Union[Callable[[], Any], Callable[[Any], Any]]
 #   (only allowed if there is a default value/factory for it)
 # - assume_not_none(): assume that the source field is not None
 # - from_extra(): create no mapping between the classes, fill the field with a dictionary called `extra`
-CurrentOrigin = Union[str, CallableWithMax1Parameter, Ignore, AssumeNotNone, FromExtra]
+CurrentOrigin = Union[str, CallableWithMax1Parameter, Ignore, AssumeNotNone, FromExtra, UpdateOnlyIfSet]
 Origin = Union[CurrentOrigin, Spezial]
 CurrentStringFieldMapping = Dict[str, CurrentOrigin]
 StringFieldMapping = Dict[str, Origin]
@@ -133,7 +144,9 @@ class MappingMethodSourceCode(ABC):
         right_side = cg.MethodCall(cg.Variable("self"), method_name, [])
         self.function.body.append(self._get_assignment(target, right_side))
 
-    def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
+    def add_mapping(self, target: FieldMeta, source: FieldMeta, only_if_source_is_set: bool = False) -> None:
+        assert not only_if_source_is_set, "this parameter cannot be used for creation"
+
         source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
         try:
             expression = map_expression(source.type, target.type, source_variable, 0)
@@ -198,7 +211,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
     func_name = "update"
     all_required_fields_need_initialization = False
 
-    def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
+    def add_mapping(self, target: FieldMeta, source: FieldMeta, only_if_source_is_set: bool = False) -> None:
         # It doesn't matter anymore, if a field is required or not. The target field is already initialized.
         target.required = False
 
@@ -208,8 +221,9 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         try:
             expression = update_expression(source.type, target.type, source_variable, target_variable, 0)
             code = cg.ExpressionStatement(expression)
-            code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
-            self.function.body.append(code)
+            code = self.target_cls.post_process(
+                code, source_cls=self.source_cls, source_field=source, target_field=target
+            )
         except UpdatingNotPossibleError:
             # raise TypeError(
             #     f"{source} of '{self.source_cls.name}' cannot be updated to {target} of '{self.target_cls.name}'"
@@ -220,15 +234,19 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
                 expression = map_expression(source.type, target.type, source_variable, 0)
             except ConvertingNotPossibleError:
                 raise TypeError(
-                    f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'. The mapping is missing, or only exists for the {MapperMode.UPDATE} mode."
+                    f"{source} of '{self.source_cls.name}' cannot be converted "
+                    f"to {target} of '{self.target_cls.name}'. "
+                    f"The mapping is missing, or only exists for the {MapperMode.UPDATE} mode."
                 )
-            self.function.body.append(
-                self._field_assignment(
-                    source=source,
-                    target=target,
-                    right_side=expression,
-                )
+            code = self._field_assignment(
+                source=source,
+                target=target,
+                right_side=expression,
             )
+
+        if only_if_source_is_set:
+            code = cg.IfElse(source_variable.is_not(cg.NONE), code)
+        self.function.body.append(code)
 
     @classmethod
     def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:

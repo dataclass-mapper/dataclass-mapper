@@ -2,7 +2,7 @@ Provide extra context to mapping
 --------------------------------
 
 Sometimes you need additional infos for the target object, that you don't have stored in the source class.
-With ``provide_with_extra`` you can mark fields, so that no mapping is generated, and the field is filled using an ``extra`` dictionary that can be given to the ``map_to`` function.
+With :func:`~dataclass_mapper.provide_with_extra` you can mark fields, so that no mapping is generated, and the field is filled using an ``extra`` dictionary that can be given to the :func:`~dataclass_mapper.map_to` function.
 
 .. testsetup:: *
 
@@ -42,7 +42,7 @@ With ``provide_with_extra`` you can mark fields, so that no mapping is generated
    Values given via the ``extra`` dictionary are not checked for their correct type.
 
 .. warning::
-   When using the ``map_to`` function it is checked, if all the required fields (marked with ``provide_with_extra()``) are given.
+   When using the :func:`~dataclass_mapper.map_to` function it is checked, if all the required fields (marked with :func:`~dataclass_mapper.from_extra`) are given.
    It will raise a ``TypeError`` in case some marked field has no value in the ``extra`` dictionary.
 
    Use this feature in moderation.

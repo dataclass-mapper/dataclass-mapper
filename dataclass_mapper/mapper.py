@@ -15,6 +15,7 @@ from .mapping_method import (
     MappingMethodSourceCode,
     StringSqlAlchemyFieldMapping,
     UpdateMappingMethodSourceCode,
+    UpdateOnlyIfSet,
 )
 from .mapping_preparation import (
     convert_sqlalchemy_fields,
@@ -32,6 +33,7 @@ def _make_mapper(
     target_cls: Any,
     namespace: Namespace,
     source_code_type: Type[MappingMethodSourceCode],
+    mapper_mode: MapperMode,
 ) -> Tuple[str, Dict[str, Callable], Dict[str, Any]]:
     source_cls_meta = get_class_meta(source_cls, namespace=namespace)
     target_cls_meta = get_class_meta(target_cls, namespace=namespace)
@@ -74,6 +76,23 @@ def _make_mapper(
             source_code.add_mapping(target=target_field, source=source_field)
         elif isinstance(raw_source, FromExtra):
             source_code.add_from_extra(target=target_field, source=raw_source)
+        elif isinstance(raw_source, UpdateOnlyIfSet):
+            if mapper_mode != MapperMode.UPDATE:
+                raise ValueError(
+                    f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to update_only_if_set() "
+                    f"if the mapper mode is not set to {MapperMode.UPDATE}."
+                )
+            source_field_name = raw_source.field_name or target_field.name
+            if source_field_name not in actual_source_fields:
+                raise ValueError(
+                    f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
+                    f"in '{source_cls.__name__}'"
+                )
+            source_field = deepcopy(actual_source_fields[source_field_name])
+            # pretend like the source field isn't optional
+            if isinstance(source_field.type, OptionalFieldType):
+                source_field.type = source_field.type.inner_type
+            source_code.add_mapping(target=target_field, source=source_field, only_if_source_is_set=True)
         elif isinstance(raw_source, Ignore):
             if source_code_type.all_required_fields_need_initialization and target_field.required:
                 # leaving the target empty and using the default value/factory is not possible,
@@ -210,6 +229,7 @@ def add_mapper_function(
             TargetCls=TargetCls,
             field_mapping=field_mapping,
             source_code_type=CreateMappingMethodSourceCode,
+            mapper_mode=mapper_mode,
             namespace=namespace,
             map_func_name=create_map_func_name,
         )
@@ -221,6 +241,7 @@ def add_mapper_function(
             TargetCls=TargetCls,
             field_mapping=field_mapping,
             source_code_type=UpdateMappingMethodSourceCode,
+            mapper_mode=mapper_mode,
             namespace=namespace,
             map_func_name=update_map_func_name,
         )
@@ -232,6 +253,7 @@ def add_specific_mapper_function(
     field_mapping: StringSqlAlchemyFieldMapping,
     namespace: Namespace,
     source_code_type: Type[MappingMethodSourceCode],
+    mapper_mode: MapperMode,
     map_func_name: str,
 ) -> None:
     map_code, factories, context = _make_mapper(
@@ -240,6 +262,7 @@ def add_specific_mapper_function(
         target_cls=TargetCls,
         namespace=namespace,
         source_code_type=source_code_type,
+        mapper_mode=mapper_mode,
     )
 
     module = import_module(SourceCls.__module__)

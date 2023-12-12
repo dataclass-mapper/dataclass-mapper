@@ -179,7 +179,7 @@ def test_pydantic_update_with_explicit_None():
     assert foo.x == 5
 
     map_to(FooUpdate(x=None), foo)
-    assert foo.x == None
+    assert foo.x is None
 
 
 def test_pydantic_update_with_alias():

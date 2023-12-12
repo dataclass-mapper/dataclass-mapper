@@ -18,6 +18,10 @@ Register mappings
 
 .. autofunction:: dataclass_mapper.from_extra
 
+.. autofunction:: dataclass_mapper.update_only_if_set
+
+.. autoenum:: dataclass_mapper.MapperMode
+
 Register enum mappings
 ----------------------
 

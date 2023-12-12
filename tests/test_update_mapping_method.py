@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from dataclass_mapper.fieldtypes import ClassFieldType, OptionalFieldType
+from dataclass_mapper.fieldtypes import ClassFieldType
 from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
 from dataclass_mapper.mapper import mapper

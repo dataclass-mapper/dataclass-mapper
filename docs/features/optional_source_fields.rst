@@ -35,5 +35,5 @@ It's possible to map an optional field to a non-optional field, if you can guara
 
 .. note::
    In a previous version (``dataclass-mapper < 1.0.0``) it was also possible to map an optional field to a non-optional target field, if the target field had a default.
-   This is no longer possible. If you want to use the default value of a field, use the ``init_with_default`` and ``ignore`` functions.
+   This is no longer possible. If you want to use the default value of a field, use the :func:`~dataclass_mapper.init_with_default` and :func:`~dataclass_mapper.ignore` functions.
    See :ref:`Default values handling`.

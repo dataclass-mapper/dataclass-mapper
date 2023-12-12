@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import pytest
 
 from dataclass_mapper.mapper import create_mapper, map_to, mapper
 from dataclass_mapper.mapper_mode import MapperMode
-from dataclass_mapper.mapping_method import ignore
+from dataclass_mapper.mapping_method import ignore, update_only_if_set
 
 
 def test_simple_update():
@@ -114,6 +114,31 @@ def test_recursive_update_with_missing_recursive_creator_fails():
             foo: List[FooUpdate]
 
     assert (
-        "'foo' of type 'List[FooUpdate]' of 'BarCreator' cannot be converted to 'foo' of type 'List[Foo]' of 'Bar'. The mapping is missing, or only exists for the MapperMode.UPDATE mode."
-        == str(excinfo.value)
+        "'foo' of type 'List[FooUpdate]' of 'BarCreator' cannot be converted to 'foo' of type 'List[Foo]' of 'Bar'. "
+        "The mapping is missing, or only exists for the MapperMode.UPDATE mode." == str(excinfo.value)
     )
+
+
+def test_update_only_if_set():
+    @dataclass
+    class Foo:
+        x: int
+
+    @dataclass
+    class FooUpdate:
+        x: Optional[int]
+
+    with pytest.raises(ValueError) as excinfo:
+        create_mapper(FooUpdate, Foo, {"x": update_only_if_set()})
+    assert (
+        str(excinfo.value)
+        == "'x' of 'Foo' cannot be set to update_only_if_set() if the mapper mode is not set to MapperMode.UPDATE."
+    )
+
+    create_mapper(FooUpdate, Foo, {"x": update_only_if_set()}, mapper_mode=MapperMode.UPDATE)
+
+    foo = Foo(x=42)
+    map_to(FooUpdate(x=None), foo)
+    assert foo.x == 42
+    map_to(FooUpdate(x=5), foo)
+    assert foo.x == 5
