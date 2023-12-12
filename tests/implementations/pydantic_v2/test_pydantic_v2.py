@@ -180,3 +180,17 @@ def test_pydantic_update_with_explicit_None():
 
     map_to(FooUpdate(x=None), foo)
     assert foo.x == None
+
+
+def test_pydantic_update_with_alias():
+    class BarWithAlias(BaseModel):
+        x: int = Field(alias="y")
+
+    @mapper(BarWithAlias)
+    class Foo(BaseModel):
+        x: int
+
+    bar = BarWithAlias(y=5)
+    assert bar.x == 5
+    map_to(Foo(x=42), bar)
+    assert bar.x == 42
