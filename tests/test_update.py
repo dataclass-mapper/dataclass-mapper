@@ -114,6 +114,6 @@ def test_recursive_update_with_missing_recursive_creator_fails():
             foo: List[FooUpdate]
 
     assert (
-        "'foo' of type 'List[FooUpdate]' of 'BarCreator' cannot be converted to 'foo' of type 'List[Foo]' of 'Bar'"
+        "'foo' of type 'List[FooUpdate]' of 'BarCreator' cannot be converted to 'foo' of type 'List[Foo]' of 'Bar'. The mapping is missing, or only exists for the MapperMode.UPDATE mode."
         == str(excinfo.value)
     )

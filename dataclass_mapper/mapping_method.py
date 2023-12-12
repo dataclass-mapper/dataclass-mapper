@@ -10,6 +10,7 @@ from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotP
 from dataclass_mapper.expression_converters import map_expression
 from dataclass_mapper.fieldtypes.optional import OptionalFieldType
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
+from dataclass_mapper.mapper_mode import MapperMode
 from dataclass_mapper.update_expressions import update_expression
 
 from . import code_generator as cg
@@ -219,12 +220,17 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
     all_required_fields_need_initialization = False
 
     def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
+        # It doesn't matter anymore, if a field is required or not. The target field is already initialized.
+        target.required = False
+
         # overwrite method to handle recursive updates
         source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
         target_variable = cg.AttributeLookup(obj="target", attribute=target.name)
         try:
             expression = update_expression(source.type, target.type, source_variable, target_variable, 0)
-            self.function.body.append(cg.ExpressionStatement(expression))
+            code = cg.ExpressionStatement(expression)
+            code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
+            self.function.body.append(code)
         except UpdatingNotPossibleError:
             # raise TypeError(
             #     f"{source} of '{self.source_cls.name}' cannot be updated to {target} of '{self.target_cls.name}'"
@@ -237,7 +243,6 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
             if (
                 isinstance(source.type, OptionalFieldType)
                 and not isinstance(target.type, OptionalFieldType)
-                and not target.required
             ):
                 source.type = source.type.inner_type
                 only_if_not_None = True
@@ -245,7 +250,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
                 expression = map_expression(source.type, target.type, source_variable, 0)
             except ConvertingNotPossibleError:
                 raise TypeError(
-                    f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
+                    f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'. The mapping is missing, or only exists for the {MapperMode.UPDATE} mode."
                 )
             self.function.body.append(
                 self._field_assignment(

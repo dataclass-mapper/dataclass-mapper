@@ -5,6 +5,7 @@ import pytest
 
 from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper
+from dataclass_mapper.mapper_mode import MapperMode
 
 if pydantic_version()[0] != 2:
     pytest.skip("V2 validators syntax", allow_module_level=True)
@@ -163,3 +164,36 @@ def test_pydantic_with_alias_allow_population_with_fields():
     foo = Foo(x=42)
     bar = BarWithAliasAllowFieldPopulation(x=42)  # type: ignore[call-arg]
     assert map_to(foo, BarWithAliasAllowFieldPopulation) == bar
+
+
+def test_pydantic_update_with_None():
+    class Foo(BaseModel):
+        x: int
+
+    @mapper(Foo, mapper_mode=MapperMode.UPDATE)
+    class FooUpdate(BaseModel):
+        x: Optional[int] = None
+
+    foo = Foo(x=5)
+    map_to(FooUpdate(), foo)
+    assert foo.x == 5
+
+    # TODO: should this happen?
+    map_to(FooUpdate(x=None), foo)
+    assert foo.x == 5
+
+
+def test_pydantic_update_with_explicit_None():
+    class Foo(BaseModel):
+        x: Optional[int]
+
+    @mapper(Foo, mapper_mode=MapperMode.UPDATE)
+    class FooUpdate(BaseModel):
+        x: Optional[int] = None
+
+    foo = Foo(x=5)
+    map_to(FooUpdate(), foo)
+    assert foo.x == 5
+
+    map_to(FooUpdate(x=None), foo)
+    assert foo.x == None
