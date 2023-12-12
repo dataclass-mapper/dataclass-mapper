@@ -6,14 +6,13 @@ import pytest
 from dataclass_mapper import IGNORE_MISSING_MAPPING, init_with_default, map_to, mapper
 
 
-@dataclass
-class BarDataclass:
-    x: int = field(default=5)
-    y: str = "some_default"
-    z: int = field(default_factory=lambda: 1)
-
-
 def test_dataclass_defaults():
+    @dataclass
+    class BarDataclass:
+        x: int = field(default=5)
+        y: str = "some_default"
+        z: int = field(default_factory=lambda: 1)
+
     @mapper(
         BarDataclass,
         {"x": init_with_default(), "y": init_with_default(), "z": init_with_default()},
@@ -25,27 +24,11 @@ def test_dataclass_defaults():
     assert map_to(Bar(), BarDataclass) == BarDataclass(x=5, y="some_default", z=1)
 
 
-@dataclass
-class FooDataclass:
-    x: int = 42
-
-
-def test_dataclass_optional_to_defaults():
-    @mapper(FooDataclass)
-    @dataclass
-    class Foo:
-        x: Optional[int]
-
-    assert repr(map_to(Foo(x=5), FooDataclass)) == repr(FooDataclass(x=5))
-    assert repr(map_to(Foo(x=None), FooDataclass)) == repr(FooDataclass(x=42))
-
-
-@dataclass
-class OptionalWithNoneDefaultDataclass:
-    x: Optional[int] = None
-
-
 def test_dataclass_optional_with_none_default():
+    @dataclass
+    class OptionalWithNoneDefaultDataclass:
+        x: Optional[int] = None
+
     @mapper(OptionalWithNoneDefaultDataclass, {"x": init_with_default()})
     @dataclass
     class Foo:
@@ -54,12 +37,11 @@ def test_dataclass_optional_with_none_default():
     assert map_to(Foo(), OptionalWithNoneDefaultDataclass) == OptionalWithNoneDefaultDataclass(x=None)
 
 
-@dataclass
-class RequiredField:
-    x: int
-
-
 def test_dataclass_init_with_default_for_required_field():
+    @dataclass
+    class RequiredField:
+        x: int
+
     with pytest.raises(ValueError) as excinfo:
 
         @mapper(RequiredField, {"x": init_with_default()})

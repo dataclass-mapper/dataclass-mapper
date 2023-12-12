@@ -166,23 +166,6 @@ def test_pydantic_with_alias_allow_population_with_fields():
     assert map_to(foo, BarWithAliasAllowFieldPopulation) == bar
 
 
-def test_pydantic_update_with_None():
-    class Foo(BaseModel):
-        x: int
-
-    @mapper(Foo, mapper_mode=MapperMode.UPDATE)
-    class FooUpdate(BaseModel):
-        x: Optional[int] = None
-
-    foo = Foo(x=5)
-    map_to(FooUpdate(), foo)
-    assert foo.x == 5
-
-    # TODO: should this happen?
-    map_to(FooUpdate(x=None), foo)
-    assert foo.x == 5
-
-
 def test_pydantic_update_with_explicit_None():
     class Foo(BaseModel):
         x: Optional[int]

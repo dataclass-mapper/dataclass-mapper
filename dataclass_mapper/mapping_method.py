@@ -103,19 +103,12 @@ class MappingMethodSourceCode(ABC):
         source: FieldMeta,
         target: FieldMeta,
         right_side: cg.Expression,
-        source_variable: cg.Expression,
-        only_if_not_None: bool,
     ) -> cg.Statement:
         """Generate code for setting the target field to the right side.
-        Only do it for a couple of conditions.
 
         :param right_side: some expression (code) that will be assigned to the target if conditions allow it
         """
         code: cg.Statement = self._get_assignment(target, right_side)
-
-        if only_if_not_None:
-            code = cg.IfElse(condition=source_variable.is_not(cg.NONE), if_block=code)
-
         code = self.target_cls.post_process(code, source_cls=self.source_cls, source_field=source, target_field=target)
         return code
 
@@ -141,18 +134,6 @@ class MappingMethodSourceCode(ABC):
         self.function.body.append(self._get_assignment(target, right_side))
 
     def add_mapping(self, target: FieldMeta, source: FieldMeta) -> None:
-        source = deepcopy(source)
-        only_if_not_None = False
-        # use the default value instead
-        # TODO: do we even want this?
-        if (
-            isinstance(source.type, OptionalFieldType)
-            and not isinstance(target.type, OptionalFieldType)
-            and not target.required
-        ):
-            source.type = source.type.inner_type
-            only_if_not_None = True
-
         source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
         try:
             expression = map_expression(source.type, target.type, source_variable, 0)
@@ -165,8 +146,6 @@ class MappingMethodSourceCode(ABC):
                 source=source,
                 target=target,
                 right_side=expression,
-                source_variable=source_variable,
-                only_if_not_None=only_if_not_None,
             )
         )
 
@@ -237,15 +216,6 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
             #     # TODO: fix bad grammar
             # )
 
-            only_if_not_None = False
-            # use the default value instead
-            # TODO: do we even want this?
-            if (
-                isinstance(source.type, OptionalFieldType)
-                and not isinstance(target.type, OptionalFieldType)
-            ):
-                source.type = source.type.inner_type
-                only_if_not_None = True
             try:
                 expression = map_expression(source.type, target.type, source_variable, 0)
             except ConvertingNotPossibleError:
@@ -257,8 +227,6 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
                     source=source,
                     target=target,
                     right_side=expression,
-                    source_variable=source_variable,
-                    only_if_not_None=only_if_not_None,
                 )
             )
 
