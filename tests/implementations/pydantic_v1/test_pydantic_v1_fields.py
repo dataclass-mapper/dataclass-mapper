@@ -37,7 +37,7 @@ def test_pydantic_optional_fields() -> None:
         y: Optional[List[int]]
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is OptionalFieldType(ClassFieldType(int))
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
     assert fields["y"].type == OptionalFieldType(ListFieldType(ClassFieldType(int)))
 
 
@@ -47,7 +47,7 @@ def test_pydantic_optional_fields_with_union():
         x: int | None
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is OptionalFieldType(ClassFieldType(int))
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
 
 
 def test_pydantic_defaults_field() -> None:
