@@ -65,7 +65,7 @@ jobs:
           installer-parallel: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root --extras "pydantic"
+        run: poetry install --no-interaction --no-root --all-extras
 
       - name: Run tests and collect coverage
         run: |
