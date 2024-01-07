@@ -50,18 +50,26 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
 ]
 
 
-if version_info >= (3, 9):
+if version_info >= (3, 10):
     TEST_DATA.extend(
         [
-            (int | float, UnionFieldType([ClassFieldType(int), ClassFieldType(float)]), "Union[int, float]"),
             (
-                int | float | None,
+                int | float,  # type: ignore
+                UnionFieldType([ClassFieldType(int), ClassFieldType(float)]),
+                "Union[int, float]",
+            ),
+            (
+                int | float | None,  # type: ignore
                 OptionalFieldType(UnionFieldType([ClassFieldType(int), ClassFieldType(float)])),
                 "Union[int, float, None]",
             ),
-            (dict[Foo, Bar], DictFieldType(ClassFieldType(Foo), ClassFieldType(Bar)), "Dict[Foo, Bar]"),
             (
-                list[Foo | None],
+                dict[Foo, Bar],  # type: ignore
+                DictFieldType(ClassFieldType(Foo), ClassFieldType(Bar)),
+                "Dict[Foo, Bar]",
+            ),
+            (
+                list[Foo | None],  # type: ignore
                 ListFieldType(OptionalFieldType(ClassFieldType(Foo))),
                 "List[Optional[Foo]]",
             ),

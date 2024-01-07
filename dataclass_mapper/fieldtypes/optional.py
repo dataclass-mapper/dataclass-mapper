@@ -1,6 +1,7 @@
 from typing import Any
 
-from dataclass_mapper.utils import is_optional, remove_NoneType
+from dataclass_mapper.fieldtypes.utils import remove_NoneType
+from dataclass_mapper.utils import is_optional
 
 from .base import FieldType, compute_field_type
 from .union import UnionFieldType

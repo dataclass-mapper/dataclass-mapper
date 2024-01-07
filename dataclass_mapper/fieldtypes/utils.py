@@ -26,14 +26,3 @@ def remove_NoneType(type_: Any) -> Any:
             type_ = Union[type_, t]
         # type_ = Union[(t for t in get_args(real_type) if t is not type(None))]
     return type_
-
-
-def is_union_subtype(type1: Any, type2: Any) -> bool:
-    """return true if all of the types of the first union are also part of the second union"""
-    if is_union_type(type2):
-        if is_union_type(type1):
-            return all(t in get_args(type2) for t in get_args(type1))
-        else:
-            return type1 in get_args(type2)
-    else:
-        return bool(type1 == type2)
