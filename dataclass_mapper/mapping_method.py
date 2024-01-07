@@ -225,11 +225,6 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
                 code, source_cls=self.source_cls, source_field=source, target_field=target
             )
         except UpdatingNotPossibleError:
-            # raise TypeError(
-            #     f"{source} of '{self.source_cls.name}' cannot be updated to {target} of '{self.target_cls.name}'"
-            #     # TODO: fix bad grammar
-            # )
-
             try:
                 expression = map_expression(source.type, target.type, source_variable, 0)
             except ConvertingNotPossibleError:

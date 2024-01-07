@@ -47,20 +47,20 @@ def test_code_gen_add_normal_assignment(code: UpdateMappingMethodSourceCode) -> 
     assert str(code) == expected_code
 
 
-# TODO: add some explicit command for that, it shouldn't happen implicitly
-# def test_code_gen_add_assignment_only_if_not_None(code: UpdateMappingMethodSourceCode) -> None:
-#     code.add_mapping(
-#         target=FieldMeta(name="target_x", type=ClassFieldType(int), required=False),
-#         source=FieldMeta(name="source_x", type=OptionalFieldType(ClassFieldType(int)), required=True),
-#     )
-#     expected_code = prepare_expected_code(
-#         """
-#         def update(self, target: "Target", extra: dict) -> "None":
-#             if self.source_x is not None:
-#                 target.target_x = self.source_x
-#         """
-#     )
-#     assert str(code) == expected_code
+def test_code_gen_add_assignment_only_if_not_None(code: UpdateMappingMethodSourceCode) -> None:
+    code.add_mapping(
+        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=False),
+        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
+        only_if_source_is_set=True,
+    )
+    expected_code = prepare_expected_code(
+        """
+        def update(self, target: "Target", extra: dict) -> "None":
+            if self.source_x is not None:
+                target.target_x = self.source_x
+        """
+    )
+    assert str(code) == expected_code
 
 
 def test_bypass_validators_option_disabled_for_dataclasses() -> None:

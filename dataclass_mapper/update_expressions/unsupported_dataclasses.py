@@ -20,5 +20,4 @@ class UnsupportedDataclassesUpdateExpression(UpdateExpression):
     def update_expression(
         self, source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
     ) -> Expression:
-        # TODO: write better message
-        raise TypeError("Updating between is not possible")
+        raise TypeError(f"There is no update mapper defined between '{source}' and '{target}'.")
