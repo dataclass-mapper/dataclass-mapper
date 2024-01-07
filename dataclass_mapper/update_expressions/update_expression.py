@@ -23,7 +23,7 @@ class UpdateExpression(ABC):
         """Creates the expression (that updates from source type to target type)."""
 
 
-def update_expression(
+def map_update_expression(
     source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
 ) -> Expression:
     for update_expression_creator in UpdateExpression.all_update_expressions:

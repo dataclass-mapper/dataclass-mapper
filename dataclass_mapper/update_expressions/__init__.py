@@ -1,5 +1,5 @@
 from .classes import ClassesUpdateExpression
 from .unsupported_dataclasses import UnsupportedDataclassesUpdateExpression
-from .update_expression import update_expression
+from .update_expression import map_update_expression
 
-__all__ = ["ClassesUpdateExpression", "update_expression", "UnsupportedDataclassesUpdateExpression"]
+__all__ = ["ClassesUpdateExpression", "map_update_expression", "UnsupportedDataclassesUpdateExpression"]

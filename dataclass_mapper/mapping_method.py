@@ -9,7 +9,7 @@ from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotP
 from dataclass_mapper.expression_converters import map_expression
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
 from dataclass_mapper.mapper_mode import MapperMode
-from dataclass_mapper.update_expressions import update_expression
+from dataclass_mapper.update_expressions import map_update_expression
 
 from . import code_generator as cg
 from .implementations.base import ClassMeta, FieldMeta
@@ -219,8 +219,8 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
         target_variable = cg.AttributeLookup(obj="target", attribute=target.name)
         try:
-            expression = update_expression(source.type, target.type, source_variable, target_variable, 0)
-            code = cg.ExpressionStatement(expression)
+            expression = map_update_expression(source.type, target.type, source_variable, target_variable, 0)
+            code: cg.Statement = cg.ExpressionStatement(expression)
             code = self.target_cls.post_process(
                 code, source_cls=self.source_cls, source_field=source, target_field=target
             )
