@@ -142,3 +142,27 @@ def test_update_only_if_set():
     assert foo.x == 42
     map_to(FooUpdate(x=5), foo)
     assert foo.x == 5
+
+
+def test_no_update_defined():
+    @dataclass
+    class Foo:
+        x: int
+
+    @dataclass
+    class Bar:
+        foo: Foo
+
+    @mapper(Foo, mapper_mode=MapperMode.CREATE)
+    @dataclass
+    class FooUpdate:
+        x: int
+
+    with pytest.raises(TypeError) as excinfo:
+
+        @mapper(Bar)
+        @dataclass
+        class BarUpdate:
+            foo: FooUpdate
+
+    assert str(excinfo.value) == "There is no update mapper defined between 'FooUpdate' and 'Foo'."

@@ -15,6 +15,15 @@ from dataclass_mapper.fieldtypes import (
 )
 
 
+def test_not_same_type_comparisons():
+    assert ClassFieldType(int) != OptionalFieldType(ClassFieldType(int))
+    assert OptionalFieldType(ClassFieldType(int)) != ClassFieldType(int)
+    assert SetFieldType(ClassFieldType(int)) != ClassFieldType(int)
+    assert ListFieldType(ClassFieldType(int)) != ClassFieldType(int)
+    assert UnionFieldType([ClassFieldType(int), ClassFieldType(float)]) != ClassFieldType(int)
+    assert DictFieldType(ClassFieldType(int), ClassFieldType(float)) != ClassFieldType(int)
+
+
 class Foo:
     pass
 
@@ -96,3 +105,9 @@ def test_check_field_name_parsing_and_str(type_: Any, expected_parsed: FieldType
     field_type = compute_field_type(type_)
     assert field_type == expected_parsed
     assert str(field_type) == expected_str
+
+
+@pytest.mark.skipif(version_info < (3, 10), reason="Union Syntax")
+def test_get_class_name_for_non_class():
+    field_type = ClassFieldType(int | float)  # type: ignore
+    assert str(field_type)

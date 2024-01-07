@@ -3,7 +3,7 @@ from enum import Enum
 
 import pytest
 
-from dataclass_mapper import enum_mapper, map_to, mapper
+from dataclass_mapper import create_mapper, enum_mapper, map_to, mapper
 
 
 @dataclass
@@ -75,3 +75,13 @@ def test_enum_mapper_failes_for_normal_classes():
             pass
 
     assert str(excinfo.value) == "`enum_mapper` does only support enum classes, use `mapper` for other classes"
+
+
+def test_class_not_mappable():
+    class Foo:
+        pass
+
+    with pytest.raises(NotImplementedError) as excinfo:
+        create_mapper(Foo, Foo)
+
+    assert str(excinfo.value) == "only dataclasses, pydantic and sqlalchemy classes are supported"

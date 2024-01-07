@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Union
 
 
 class Expression(ABC):
@@ -8,29 +8,14 @@ class Expression(ABC):
     def __str__(self) -> str:
         ...
 
-    def equals(self, other: "Expression") -> "Expression":
-        return Equals(self, other)
-
     def is_(self, other: "Expression") -> "Expression":
         return Is(self, other)
 
     def is_not(self, other: "Expression") -> "Expression":
         return IsNot(self, other)
 
-    def in_(self, other: "Expression") -> "Expression":
-        return In(self, other)
-
     def not_in_(self, other: "Expression") -> "Expression":
         return NotIn(self, other)
-
-
-@dataclass
-class Equals(Expression):
-    left: Expression
-    right: Expression
-
-    def __str__(self) -> str:
-        return f"{self.left} == {self.right}"
 
 
 @dataclass
@@ -49,15 +34,6 @@ class IsNot(Expression):
 
     def __str__(self) -> str:
         return f"{self.left} is not {self.right}"
-
-
-@dataclass
-class In(Expression):
-    left: Expression
-    right: Expression
-
-    def __str__(self) -> str:
-        return f"{self.left} in {self.right}"
 
 
 @dataclass
@@ -154,16 +130,6 @@ class DictComprehension(Expression):
 
 
 @dataclass
-class FunctionCall(Expression):
-    function_name: str
-    parameters: List[Expression]
-
-    def __str__(self) -> str:
-        parameters = ", ".join(str(param) for param in self.parameters)
-        return f"{self.function_name}({parameters})"
-
-
-@dataclass
 class MethodCall(Expression):
     object_name: Expression
     method_name: str
@@ -228,15 +194,11 @@ class Raise(Statement):
 class IfElse(Statement):
     condition: Union[str, Expression]
     if_block: Statement
-    else_block: Optional[Statement] = None
 
     def to_string(self, indent: int) -> str:
         lines: List[str] = []
         lines.append(f"{' '*indent}if {self.condition}:")
         lines.append(self.if_block.to_string(indent + 4))
-        if self.else_block:
-            lines.append(f"{' '*indent}else:")
-            lines.append(self.else_block.to_string(indent + 4))
         return "\n".join(lines)
 
 

@@ -19,6 +19,7 @@ def test_is_mappable_to():
 
     assert is_mappable_to(Foo, Bar)
     assert not is_mappable_to(Bar, Foo)
+    assert not is_mappable_to(1, 2)
 
 
 def test_is_updabtable_to():
@@ -34,6 +35,7 @@ def test_is_updabtable_to():
 
     assert is_updatable_to(Foo, Bar)
     assert not is_updatable_to(Bar, Foo)
+    assert not is_updatable_to(1, 2)
 
 
 def test_naming_for_object_fails():

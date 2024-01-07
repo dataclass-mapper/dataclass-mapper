@@ -86,7 +86,7 @@ addopts = "--doctest-glob \"*.rst\""
 filterwarnings = ["error"]
 
 [tool.coverage.report]
-exclude_lines = ["pragma: no cover", "@abstractmethod"]
+exclude_also = ["pragma: no cover", "@abstractmethod", "Protocol"]
 
 [tool.poetry-dynamic-versioning]
 enable = false
