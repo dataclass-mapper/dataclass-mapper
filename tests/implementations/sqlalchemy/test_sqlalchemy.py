@@ -1,10 +1,12 @@
 # mypy: disable-error-code="attr-defined,name-defined,misc"
 
+import enum
 from dataclasses import dataclass
 from typing import List, Optional, Set, cast
 from uuid import UUID, uuid4
 
 import pytest
+from sqlalchemy import Enum
 
 from dataclass_mapper import init_with_default
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
@@ -628,3 +630,32 @@ def test_map_sqlalchemy_with_attributes(db: InMemoryDatabase):
         },
     )
     create_mapper(ParentSourceTable, ParentTargetTable, {ParentTargetTable.id: init_with_default()})
+
+
+def test_sqlalchemy_enum(db: InMemoryDatabase):
+    class MyEnum(enum.Enum):
+        ONE = 1
+        TWO = 2
+        THREE = 3
+
+    class FooDb(db.Base):
+        __tablename__ = "foo_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        value: Mapped[MyEnum] = mapped_column(Enum(MyEnum))
+
+    db.create_all()
+
+    @mapper(FooDb, {"id": init_with_default()})
+    @mapper_from(FooDb)
+    @dataclass
+    class Foo:
+        value: MyEnum
+
+    foo = Foo(MyEnum.ONE)
+    foo_db = map_to(foo, FooDb)
+
+    db.session.add(foo_db)
+    db.session.commit()
+
+    assert db.session.query(FooDb).count() == 1
+    assert map_to(db.session.query(FooDb).one(), Foo) == Foo(MyEnum.ONE)
