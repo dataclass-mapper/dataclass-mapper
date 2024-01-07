@@ -1,0 +1,26 @@
+from typing import Any, get_args, get_origin
+
+from .base import FieldType, compute_field_type
+
+
+class SetFieldType(FieldType):
+    def __init__(self, value_type: FieldType):
+        self.value_type = value_type
+
+    @staticmethod
+    def is_applicable(type_: Any) -> bool:
+        return get_origin(type_) is set
+
+    @classmethod
+    def from_type(cls, type_: Any) -> FieldType:
+        value_type = compute_field_type(get_args(type_)[0])
+        return cls(value_type)
+
+    def __str__(self) -> str:
+        return f"Set[{str(self.value_type)}]"
+
+    def __eq__(self, other: object) -> bool:
+        if type(self) is not type(other):
+            return False
+        assert isinstance(other, SetFieldType)
+        return self.value_type == other.value_type

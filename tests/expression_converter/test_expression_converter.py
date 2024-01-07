@@ -5,18 +5,18 @@ import pytest
 
 from dataclass_mapper.code_generator import AttributeLookup
 from dataclass_mapper.expression_converters.expression_converter import map_expression
-from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType
+from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType, SetFieldType
 from dataclass_mapper.fieldtypes.base import FieldType
 from dataclass_mapper.fieldtypes.dict import DictFieldType
 from dataclass_mapper.utils import get_map_to_func_name
 
 
-@dataclass
+@dataclass(frozen=True)
 class Foo:
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Bar:
     pass
 
@@ -80,6 +80,11 @@ TEST_CASES: List[Scenario] = [
         source=DictFieldType(ClassFieldType(Foo), OptionalFieldType(ClassFieldType(Foo))),
         target=DictFieldType(ClassFieldType(Bar), OptionalFieldType(ClassFieldType(Bar))),
         expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): None if v0 is None else v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",  # noqa: E501
+    ),
+    Scenario(
+        source=SetFieldType(ClassFieldType(Foo)),
+        target=SetFieldType(ClassFieldType(Bar)),
+        expected_code=f"{{x0._map_to_Bar_{id(Bar)}(extra) for x0 in src.x}}",  # noqa: E501
     ),
 ]
 

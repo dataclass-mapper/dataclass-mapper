@@ -1,7 +1,7 @@
 # mypy: disable-error-code="attr-defined,name-defined,misc"
 
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import List, Optional, Set, cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -192,6 +192,46 @@ def test_map_sqlalchemy_one_to_many(db: InMemoryDatabase):
     db.create_all()
 
     parent = Parent(children=[Child(), Child()])
+    parent_entity = map_to(parent, ParentTable)
+    db.session.add(parent_entity)
+    db.session.commit()
+
+    assert db.session.query(ParentTable).count() == 1
+    assert db.session.query(ChildTable).count() == 2
+
+    parent_entity = db.session.query(ParentTable).options(joinedload(ParentTable.children)).one()
+    parent = map_to(parent_entity, Parent)
+
+    assert len(parent.children) == 2
+
+
+def test_map_sqlalchemy_one_to_many_set(db: InMemoryDatabase):
+    class ParentTable(db.Base):
+        __tablename__ = "parent_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[Set["ChildTable"]] = relationship()
+
+    class ChildTable(db.Base):
+        __tablename__ = "child_table"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent_table.id"))
+        name: Mapped[str] = mapped_column(String(64))
+
+    @mapper(ChildTable, {"id": init_with_default(), "parent_id": init_with_default()})
+    @mapper_from(ChildTable)
+    @dataclass(frozen=True)
+    class Child:
+        name: str
+
+    @mapper(ParentTable, {"id": init_with_default()})
+    @mapper_from(ParentTable)
+    @dataclass
+    class Parent:
+        children: Set[Child]
+
+    db.create_all()
+
+    parent = Parent(children={Child("Angela"), Child("Boris")})
     parent_entity = map_to(parent, ParentTable)
     db.session.add(parent_entity)
     db.session.commit()

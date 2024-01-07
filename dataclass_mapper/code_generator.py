@@ -130,6 +130,16 @@ class ListComprehension(Expression):
 
 
 @dataclass
+class SetComprehension(Expression):
+    expr: Expression
+    iter_var: Variable
+    container: Expression
+
+    def __str__(self) -> str:
+        return f"{{{self.expr} for {self.iter_var} in {self.container}}}"
+
+
+@dataclass
 class DictComprehension(Expression):
     key_expr: Expression
     value_expr: Expression

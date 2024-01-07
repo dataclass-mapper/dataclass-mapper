@@ -1,5 +1,5 @@
 from sys import version_info
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
@@ -9,6 +9,7 @@ from dataclass_mapper.fieldtypes import (
     FieldType,
     ListFieldType,
     OptionalFieldType,
+    SetFieldType,
     UnionFieldType,
     compute_field_type,
 )
@@ -37,8 +38,16 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
         OptionalFieldType(UnionFieldType([ClassFieldType(int), ClassFieldType(float)])),
         "Union[int, float, None]",
     ),
-    (Bar, ClassFieldType(Bar), "Bar"),
-    (List[Bar], ListFieldType(ClassFieldType(Bar)), "List[Bar]"),
+    (
+        Bar,
+        ClassFieldType(Bar),
+        "Bar",
+    ),
+    (
+        List[Bar],
+        ListFieldType(ClassFieldType(Bar)),
+        "List[Bar]",
+    ),
     (
         Dict[Bar, Optional[List[Optional[Foo]]]],
         DictFieldType(
@@ -46,6 +55,11 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
             OptionalFieldType(ListFieldType(OptionalFieldType(ClassFieldType(Foo)))),
         ),
         "Dict[Bar, Optional[List[Optional[Foo]]]]",
+    ),
+    (
+        Set[Bar],
+        SetFieldType(ClassFieldType(Bar)),
+        "Set[Bar]",
     ),
 ]
 

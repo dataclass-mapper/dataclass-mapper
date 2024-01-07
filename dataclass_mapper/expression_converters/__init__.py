@@ -6,6 +6,7 @@ from .list import ListComprehension
 from .non_optional_to_optional import NonOptionalToOptionalExpressionConverter
 from .optional_to_optional import OptionalToOptionalExpressionConverter
 from .same_class import SameClassExpressionConverter
+from .set import SetExpressionConverter
 from .union_to_union import UnionToUnionExpressionConverter
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "UnionToUnionExpressionConverter",
     "OptionalToOptionalExpressionConverter",
     "DifferentClassExpressionConverter",
+    "SetExpressionConverter",
 ]

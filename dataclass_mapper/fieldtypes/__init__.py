@@ -3,6 +3,7 @@ from .class_fieldtype import ClassFieldType
 from .dict import DictFieldType
 from .list import ListFieldType
 from .optional import OptionalFieldType
+from .set import SetFieldType
 from .union import UnionFieldType
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "ClassFieldType",
     "ListFieldType",
     "DictFieldType",
+    "SetFieldType",
 ]
