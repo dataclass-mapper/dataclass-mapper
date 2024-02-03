@@ -32,6 +32,7 @@ class DataclassClassMeta(ClassMeta):
         return {
             field.name: DataclassesFieldMeta.from_dataclass(field, real_type=real_types[field.name])
             for field in fields(clazz)
+            if field.init
         }
 
     @staticmethod
