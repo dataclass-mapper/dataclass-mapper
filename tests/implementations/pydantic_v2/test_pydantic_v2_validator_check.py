@@ -1,6 +1,7 @@
 # mypy: disable-error-code="attr-defined"
 import pytest
 
+from dataclass_mapper.implementations.class_type import ClassType
 from dataclass_mapper.implementations.pydantic_v2 import PydanticV2ClassMeta, pydantic_version
 from dataclass_mapper.namespace import Namespace
 
@@ -17,7 +18,7 @@ def test_pydantic_has_no_validators():
         x: int
 
     assert not PydanticV2ClassMeta.has_validators(Pydantic1)
-    assert PydanticV2ClassMeta.from_clazz(Pydantic1, namespace=empty_namespace).use_construct
+    assert PydanticV2ClassMeta.from_clazz(Pydantic1, namespace=empty_namespace, type_=ClassType.TARGET).use_construct
 
 
 def test_pydantic_has_validators():
@@ -29,7 +30,9 @@ def test_pydantic_has_validators():
             return v
 
     assert PydanticV2ClassMeta.has_validators(Pydantic1)
-    assert not PydanticV2ClassMeta.from_clazz(Pydantic1, namespace=empty_namespace).use_construct
+    assert not PydanticV2ClassMeta.from_clazz(
+        Pydantic1, namespace=empty_namespace, type_=ClassType.TARGET
+    ).use_construct
 
     class Pydantic2(BaseModel):
         x: int
@@ -39,7 +42,9 @@ def test_pydantic_has_validators():
             return v
 
     assert PydanticV2ClassMeta.has_validators(Pydantic2)
-    assert not PydanticV2ClassMeta.from_clazz(Pydantic2, namespace=empty_namespace).use_construct
+    assert not PydanticV2ClassMeta.from_clazz(
+        Pydantic2, namespace=empty_namespace, type_=ClassType.TARGET
+    ).use_construct
 
     class Pydantic3(BaseModel):
         x: int
@@ -50,7 +55,9 @@ def test_pydantic_has_validators():
             return v
 
     assert PydanticV2ClassMeta.has_validators(Pydantic3)
-    assert not PydanticV2ClassMeta.from_clazz(Pydantic3, namespace=empty_namespace).use_construct
+    assert not PydanticV2ClassMeta.from_clazz(
+        Pydantic3, namespace=empty_namespace, type_=ClassType.TARGET
+    ).use_construct
 
     class Pydantic6(BaseModel):
         x: int
@@ -60,7 +67,9 @@ def test_pydantic_has_validators():
             return values
 
     assert PydanticV2ClassMeta.has_validators(Pydantic6)
-    assert not PydanticV2ClassMeta.from_clazz(Pydantic6, namespace=empty_namespace).use_construct
+    assert not PydanticV2ClassMeta.from_clazz(
+        Pydantic6, namespace=empty_namespace, type_=ClassType.TARGET
+    ).use_construct
 
     class Pydantic7(BaseModel):
         x: int
@@ -70,7 +79,9 @@ def test_pydantic_has_validators():
             return values
 
     assert PydanticV2ClassMeta.has_validators(Pydantic7)
-    assert not PydanticV2ClassMeta.from_clazz(Pydantic7, namespace=empty_namespace).use_construct
+    assert not PydanticV2ClassMeta.from_clazz(
+        Pydantic7, namespace=empty_namespace, type_=ClassType.TARGET
+    ).use_construct
 
     # TODO;
     # This still registers a validator that is run with `Pydantic8(x="abcdef")`

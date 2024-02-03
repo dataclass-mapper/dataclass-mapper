@@ -4,10 +4,11 @@ from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, cast, runtim
 from uuid import UUID
 
 from dataclass_mapper.fieldtypes import compute_field_type
-from dataclass_mapper.implementations.utils import parse_version
 from dataclass_mapper.namespace import Namespace
 
 from .base import ClassMeta, DataclassType, FieldMeta
+from .class_type import ClassType
+from .utils import parse_version
 
 
 def sqlalchemy_version() -> Tuple[int, int, int]:
@@ -147,7 +148,7 @@ class SQLAlchemyClassMeta(ClassMeta):
         return False
 
     @classmethod
-    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "SQLAlchemyClassMeta":
+    def from_clazz(cls, clazz: Any, namespace: Namespace, type_: ClassType) -> "SQLAlchemyClassMeta":
         column_fields = cls._fields(clazz, namespace=namespace)
         relationship_fields = cls._relationship_fields(clazz, column_fields, namespace=namespace)
         return cls(name=cast(str, clazz.__name__), fields={**column_fields, **relationship_fields}, clazz=clazz)

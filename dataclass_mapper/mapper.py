@@ -4,11 +4,11 @@ from copy import deepcopy
 from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
-from dataclass_mapper.fieldtypes.optional import OptionalFieldType
-from dataclass_mapper.mapper_mode import MapperMode
-
 from .classmeta import get_class_meta
 from .enum import EnumMapping, make_enum_mapper
+from .fieldtypes.optional import OptionalFieldType
+from .implementations.class_type import ClassType
+from .mapper_mode import MapperMode
 from .mapping_method import (
     AssumeNotNone,
     CreateMappingMethodSourceCode,
@@ -37,8 +37,8 @@ def _make_mapper(
     source_code_type: Type[MappingMethodSourceCode],
     mapper_mode: MapperMode,
 ) -> Tuple[ast.mod, Dict[str, Callable], Dict[str, Any]]:
-    source_cls_meta = get_class_meta(source_cls, namespace=namespace)
-    target_cls_meta = get_class_meta(target_cls, namespace=namespace)
+    source_cls_meta = get_class_meta(source_cls, namespace=namespace, type_=ClassType.SOURCE)
+    target_cls_meta = get_class_meta(target_cls, namespace=namespace, type_=ClassType.TARGET)
     actual_source_fields = source_cls_meta.fields
     actual_target_fields = target_cls_meta.fields
 

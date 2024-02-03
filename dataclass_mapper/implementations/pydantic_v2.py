@@ -2,10 +2,11 @@ from typing import Any, Dict, Optional, Tuple, cast
 
 import dataclass_mapper.code_generator as cg
 from dataclass_mapper.fieldtypes import OptionalFieldType, compute_field_type
-from dataclass_mapper.implementations.utils import parse_version
 from dataclass_mapper.namespace import Namespace
 
 from .base import ClassMeta, DataclassType, FieldMeta
+from .class_type import ClassType
+from .utils import parse_version
 
 
 def pydantic_version() -> Tuple[int, int, int]:
@@ -85,7 +86,7 @@ class PydanticV2ClassMeta(ClassMeta):
         return False
 
     @classmethod
-    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "PydanticV2ClassMeta":
+    def from_clazz(cls, clazz: Any, namespace: Namespace, type_: ClassType) -> "PydanticV2ClassMeta":
         return cls(
             name=cast(str, clazz.__name__),
             fields=cls._fields(clazz, namespace=namespace),

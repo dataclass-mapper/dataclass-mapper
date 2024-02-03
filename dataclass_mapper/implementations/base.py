@@ -8,6 +8,8 @@ import dataclass_mapper.code_generator as cg
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.namespace import Namespace
 
+from .class_type import ClassType
+
 
 class DataclassType(Enum):
     DATACLASSES = auto()
@@ -66,7 +68,7 @@ class ClassMeta(ABC):
 
     @classmethod
     @abstractmethod
-    def from_clazz(cls, clazz: Any, namespace: Namespace) -> "ClassMeta":
+    def from_clazz(cls, clazz: Any, namespace: Namespace, type_: ClassType) -> "ClassMeta":
         """Parse the given class"""
 
     @classmethod
