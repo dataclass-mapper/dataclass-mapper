@@ -1,4 +1,5 @@
 import ast
+import sys
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -49,7 +50,10 @@ class Constant(Expression):
     value: Any
 
     def generate_ast(self) -> ast.expr:
-        return ast.Constant(value=self.value)
+        if sys.version_info < (3, 9):
+            return ast.Constant(value=self.value, kind=None)
+        else:
+            return ast.Constant(value=self.value)
 
 
 NONE = Constant(None)
@@ -77,7 +81,13 @@ class DictLookup(Expression):
     key: Expression
 
     def generate_ast(self) -> ast.expr:
-        return ast.Subscript(value=self.dictionary.generate_ast(), slice=self.key.generate_ast(), ctx=self.get_ctx())
+        value = self.dictionary.generate_ast()
+        if sys.version_info < (3, 9):
+            slice = ast.Index(value=self.key.generate_ast())
+        else:
+            slice = self.key.generate_ast()
+
+        return ast.Subscript(value=value, slice=slice, ctx=self.get_ctx())
 
 
 @dataclass
@@ -232,17 +242,12 @@ class Assignment(Statement):
     rhs: Expression
 
     def generate_ast(self) -> ast.stmt:
-        return ast.Assign(targets=[self.lhs.as_store().generate_ast()], value=self.rhs.generate_ast())
-
-
-# class Block(Statement):
-#     statements: list[Statement]
-
-#     def append(self, statement: Statement) -> None:
-#         self.statements.append(statement)
-
-#     def __bool__(self) -> bool:
-#         return bool(self.statements)
+        targets = [self.lhs.as_store().generate_ast()]
+        value = self.rhs.generate_ast()
+        if sys.version_info < (3, 9):
+            return ast.Assign(targets=targets, value=value, type_comment=None)
+        else:
+            return ast.Assign(targets=targets, value=value)
 
 
 @dataclass
@@ -251,18 +256,21 @@ class Raise(Statement):
     message: str
 
     def generate_ast(self) -> ast.stmt:
-        return ast.Raise(
-            exc=ast.Call(
-                func=ast.Name(id=self.exception, ctx=ast.Load()), args=[ast.Constant(value=self.message)], keywords=[]
-            )
+        exc = ast.Call(
+            func=ast.Name(id=self.exception, ctx=ast.Load()), args=[Constant(self.message).generate_ast()], keywords=[]
         )
+
+        if sys.version_info < (3, 9):
+            return ast.Raise(exc=exc, cause=None)
+        else:
+            return ast.Raise(exc=exc)
 
 
 @dataclass
 class IfElse(Statement):
     condition: Expression
-    if_block: list[Statement]
-    else_block: list[Statement] = field(default_factory=list)
+    if_block: List[Statement]
+    else_block: List[Statement] = field(default_factory=list)
 
     def generate_ast(self) -> ast.stmt:
         return ast.If(
@@ -287,38 +295,58 @@ class Arg:
 
     def generate_ast(self):
         annotation = None if self.type_ is None else self.type_.generate_ast()
-        return ast.arg(arg=self.name, annotation=annotation)
+
+        if sys.version_info < (3, 9):
+            return ast.arg(arg=self.name, annotation=annotation, type_comment=None)
+        else:
+            return ast.arg(arg=self.name, annotation=annotation)
 
 
 @dataclass
 class Function(Statement):
     name: str
-    args: list[Arg]
-    # body: list[Statement]
+    args: List[Arg]
     return_type: Expression
-    body: list[Any]
+    body: List[Any]
 
     def generate_ast(self) -> ast.stmt:
-        return ast.FunctionDef(
-            name=self.name,
-            args=ast.arguments(
-                args=[arg.generate_ast() for arg in self.args],
-                posonlyargs=[],
-                vararg=None,
-                kwonlyargs=[],
-                kw_defaults=[],
-                kwarg=None,
-                defaults=[],
-            ),
-            body=[stmt.generate_ast() for stmt in self.body] or [Pass().generate_ast()],
-            decorator_list=[],
-            returns=self.return_type.generate_ast(),
+        name = self.name
+        args = ast.arguments(
+            args=[arg.generate_ast() for arg in self.args],
+            posonlyargs=[],
+            vararg=None,
+            kwonlyargs=[],
+            kw_defaults=[],
+            kwarg=None,
+            defaults=[],
         )
+        body = [stmt.generate_ast() for stmt in self.body] or [Pass().generate_ast()]
+        returns = self.return_type.generate_ast()
+
+        if sys.version_info < (3, 9):
+            return ast.FunctionDef(
+                name=name,
+                args=args,
+                body=body,
+                decorator_list=[],
+                returns=returns,
+                type_comment=None,
+            )
+        elif sys.version_info < (3, 12):
+            return ast.FunctionDef(
+                name=name,
+                args=args,
+                body=body,
+                decorator_list=[],
+                returns=returns,
+            )
+        else:
+            return ast.FunctionDef(name=name, args=args, body=body, decorator_list=[], returns=returns, type_params=[])
 
 
 @dataclass
 class Module:
-    stmts: list[Any]
+    stmts: List[Any]
 
     def generate_ast(self) -> ast.mod:
         m = ast.Module(body=[stmt.generate_ast() for stmt in self.stmts], type_ignores=[])

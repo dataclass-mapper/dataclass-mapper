@@ -5,18 +5,11 @@ import pytest
 from dataclass_mapper import from_extra, map_to, mapper
 
 
-@dataclass
-class Target:
-    x: int
-
-
-@mapper(Target, {"x": from_extra("x")})
-@dataclass
-class Source:
-    pass
-
-
 def test_from_extra_simple():
+    @dataclass
+    class Target:
+        x: int
+
     @mapper(Target, {"x": from_extra("x")})
     @dataclass
     class Source:
@@ -26,6 +19,15 @@ def test_from_extra_simple():
 
 
 def test_from_extra_missing_extra():
+    @dataclass
+    class Target:
+        x: int
+
+    @mapper(Target, {"x": from_extra("x")})
+    @dataclass
+    class Source:
+        pass
+
     with pytest.raises(TypeError) as excinfo:
         map_to(Source(), Target)
     assert (
@@ -35,6 +37,15 @@ def test_from_extra_missing_extra():
 
 
 def test_from_extra_recursive_simple():
+    @dataclass
+    class Target:
+        x: int
+
+    @mapper(Target, {"x": from_extra("x")})
+    @dataclass
+    class Source:
+        pass
+
     @dataclass
     class TargetCollection:
         field: Target
