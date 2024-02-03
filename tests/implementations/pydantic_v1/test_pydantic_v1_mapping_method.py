@@ -7,6 +7,7 @@ from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
 from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta
 from dataclass_mapper.mapping_method import CreateMappingMethodSourceCode
+from tests.utils import assert_ast_equal
 
 
 def prepare_expected_code(code: str) -> str:
@@ -51,12 +52,12 @@ def test_bypass_validators_option_for_pydantic() -> None:
     )
     expected_code = prepare_expected_code(
         """
-        def convert(self, extra: dict) -> "Target":
+        def convert(self, extra: "dict") -> "Target":
             d = {}
             return TargetAlias.construct(**d)
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_dont_bypass_validators_option_for_pydantic() -> None:
@@ -78,12 +79,12 @@ def test_dont_bypass_validators_option_for_pydantic() -> None:
     )
     expected_code = prepare_expected_code(
         """
-        def convert(self, extra: dict) -> "Target":
+        def convert(self, extra: "dict") -> "Target":
             d = {}
             return TargetAlias(**d)
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_pydantic_alias() -> None:
@@ -109,13 +110,13 @@ def test_pydantic_alias() -> None:
     )
     expected_code = prepare_expected_code(
         """
-        def convert(self, extra: dict) -> "Target":
+        def convert(self, extra: "dict") -> "Target":
             d = {}
             d["TARGET_VARIABLE_X"] = self.source_x
             return TargetAlias(**d)
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_pydantic_alias_allow_population_by_fields() -> None:
@@ -142,10 +143,10 @@ def test_pydantic_alias_allow_population_by_fields() -> None:
     )
     expected_code = prepare_expected_code(
         """
-        def convert(self, extra: dict) -> "Target":
+        def convert(self, extra: "dict") -> "Target":
             d = {}
             d["target_x"] = self.source_x
             return TargetAlias(**d)
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)

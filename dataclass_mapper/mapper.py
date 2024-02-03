@@ -1,3 +1,4 @@
+import ast
 from copy import deepcopy
 from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
@@ -34,7 +35,7 @@ def _make_mapper(
     namespace: Namespace,
     source_code_type: Type[MappingMethodSourceCode],
     mapper_mode: MapperMode,
-) -> Tuple[str, Dict[str, Callable], Dict[str, Any]]:
+) -> Tuple[ast.mod, Dict[str, Callable], Dict[str, Any]]:
     source_cls_meta = get_class_meta(source_cls, namespace=namespace)
     target_cls_meta = get_class_meta(target_cls, namespace=namespace)
     actual_source_fields = source_cls_meta.fields
@@ -106,7 +107,7 @@ def _make_mapper(
         else:
             assert False, "impossible to reach"
 
-    return str(source_code), source_code.methods, {target_cls_meta.alias_name: target_cls}
+    return source_code.get_ast(), source_code.methods, {target_cls_meta.alias_name: target_cls}
 
 
 def create_mapper(
@@ -256,7 +257,7 @@ def add_specific_mapper_function(
     mapper_mode: MapperMode,
     map_func_name: str,
 ) -> None:
-    map_code, factories, context = _make_mapper(
+    map_code_ast, factories, context = _make_mapper(
         field_mapping,
         source_cls=SourceCls,
         target_cls=TargetCls,
@@ -268,6 +269,8 @@ def add_specific_mapper_function(
     module = import_module(SourceCls.__module__)
 
     d: Dict = {}
+    filename = f"<{source_code_type.func_name}_{SourceCls.__name__}_{TargetCls.__name__}>"
+    map_code = compile(cast(ast.Module, map_code_ast), filename=filename, mode="exec")
     # Support older versions of python by calling {**a, **b} rather than a|b
     exec(map_code, {**module.__dict__, **context}, d)
 

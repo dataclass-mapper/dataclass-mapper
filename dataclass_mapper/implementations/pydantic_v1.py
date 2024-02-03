@@ -53,7 +53,11 @@ class PydanticV1ClassMeta(ClassMeta):
 
     def return_statement(self) -> cg.Return:
         if self.use_construct:
-            return cg.Return(f"{self.alias_name}.construct(**d)")
+            return cg.Return(
+                cg.MethodCall(
+                    cg.Variable(self.alias_name), "construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
+                )
+            )
         else:
             return super().return_statement()
 
@@ -103,5 +107,8 @@ class PydanticV1ClassMeta(ClassMeta):
         cls, code: cg.Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
     ) -> cg.Statement:
         if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
-            code = cg.IfElse(condition=f"'{source_field.name}' in self.__fields_set__", if_block=code)
+            code = cg.IfElse(
+                condition=cg.Constant(source_field.name).in_(cg.AttributeLookup(cg.Variable("self"), "__fields_set__")),
+                if_block=[code],
+            )
         return code

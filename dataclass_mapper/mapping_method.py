@@ -1,3 +1,4 @@
+import ast
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -147,7 +148,7 @@ class MappingMethodSourceCode(ABC):
     def add_mapping(self, target: FieldMeta, source: FieldMeta, only_if_source_is_set: bool = False) -> None:
         assert not only_if_source_is_set, "this parameter cannot be used for creation"
 
-        source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
+        source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.name)
         try:
             expression = map_expression(source.type, target.type, source_variable, 0)
         except ConvertingNotPossibleError:
@@ -169,14 +170,14 @@ class MappingMethodSourceCode(ABC):
         )
 
         extra = cg.Variable("extra")
-        key = cg.StringValue(source.name)
+        key = cg.Constant(source.name)
         self.function.body.append(
-            cg.IfElse(condition=key.not_in_(extra), if_block=cg.Raise(f'TypeError("{exception_msg}")'))
+            cg.IfElse(condition=key.not_in_(extra), if_block=[cg.Raise("TypeError", exception_msg)])
         )
         self.function.body.append(self._get_assignment(target=target, right_side=cg.DictLookup(extra, key)))
 
     @abstractmethod
-    def __str__(self) -> str:
+    def get_ast(self) -> ast.mod:
         pass
 
 
@@ -190,19 +191,20 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
     def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:
         return cg.Function(
             cls.func_name,
-            args="self, extra: dict",
-            return_type=target_cls.name,
-            body=cg.Block(cg.Assignment(name="d", rhs="{}")),
+            args=[cg.Arg("self"), cg.Arg("extra", cg.Constant("dict"))],
+            return_type=cg.Constant(target_cls.name),
+            body=[cg.Assignment(lhs=cg.Variable("d"), rhs=cg.EmptyDict())],
         )
 
     def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
         variable_name = self.target_cls.get_assignment_name(target)
-        lookup = cg.DictLookup(dict_name="d", key=variable_name)
-        return cg.Assignment(name=lookup, rhs=right_side)
+        lookup = cg.DictLookup(dictionary=cg.Variable("d"), key=cg.Constant(variable_name))
+        return cg.Assignment(lhs=lookup, rhs=right_side)
 
-    def __str__(self) -> str:
+    def get_ast(self) -> ast.mod:
         self.function.body.append(self.target_cls.return_statement())
-        return self.function.to_string(0)
+        module = cg.Module([self.function])
+        return module.generate_ast()
 
 
 class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
@@ -216,8 +218,8 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         target.required = False
 
         # overwrite method to handle recursive updates
-        source_variable = cg.AttributeLookup(obj="self", attribute=source.name)
-        target_variable = cg.AttributeLookup(obj="target", attribute=target.name)
+        source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.name)
+        target_variable = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.name)
         try:
             expression = map_update_expression(source.type, target.type, source_variable, target_variable, 0)
             code: cg.Statement = cg.ExpressionStatement(expression)
@@ -240,23 +242,21 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
             )
 
         if only_if_source_is_set:
-            code = cg.IfElse(source_variable.is_not(cg.NONE), code)
+            code = cg.IfElse(source_variable.is_not(cg.NONE), [code])
         self.function.body.append(code)
 
     @classmethod
     def _create_function(cls, source_cls: ClassMeta, target_cls: ClassMeta) -> cg.Function:
         return cg.Function(
             cls.func_name,
-            args=f'self, target: "{target_cls.name}", extra: dict',
-            return_type="None",
-            body=cg.Block(),
+            args=[cg.Arg("self"), cg.Arg("target", cg.Constant(target_cls.name)), cg.Arg("extra", cg.Constant("dict"))],
+            return_type=cg.Constant(None),
+            body=[],
         )
 
     def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
-        lookup = cg.AttributeLookup(obj="target", attribute=target.name)
-        return cg.Assignment(name=lookup, rhs=right_side)
+        lookup = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.name)
+        return cg.Assignment(lhs=lookup, rhs=right_side)
 
-    def __str__(self) -> str:
-        if not self.function.body:
-            self.function.body.append(cg.Pass())
-        return self.function.to_string(0)
+    def get_ast(self) -> ast.mod:
+        return cg.Module([self.function]).generate_ast()

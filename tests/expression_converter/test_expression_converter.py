@@ -3,12 +3,13 @@ from typing import List
 
 import pytest
 
-from dataclass_mapper.code_generator import AttributeLookup
+from dataclass_mapper.code_generator import AttributeLookup, Variable
 from dataclass_mapper.expression_converters.expression_converter import map_expression
 from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType, SetFieldType
 from dataclass_mapper.fieldtypes.base import FieldType
 from dataclass_mapper.fieldtypes.dict import DictFieldType
 from dataclass_mapper.utils import get_map_to_func_name
+from tests.utils import assert_ast_equal
 
 
 @dataclass(frozen=True)
@@ -74,12 +75,12 @@ TEST_CASES: List[Scenario] = [
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), ClassFieldType(Foo)),
         target=DictFieldType(ClassFieldType(Bar), ClassFieldType(Bar)),
-        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",  # noqa: E501
+        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): v0._map_to_Bar_{id(Bar)}(extra) for (k0, v0) in src.x.items()}}",  # noqa: E501
     ),
     Scenario(
         source=DictFieldType(ClassFieldType(Foo), OptionalFieldType(ClassFieldType(Foo))),
         target=DictFieldType(ClassFieldType(Bar), OptionalFieldType(ClassFieldType(Bar))),
-        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): None if v0 is None else v0._map_to_Bar_{id(Bar)}(extra) for k0, v0 in src.x.items()}}",  # noqa: E501
+        expected_code=f"{{k0._map_to_Bar_{id(Bar)}(extra): None if v0 is None else v0._map_to_Bar_{id(Bar)}(extra) for (k0, v0) in src.x.items()}}",  # noqa: E501
     ),
     Scenario(
         source=SetFieldType(ClassFieldType(Foo)),
@@ -91,6 +92,8 @@ TEST_CASES: List[Scenario] = [
 
 @pytest.mark.parametrize("test_case", TEST_CASES)
 def test_expression_converter(test_case: Scenario):
-    source = AttributeLookup("src", "x")
+    source = AttributeLookup(Variable("src"), "x")
 
-    assert str(map_expression(test_case.source, test_case.target, source, 0)) == test_case.expected_code
+    assert_ast_equal(
+        map_expression(test_case.source, test_case.target, source, 0).generate_ast(), test_case.expected_code
+    )

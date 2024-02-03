@@ -8,6 +8,7 @@ from dataclass_mapper.implementations.base import FieldMeta
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
 from dataclass_mapper.mapper import mapper
 from dataclass_mapper.mapping_method import FromExtra, UpdateMappingMethodSourceCode
+from tests.utils import assert_ast_equal
 
 
 def prepare_expected_code(code: str) -> str:
@@ -40,11 +41,11 @@ def test_code_gen_add_normal_assignment(code: UpdateMappingMethodSourceCode) -> 
     )
     expected_code = prepare_expected_code(
         """
-        def update(self, target: "Target", extra: dict) -> "None":
+        def update(self, target: "Target", extra: "dict") -> None:
             target.target_x = self.source_x
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_code_gen_add_assignment_only_if_not_None(code: UpdateMappingMethodSourceCode) -> None:
@@ -55,12 +56,12 @@ def test_code_gen_add_assignment_only_if_not_None(code: UpdateMappingMethodSourc
     )
     expected_code = prepare_expected_code(
         """
-        def update(self, target: "Target", extra: dict) -> "None":
+        def update(self, target: "Target", extra: "dict") -> None:
             if self.source_x is not None:
                 target.target_x = self.source_x
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_bypass_validators_option_disabled_for_dataclasses() -> None:
@@ -80,11 +81,11 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
     )
     expected_code = prepare_expected_code(
         """
-        def update(self, target: "Target", extra: dict) -> "None":
+        def update(self, target: "Target", extra: "dict") -> None:
             pass
         """
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_recursive_update(code: UpdateMappingMethodSourceCode):
@@ -104,11 +105,11 @@ def test_recursive_update(code: UpdateMappingMethodSourceCode):
     footarget_id = id(FooTarget)
     expected_code = prepare_expected_code(
         f"""
-        def update(self, target: "Target", extra: dict) -> "None":
+        def update(self, target: "Target", extra: "dict") -> None:
             self.source_x._mapupdate_to_FooTarget_{footarget_id}(target.target_x, extra)
         """  # noqa: E501
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)
 
 
 def test_provide_with_extra_code_check(code: UpdateMappingMethodSourceCode):
@@ -117,10 +118,10 @@ def test_provide_with_extra_code_check(code: UpdateMappingMethodSourceCode):
     )
     expected_code = prepare_expected_code(
         """
-        def update(self, target: "Target", extra: dict) -> "None":
+        def update(self, target: "Target", extra: "dict") -> None:
             if "external_x" not in extra:
                 raise TypeError("When mapping an object of 'Source' to 'Target' the item 'external_x' needs to be provided in the `extra` dictionary")
             target.target_x = extra["external_x"]
         """  # noqa: E501
     )
-    assert str(code) == expected_code
+    assert_ast_equal(code.get_ast(), expected_code)

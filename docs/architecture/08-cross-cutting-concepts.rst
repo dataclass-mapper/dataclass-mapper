@@ -52,7 +52,7 @@ Mapper Function Generation
 
 From the :ref:`Introspection` we receive a list of fields and can determine how a mapping will work.
 We create a mapper function that performs the mapping as a string.
-E.g. for two given classes ``Foo`` and ``Bar`` - one with a field ``x`` and one with a field ``y`` of the same type - the following string will be generated:
+E.g. for two given classes ``Foo`` and ``Bar`` - one with a field ``x`` and one with a field ``y`` of the same type - an AST (abstract syntax tree) will be generated, that's more or less equivalent to the following code snippet.
 
 .. code-block:: python
 

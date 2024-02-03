@@ -51,7 +51,9 @@ class ClassMeta(ABC):
 
     def return_statement(self) -> cg.Return:
         """The code for creating the object and returning it"""
-        return cg.Return(f"{self.alias_name}(**d)")
+        return cg.Return(
+            cg.FunctionCall(cg.Variable(self.alias_name), args=[], keywords=[cg.Keyword(cg.Variable("d"))])
+        )
 
     @abstractmethod
     def get_assignment_name(self, field: FieldMeta) -> str:
