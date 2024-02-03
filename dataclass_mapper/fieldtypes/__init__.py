@@ -1,3 +1,4 @@
+from .any import AnyType
 from .base import FieldType, compute_field_type
 from .class_fieldtype import ClassFieldType
 from .dict import DictFieldType
@@ -15,4 +16,5 @@ __all__ = [
     "ListFieldType",
     "DictFieldType",
     "SetFieldType",
+    "AnyType",
 ]

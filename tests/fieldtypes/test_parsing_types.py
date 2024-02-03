@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import pytest
 
 from dataclass_mapper.fieldtypes import (
+    AnyType,
     ClassFieldType,
     DictFieldType,
     FieldType,
@@ -69,6 +70,11 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
         Set[Bar],
         SetFieldType(ClassFieldType(Bar)),
         "Set[Bar]",
+    ),
+    (
+        Any,
+        AnyType(),
+        "Any",
     ),
 ]
 

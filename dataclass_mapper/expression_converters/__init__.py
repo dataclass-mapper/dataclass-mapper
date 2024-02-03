@@ -1,3 +1,4 @@
+from .anything_to_any import AnythingToAnyExpressionConverter
 from .class_to_union import ClassToUnionExpressionConverter
 from .dict import DictComprehension
 from .different_class import DifferentClassExpressionConverter
@@ -21,4 +22,5 @@ __all__ = [
     "OptionalToOptionalExpressionConverter",
     "DifferentClassExpressionConverter",
     "SetExpressionConverter",
+    "AnythingToAnyExpressionConverter",
 ]

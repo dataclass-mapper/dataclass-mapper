@@ -9,7 +9,7 @@ class ClassFieldType(FieldType):
 
     @staticmethod
     def is_applicable(type_: Any) -> bool:
-        return get_origin(type_) is None
+        return get_origin(type_) is None and type_ is not Any
 
     @classmethod
     def from_type(cls, type_: Any) -> "FieldType":
