@@ -1,4 +1,5 @@
 import ast
+import sys
 from copy import deepcopy
 from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
@@ -278,7 +279,12 @@ def add_specific_mapper_function(
         raise AttributeError(
             f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
         )
-    setattr(SourceCls, map_func_name, d[source_code_type.func_name])
+    map_func = d[source_code_type.func_name]
+    if sys.version_info < (3, 9):
+        map_func.__doc__ = ast.dump(map_code_ast)
+    else:
+        map_func.__doc__ = ast.unparse(map_code_ast)
+    setattr(SourceCls, map_func_name, map_func)
     for name, factory in factories.items():
         setattr(SourceCls, name, factory)
 
@@ -401,3 +407,17 @@ def map_to(obj, target: Union[Type[T], T], extra: Optional[Dict[str, Any]] = Non
             return cast(T, getattr(obj, func_name)(target, extra))
 
     raise NotImplementedError(f"Object of type '{type(obj).__name__}' cannot be mapped to '{TargetCls.__name__}'")
+
+
+def debug_map_codes(source: Type, target: Type) -> Tuple[Optional[str], Optional[str]]:
+    create_func_name = get_map_to_func_name(target)
+    map_create_code: Optional[str] = None
+    if hasattr(source, create_func_name):
+        map_create_code = getattr(source, create_func_name).__doc__
+
+    update_func_name = get_map_to_func_name(target)
+    map_update_code: Optional[str] = None
+    if hasattr(source, update_func_name):
+        map_update_code = getattr(source, update_func_name).__doc__
+
+    return (map_create_code, map_update_code)
