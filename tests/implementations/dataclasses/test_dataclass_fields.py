@@ -18,9 +18,15 @@ def test_dataclass_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=Namespace(locals={}, globals={})).fields
     assert fields == {
-        "x": DataclassesFieldMeta(name="x", type=ClassFieldType(int), required=True),
-        "y": DataclassesFieldMeta(name="y", type=ClassFieldType(str), required=True),
-        "z": DataclassesFieldMeta(name="z", type=ListFieldType(ClassFieldType(int)), required=True),
+        "x": DataclassesFieldMeta(
+            attribute_name="x", type=ClassFieldType(int), required=True, initializer_param_name="x"
+        ),
+        "y": DataclassesFieldMeta(
+            attribute_name="y", type=ClassFieldType(str), required=True, initializer_param_name="y"
+        ),
+        "z": DataclassesFieldMeta(
+            attribute_name="z", type=ListFieldType(ClassFieldType(int)), required=True, initializer_param_name="z"
+        ),
     }
 
 

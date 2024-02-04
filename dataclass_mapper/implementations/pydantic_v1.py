@@ -19,16 +19,20 @@ def pydantic_version() -> Tuple[int, int, int]:
 
 class PydanticV1FieldMeta(FieldMeta):
     @classmethod
-    def from_pydantic(cls, field: Any) -> "PydanticV1FieldMeta":
+    def from_pydantic(cls, field: Any, use_alias_in_initializer: bool) -> "PydanticV1FieldMeta":
         type_ = field.outer_type_
         if field.allow_none:
             type_ = Optional[type_]
+
+        initializer_param_name = field.name
+        if use_alias_in_initializer:
+            initializer_param_name = field.alias or field.name
+
         return cls(
-            name=field.name,
+            attribute_name=field.name,
             type=compute_field_type(type_),
-            # allow_none=field.allow_none,
             required=field.required,
-            alias=field.alias,
+            initializer_param_name=initializer_param_name,
         )
 
 
@@ -41,12 +45,10 @@ class PydanticV1ClassMeta(ClassMeta):
         fields: Dict[str, FieldMeta],
         clazz: Any,
         use_construct: bool,
-        allow_population_by_field_name: bool = False,
-        alias_name: Optional[str] = None,
+        internal_name: Optional[str] = None,
     ) -> None:
-        super().__init__(name=name, fields=fields, alias_name=alias_name, clazz=clazz)
+        super().__init__(name=name, fields=fields, internal_name=internal_name, clazz=clazz)
         self.use_construct = use_construct
-        self.allow_population_by_field_name = allow_population_by_field_name
 
     @staticmethod
     def has_validators(clazz: Any) -> bool:
@@ -56,22 +58,19 @@ class PydanticV1ClassMeta(ClassMeta):
         if self.use_construct:
             return cg.Return(
                 cg.MethodCall(
-                    cg.Variable(self.alias_name), "construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
+                    cg.Variable(self.internal_name), "construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
                 )
             )
         else:
             return super().return_statement()
 
-    def get_assignment_name(self, field: FieldMeta) -> str:
-        if self.use_construct or self.allow_population_by_field_name:
-            return field.name
-        else:
-            return field.alias or field.name
-
     @staticmethod
-    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
+    def _fields(clazz: Any, namespace: Namespace, use_alias_in_initializer: bool) -> Dict[str, FieldMeta]:
         clazz.update_forward_refs(**namespace.locals)
-        return {field.name: PydanticV1FieldMeta.from_pydantic(field) for field in clazz.__fields__.values()}
+        return {
+            field.name: PydanticV1FieldMeta.from_pydantic(field, use_alias_in_initializer=use_alias_in_initializer)
+            for field in clazz.__fields__.values()
+        }
 
     @staticmethod
     def applies(clz: Any) -> bool:
@@ -85,12 +84,13 @@ class PydanticV1ClassMeta(ClassMeta):
 
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace, type_: ClassType) -> "PydanticV1ClassMeta":
+        allow_population_by_field_name = getattr(clazz.Config, "allow_population_by_field_name", False)
+        use_alias_in_initializer = not allow_population_by_field_name
         return cls(
             name=cast(str, clazz.__name__),
-            fields=cls._fields(clazz, namespace=namespace),
+            fields=cls._fields(clazz, namespace=namespace, use_alias_in_initializer=use_alias_in_initializer),
             clazz=clazz,
             use_construct=not cls.has_validators(clazz),
-            allow_population_by_field_name=getattr(clazz.Config, "allow_population_by_field_name", False),
         )
 
     @classmethod
@@ -109,7 +109,9 @@ class PydanticV1ClassMeta(ClassMeta):
     ) -> cg.Statement:
         if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
             code = cg.IfElse(
-                condition=cg.Constant(source_field.name).in_(cg.AttributeLookup(cg.Variable("self"), "__fields_set__")),
+                condition=cg.Constant(source_field.attribute_name).in_(
+                    cg.AttributeLookup(cg.Variable("self"), "__fields_set__")
+                ),
                 if_block=[code],
             )
         return code

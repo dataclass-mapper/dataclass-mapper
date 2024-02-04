@@ -21,45 +21,38 @@ class DataclassType(Enum):
 class FieldMeta:
     """Dataclass containing meta information about fields in dataclasses or pydantic classes.
     Information like the name and type of the field, and if it is required to set it.
-
-    The type will contain the exact type of the field.
-    However for optional fields, the Optional quantifier is removed, and `allow_none` is set accordingly.
-    - int           => type = int, allow_none = False
-    - Optional[int] => type = int, allow_none = True
     """
 
-    name: str
+    # The name to access this field, via obj.{attribute_name}
+    attribute_name: str
     type: FieldType
-    # allow_none: bool
     required: bool
-    alias: Optional[str] = None
-
-    # @property
-    # def disallow_none(self) -> bool:
-    #     return not self.allow_none
+    # The name that's used in the initializer method, via Target({initializer_param_name}=...)
+    # Typically that's the same as the attribute name, however in certain cases (alias in Pydantic) it may differ.
+    initializer_param_name: str
 
     def __repr__(self) -> str:
-        return f"'{self.name}' of type '{self.type}'"
+        return f"'{self.attribute_name}' of type '{self.type}'"
 
 
 class ClassMeta(ABC):
     _type: DataclassType
 
-    def __init__(self, name: str, fields: Dict[str, FieldMeta], clazz: Any, alias_name: Optional[str] = None) -> None:
+    def __init__(
+        self, name: str, fields: Dict[str, FieldMeta], clazz: Any, internal_name: Optional[str] = None
+    ) -> None:
         self.name = name
         self.fields = fields
-        self.alias_name = alias_name or f"_{uuid4().hex}"
+        # For the code generation it's better to have a unique name.
+        # E.g. to avoid cases where two classes are named the same and it might create the wrong one
+        self.internal_name = internal_name or f"_{uuid4().hex}"
         self.clazz = clazz
 
     def return_statement(self) -> cg.Return:
         """The code for creating the object and returning it"""
         return cg.Return(
-            cg.FunctionCall(cg.Variable(self.alias_name), args=[], keywords=[cg.Keyword(cg.Variable("d"))])
+            cg.FunctionCall(cg.Variable(self.internal_name), args=[], keywords=[cg.Keyword(cg.Variable("d"))])
         )
-
-    @abstractmethod
-    def get_assignment_name(self, field: FieldMeta) -> str:
-        """Returns the name for the variable that should be used for an assignment"""
 
     @staticmethod
     @abstractmethod

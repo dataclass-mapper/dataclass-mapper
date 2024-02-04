@@ -21,21 +21,25 @@ def code() -> CreateMappingMethodSourceCode:
             name="Source",
             fields={},
             clazz=None,
-            alias_name="Source",
+            internal_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
             clazz=None,
-            alias_name="TargetAlias",
+            internal_name="TargetAlias",
         ),
     )
 
 
 def test_code_gen_add_normal_assignment(code: CreateMappingMethodSourceCode) -> None:
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True),
-        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+        ),
+        source=FieldMeta(
+            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+        ),
     )
     expected_code = prepare_expected_code(
         """
@@ -48,19 +52,39 @@ def test_code_gen_add_normal_assignment(code: CreateMappingMethodSourceCode) -> 
     assert_ast_equal(code.get_ast(), expected_code)
 
 
+def test_code_gen_alias(code: CreateMappingMethodSourceCode) -> None:
+    code.add_mapping(
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="TARGET_X"
+        ),
+        source=FieldMeta(
+            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+        ),
+    )
+    expected_code = prepare_expected_code(
+        """
+        def convert(self, extra: "dict") -> "Target":
+            d = {}
+            d["TARGET_X"] = self.source_x
+            return TargetAlias(**d)
+        """
+    )
+    assert_ast_equal(code.get_ast(), expected_code)
+
+
 def test_bypass_validators_option_disabled_for_dataclasses() -> None:
     code = CreateMappingMethodSourceCode(
         source_cls=DataclassClassMeta(
             name="Source",
             fields={},
             clazz=None,
-            alias_name="Source",
+            internal_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
             clazz=None,
-            alias_name="TargetAlias",
+            internal_name="TargetAlias",
         ),
     )
     expected_code = prepare_expected_code(
@@ -75,7 +99,10 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
 
 def test_provide_with_extra_code_check(code: CreateMappingMethodSourceCode):
     code.add_from_extra(
-        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True), source=FromExtra("external_x")
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+        ),
+        source=FromExtra("external_x"),
     )
     expected_code = prepare_expected_code(
         """

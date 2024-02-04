@@ -25,9 +25,15 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
-        "x": PydanticV2FieldMeta(name="x", type=ClassFieldType(int), required=True, alias=None),
-        "y": PydanticV2FieldMeta(name="y", type=ClassFieldType(str), required=True, alias=None),
-        "z": PydanticV2FieldMeta(name="z", type=ListFieldType(ClassFieldType(int)), required=True, alias=None),
+        "x": PydanticV2FieldMeta(
+            attribute_name="x", type=ClassFieldType(int), required=True, initializer_param_name="x"
+        ),
+        "y": PydanticV2FieldMeta(
+            attribute_name="y", type=ClassFieldType(str), required=True, initializer_param_name="y"
+        ),
+        "z": PydanticV2FieldMeta(
+            attribute_name="z", type=ListFieldType(ClassFieldType(int)), required=True, initializer_param_name="z"
+        ),
     }
 
 
@@ -80,11 +86,11 @@ def test_pydantic_alias() -> None:
         c: int
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "b"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "b"
 
-    assert fields["c"].name == "c"
-    assert fields["c"].alias is None
+    assert fields["c"].attribute_name == "c"
+    assert fields["c"].initializer_param_name == "c"
 
     class Bar(BaseModel):
         a: int
@@ -92,5 +98,14 @@ def test_pydantic_alias() -> None:
         model_config = ConfigDict(alias_generator=lambda x: x.upper())
 
     fields = get_class_meta(Bar, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "A"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "A"
+
+    class Baz(BaseModel):
+        a: int = Field(alias="b")
+
+        model_config = ConfigDict(populate_by_name=True)
+
+    fields = get_class_meta(Baz, namespace=empty_namespace).fields
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "a"

@@ -23,21 +23,43 @@ def code() -> UpdateMappingMethodSourceCode:
             name="Source",
             fields={},
             clazz=None,
-            alias_name="Source",
+            internal_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
             clazz=None,
-            alias_name="TargetAlias",
+            internal_name="TargetAlias",
         ),
     )
 
 
 def test_code_gen_add_normal_assignment(code: UpdateMappingMethodSourceCode) -> None:
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True),
-        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+        ),
+        source=FieldMeta(
+            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+        ),
+    )
+    expected_code = prepare_expected_code(
+        """
+        def update(self, target: "Target", extra: "dict") -> None:
+            target.target_x = self.source_x
+        """
+    )
+    assert_ast_equal(code.get_ast(), expected_code)
+
+
+def test_code_gen_alias_not_used_for_update(code: UpdateMappingMethodSourceCode) -> None:
+    code.add_mapping(
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="TARGET_X"
+        ),
+        source=FieldMeta(
+            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+        ),
     )
     expected_code = prepare_expected_code(
         """
@@ -50,8 +72,12 @@ def test_code_gen_add_normal_assignment(code: UpdateMappingMethodSourceCode) -> 
 
 def test_code_gen_add_assignment_only_if_not_None(code: UpdateMappingMethodSourceCode) -> None:
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=False),
-        source=FieldMeta(name="source_x", type=ClassFieldType(int), required=True),
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=False, initializer_param_name="target_x"
+        ),
+        source=FieldMeta(
+            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+        ),
         only_if_source_is_set=True,
     )
     expected_code = prepare_expected_code(
@@ -70,13 +96,13 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
             name="Source",
             fields={},
             clazz=None,
-            alias_name="Source",
+            internal_name="Source",
         ),
         target_cls=DataclassClassMeta(
             name="Target",
             fields={},
             clazz=None,
-            alias_name="TargetAlias",
+            internal_name="TargetAlias",
         ),
     )
     expected_code = prepare_expected_code(
@@ -99,8 +125,12 @@ def test_recursive_update(code: UpdateMappingMethodSourceCode):
         pass
 
     code.add_mapping(
-        target=FieldMeta(name="target_x", type=ClassFieldType(FooTarget), required=True),
-        source=FieldMeta(name="source_x", type=ClassFieldType(FooSource), required=True),
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(FooTarget), required=True, initializer_param_name="target_x"
+        ),
+        source=FieldMeta(
+            attribute_name="source_x", type=ClassFieldType(FooSource), required=True, initializer_param_name="source_x"
+        ),
     )
     footarget_id = id(FooTarget)
     expected_code = prepare_expected_code(
@@ -114,7 +144,10 @@ def test_recursive_update(code: UpdateMappingMethodSourceCode):
 
 def test_provide_with_extra_code_check(code: UpdateMappingMethodSourceCode):
     code.add_from_extra(
-        target=FieldMeta(name="target_x", type=ClassFieldType(int), required=True), source=FromExtra("external_x")
+        target=FieldMeta(
+            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+        ),
+        source=FromExtra("external_x"),
     )
     expected_code = prepare_expected_code(
         """

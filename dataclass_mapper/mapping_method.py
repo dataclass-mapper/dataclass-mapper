@@ -132,7 +132,7 @@ class MappingMethodSourceCode(ABC):
         if (parameter_cnt := len(signature(source).parameters)) >= 2:
             # can only happen, if the typing annotation fails (e.g. because mypy is not installed)
             raise ValueError(
-                f"'{target.name}' of '{self.target_cls.name}' cannot be mapped "
+                f"'{target.attribute_name}' of '{self.target_cls.name}' cannot be mapped "
                 "using a factory with more than one parameter"
             )
 
@@ -148,7 +148,7 @@ class MappingMethodSourceCode(ABC):
     def add_mapping(self, target: FieldMeta, source: FieldMeta, only_if_source_is_set: bool = False) -> None:
         assert not only_if_source_is_set, "this parameter cannot be used for creation"
 
-        source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.name)
+        source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.attribute_name)
         try:
             expression = map_expression(source.type, target.type, source_variable, 0)
         except ConvertingNotPossibleError:
@@ -197,8 +197,7 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
         )
 
     def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
-        variable_name = self.target_cls.get_assignment_name(target)
-        lookup = cg.DictLookup(dictionary=cg.Variable("d"), key=cg.Constant(variable_name))
+        lookup = cg.DictLookup(dictionary=cg.Variable("d"), key=cg.Constant(target.initializer_param_name))
         return cg.Assignment(lhs=lookup, rhs=right_side)
 
     def get_ast(self) -> ast.mod:
@@ -218,8 +217,8 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         target.required = False
 
         # overwrite method to handle recursive updates
-        source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.name)
-        target_variable = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.name)
+        source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.attribute_name)
+        target_variable = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.attribute_name)
         try:
             expression = map_update_expression(source.type, target.type, source_variable, target_variable, 0)
             code: cg.Statement = cg.ExpressionStatement(expression)
@@ -255,7 +254,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         )
 
     def _get_assignment(self, target: FieldMeta, right_side: cg.Expression) -> cg.Assignment:
-        lookup = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.name)
+        lookup = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.attribute_name)
         return cg.Assignment(lhs=lookup, rhs=right_side)
 
     def get_ast(self) -> ast.mod:

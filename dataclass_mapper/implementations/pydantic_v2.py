@@ -19,13 +19,16 @@ def pydantic_version() -> Tuple[int, int, int]:
 
 class PydanticV2FieldMeta(FieldMeta):
     @classmethod
-    def from_pydantic(cls, field: Any, name: str) -> "PydanticV2FieldMeta":
+    def from_pydantic(cls, field: Any, attribute_name: str, use_alias_in_initializer: bool) -> "PydanticV2FieldMeta":
+        initializer_param_name = attribute_name
+        if use_alias_in_initializer:
+            initializer_param_name = field.alias or attribute_name
+
         return cls(
-            name=name,
+            attribute_name=attribute_name,
             type=compute_field_type(field.annotation),
-            # allow_none=is_optional(field.annotation),
             required=field.is_required(),
-            alias=field.alias,
+            initializer_param_name=initializer_param_name,
         )
 
 
@@ -38,12 +41,10 @@ class PydanticV2ClassMeta(ClassMeta):
         fields: Dict[str, FieldMeta],
         clazz: Any,
         use_construct: bool,
-        populate_by_name: bool = False,
-        alias_name: Optional[str] = None,
+        internal_name: Optional[str] = None,
     ) -> None:
-        super().__init__(name=name, fields=fields, alias_name=alias_name, clazz=clazz)
+        super().__init__(name=name, fields=fields, internal_name=internal_name, clazz=clazz)
         self.use_construct = use_construct
-        self.populate_by_name = populate_by_name
 
     @staticmethod
     def has_validators(clazz: Any) -> bool:
@@ -59,21 +60,18 @@ class PydanticV2ClassMeta(ClassMeta):
         if self.use_construct:
             return cg.Return(
                 cg.MethodCall(
-                    cg.Variable(self.alias_name), "model_construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
+                    cg.Variable(self.internal_name), "model_construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
                 )
             )
         else:
             return super().return_statement()
 
-    def get_assignment_name(self, field: FieldMeta) -> str:
-        if self.use_construct or self.populate_by_name:
-            return field.name
-        else:
-            return field.alias or field.name
-
     @staticmethod
-    def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
-        return {name: PydanticV2FieldMeta.from_pydantic(field, name) for name, field in clazz.model_fields.items()}
+    def _fields(clazz: Any, namespace: Namespace, use_alias_in_initializer: bool) -> Dict[str, FieldMeta]:
+        return {
+            name: PydanticV2FieldMeta.from_pydantic(field, name, use_alias_in_initializer=use_alias_in_initializer)
+            for name, field in clazz.model_fields.items()
+        }
 
     @staticmethod
     def applies(clz: Any) -> bool:
@@ -87,12 +85,13 @@ class PydanticV2ClassMeta(ClassMeta):
 
     @classmethod
     def from_clazz(cls, clazz: Any, namespace: Namespace, type_: ClassType) -> "PydanticV2ClassMeta":
+        populate_by_name = clazz.model_config.get("populate_by_name", False)
+        use_alias_in_initializer = not populate_by_name
         return cls(
             name=cast(str, clazz.__name__),
-            fields=cls._fields(clazz, namespace=namespace),
+            fields=cls._fields(clazz, namespace=namespace, use_alias_in_initializer=use_alias_in_initializer),
             clazz=clazz,
             use_construct=not cls.has_validators(clazz),
-            populate_by_name=clazz.model_config.get("populate_by_name", False),
         )
 
     @classmethod
@@ -111,7 +110,7 @@ class PydanticV2ClassMeta(ClassMeta):
     ) -> cg.Statement:
         if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
             code = cg.IfElse(
-                condition=cg.Constant(source_field.name).in_(
+                condition=cg.Constant(source_field.attribute_name).in_(
                     cg.AttributeLookup(cg.Variable("self"), "model_fields_set")
                 ),
                 if_block=[code],

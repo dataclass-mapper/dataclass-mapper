@@ -65,7 +65,7 @@ def _make_mapper(
                 )
             source_code.add_mapping(target=target_field, source=actual_source_fields[source_field_name])
         elif isinstance(raw_source, AssumeNotNone):
-            source_field_name = raw_source.field_name or target_field.name
+            source_field_name = raw_source.field_name or target_field.attribute_name
             if source_field_name not in actual_source_fields:
                 raise ValueError(
                     f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
@@ -84,7 +84,7 @@ def _make_mapper(
                     f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to update_only_if_set() "
                     f"if the mapper mode is not set to {MapperMode.UPDATE}."
                 )
-            source_field_name = raw_source.field_name or target_field.name
+            source_field_name = raw_source.field_name or target_field.attribute_name
             if source_field_name not in actual_source_fields:
                 raise ValueError(
                     f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
@@ -108,7 +108,7 @@ def _make_mapper(
         else:
             assert False, "impossible to reach"
 
-    return source_code.get_ast(), source_code.methods, {target_cls_meta.alias_name: target_cls}
+    return source_code.get_ast(), source_code.methods, {target_cls_meta.internal_name: target_cls}
 
 
 def create_mapper(

@@ -22,17 +22,16 @@ def sqlalchemy_version() -> Tuple[int, int, int]:
 @dataclass(repr=False)
 class SQLAlchemyFieldMeta(FieldMeta):
     @classmethod
-    def from_sqlalchemy(cls, field: Any, name: str) -> "SQLAlchemyFieldMeta":
+    def from_sqlalchemy(cls, field: Any, attribute_name: str) -> "SQLAlchemyFieldMeta":
         # TODO: disable "GENERATED ALWAYS columns" (e.g. Column(Identity(always=True)))
-        type_ = cls._extract_sqlalchemy_type(field.type, name)
+        type_ = cls._extract_sqlalchemy_type(field.type, attribute_name)
         if field.nullable:
             type_ = Optional[type_]
         return cls(
-            name=name,
+            attribute_name=attribute_name,
             type=compute_field_type(type_),
-            # allow_none=field.nullable,
             required=cls._is_required(field),
-            alias=None,
+            initializer_param_name=attribute_name,
         )
 
     @classmethod
@@ -91,12 +90,9 @@ class SQLAlchemyClassMeta(ClassMeta):
         name: str,
         fields: Dict[str, FieldMeta],
         clazz: Any,
-        alias_name: Optional[str] = None,
+        internal_name: Optional[str] = None,
     ) -> None:
-        super().__init__(name=name, fields=fields, clazz=clazz, alias_name=alias_name)
-
-    def get_assignment_name(self, field: FieldMeta) -> str:
-        return field.name
+        super().__init__(name=name, fields=fields, clazz=clazz, internal_name=internal_name)
 
     @staticmethod
     def _fields(clazz: Any, namespace: Namespace) -> Dict[str, SQLAlchemyFieldMeta]:
@@ -126,10 +122,11 @@ class SQLAlchemyClassMeta(ClassMeta):
                 type_ = Optional[type_]
 
             fields[name] = SQLAlchemyFieldMeta(
-                name=name,
+                attribute_name=name,
                 type=compute_field_type(type_),
                 # allow_none=nullable,
                 required=False,  # TODO: is this always the case?
+                initializer_param_name=name,
             )
             # todo: what if `relationship(viewonly=True)` is set?
         return fields

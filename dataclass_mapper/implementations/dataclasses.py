@@ -15,18 +15,15 @@ class DataclassesFieldMeta(FieldMeta):
     def from_dataclass(cls, field: DataclassField, real_type: Any) -> "DataclassesFieldMeta":
         has_default = field.default is not MISSING or field.default_factory is not MISSING
         return cls(
-            name=field.name,
+            attribute_name=field.name,
             type=compute_field_type(real_type),
-            # allow_none=is_optional(real_type),
             required=not has_default,
+            initializer_param_name=field.name,
         )
 
 
 class DataclassClassMeta(ClassMeta):
     _type = DataclassType.DATACLASSES
-
-    def get_assignment_name(self, field: FieldMeta) -> str:
-        return field.name
 
     @staticmethod
     def _fields(clazz: Any, namespace: Namespace) -> Dict[str, FieldMeta]:
