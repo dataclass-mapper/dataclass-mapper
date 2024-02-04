@@ -8,6 +8,7 @@ from .non_optional_to_optional import NonOptionalToOptionalExpressionConverter
 from .optional_to_optional import OptionalToOptionalExpressionConverter
 from .same_class import SameClassExpressionConverter
 from .set import SetExpressionConverter
+from .tuple import TupleExpressionConverter
 from .union_to_union import UnionToUnionExpressionConverter
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "DifferentClassExpressionConverter",
     "SetExpressionConverter",
     "AnythingToAnyExpressionConverter",
+    "TupleExpressionConverter",
 ]

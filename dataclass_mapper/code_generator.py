@@ -134,6 +134,14 @@ class ListComprehension(Expression):
 
 
 @dataclass
+class Tuple(Expression):
+    expressions: List[Expression]
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Tuple(elts=[expr.generate_ast() for expr in self.expressions], ctx=ast.Load())
+
+
+@dataclass
 class SetComprehension(Expression):
     expr: Expression
     iter_var: Variable

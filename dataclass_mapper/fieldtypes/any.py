@@ -3,7 +3,7 @@ from typing import Any
 from .base import FieldType
 
 
-class AnyType(FieldType):
+class AnyFieldType(FieldType):
     @staticmethod
     def is_applicable(type_: Any) -> bool:
         return type_ is Any

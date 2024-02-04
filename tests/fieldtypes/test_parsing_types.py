@@ -1,16 +1,17 @@
-from sys import version_info
+import sys
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
 from dataclass_mapper.fieldtypes import (
-    AnyType,
+    AnyFieldType,
     ClassFieldType,
     DictFieldType,
     FieldType,
     ListFieldType,
     OptionalFieldType,
     SetFieldType,
+    TupleFieldType,
     UnionFieldType,
     compute_field_type,
 )
@@ -23,6 +24,8 @@ def test_not_same_type_comparisons():
     assert ListFieldType(ClassFieldType(int)) != ClassFieldType(int)
     assert UnionFieldType([ClassFieldType(int), ClassFieldType(float)]) != ClassFieldType(int)
     assert DictFieldType(ClassFieldType(int), ClassFieldType(float)) != ClassFieldType(int)
+    assert AnyFieldType() != ClassFieldType(int)
+    assert TupleFieldType([ClassFieldType(int)]) != ClassFieldType(int)
 
 
 class Foo:
@@ -73,13 +76,21 @@ TEST_DATA: List[Tuple[Any, FieldType, str]] = [
     ),
     (
         Any,
-        AnyType(),
+        AnyFieldType(),
         "Any",
+    ),
+    (Tuple[int, str], TupleFieldType([ClassFieldType(int), ClassFieldType(str)]), "Tuple[int, str]"),
+    (
+        Union[Tuple[int, str, float], int],
+        UnionFieldType(
+            [TupleFieldType([ClassFieldType(int), ClassFieldType(str), ClassFieldType(float)]), ClassFieldType(int)]
+        ),
+        "Union[Tuple[int, str, float], int]",
     ),
 ]
 
 
-if version_info >= (3, 10):
+if sys.version_info >= (3, 10):
     TEST_DATA.extend(
         [
             (
@@ -113,7 +124,7 @@ def test_check_field_name_parsing_and_str(type_: Any, expected_parsed: FieldType
     assert str(field_type) == expected_str
 
 
-@pytest.mark.skipif(version_info < (3, 10), reason="Union Syntax")
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Union Syntax")
 def test_get_class_name_for_non_class():
     field_type = ClassFieldType(int | float)  # type: ignore
     assert str(field_type)

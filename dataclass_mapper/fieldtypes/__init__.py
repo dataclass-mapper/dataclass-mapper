@@ -1,10 +1,11 @@
-from .any import AnyType
+from .any import AnyFieldType
 from .base import FieldType, compute_field_type
 from .class_fieldtype import ClassFieldType
 from .dict import DictFieldType
 from .list import ListFieldType
 from .optional import OptionalFieldType
 from .set import SetFieldType
+from .tuple import TupleFieldType
 from .union import UnionFieldType
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "ListFieldType",
     "DictFieldType",
     "SetFieldType",
-    "AnyType",
+    "AnyFieldType",
+    "TupleFieldType",
 ]
