@@ -107,7 +107,7 @@ def test_pydantic_alias() -> None:
         a: int
 
         class Config:
-            fields = {"a": "aaa"}
+            fields = {"a": "aaa"}  # noqa: RUF012
 
     fields = get_class_meta(Baz, namespace=empty_namespace).fields
     assert fields["a"].attribute_name == "a"

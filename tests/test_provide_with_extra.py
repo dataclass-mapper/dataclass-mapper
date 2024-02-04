@@ -31,8 +31,8 @@ def test_from_extra_missing_extra():
     with pytest.raises(TypeError) as excinfo:
         map_to(Source(), Target)
     assert (
-        "When mapping an object of 'Source' to 'Target' the item 'x' needs to be provided in the `extra` dictionary"
-        == str(excinfo.value)
+        str(excinfo.value)
+        == "When mapping an object of 'Source' to 'Target' the item 'x' needs to be provided in the `extra` dictionary"
     )
 
 

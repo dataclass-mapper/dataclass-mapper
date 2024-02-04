@@ -1,5 +1,6 @@
 import ast
 from abc import ABC, abstractmethod
+from dataclasses import replace
 from inspect import signature
 from typing import Callable, Dict, cast
 from uuid import uuid4
@@ -75,7 +76,7 @@ class MappingMethodSourceCode(ABC):
         except ConvertingNotPossibleError:
             raise TypeError(
                 f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
-            )
+            ) from None
         self.function.body.append(
             self._field_assignment(
                 source=source,
@@ -135,7 +136,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
 
     def add_mapping(self, target: FieldMeta, source: FieldMeta, only_if_source_is_set: bool = False) -> None:
         # It doesn't matter anymore, if a field is required or not. The target field is already initialized.
-        target.required = False
+        target = replace(target, required=False)
 
         # overwrite method to handle recursive updates
         source_variable = cg.AttributeLookup(obj=cg.Variable("self"), attribute=source.attribute_name)
@@ -154,7 +155,7 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
                     f"{source} of '{self.source_cls.name}' cannot be converted "
                     f"to {target} of '{self.target_cls.name}'. "
                     f"The mapping is missing, or only exists for the {MapperMode.UPDATE} mode."
-                )
+                ) from None
             code = self._field_assignment(
                 source=source,
                 target=target,

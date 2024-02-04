@@ -18,7 +18,4 @@ def get_class_meta(cls: Any, namespace: Namespace, type_: ClassType = ClassType.
 
 
 def is_dataclass_supported(cls: Any) -> bool:
-    for class_meta_type in class_meta_types:
-        if class_meta_type.applies(cls):
-            return True
-    return False
+    return any(class_meta_type.applies(cls) for class_meta_type in class_meta_types)

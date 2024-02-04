@@ -18,6 +18,5 @@ class ClassesUpdateExpression(UpdateExpression):
         self, source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
     ) -> Expression:
         assert isinstance(target, ClassFieldType)
-        # self_variable = Variable("self")
         extra_variable = Variable("extra")
         return MethodCall(source_exp, get_mapupdate_to_func_name(target.cls_type), [target_exp, extra_variable])

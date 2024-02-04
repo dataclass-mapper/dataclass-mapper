@@ -52,7 +52,7 @@ def raise_if_mapping_doesnt_match_target(
 
 def normalize_deprecated_mappings(mapping: StringFieldMapping) -> CurrentStringFieldMapping:
     """Replace the deprecated options with their modern counterparts."""
-    normalized_mapping: CurrentStringFieldMapping = dict()
+    normalized_mapping: CurrentStringFieldMapping = {}
 
     for target_field_name, raw_source in mapping.items():
         if isinstance(raw_source, Spezial):
@@ -60,10 +60,11 @@ def normalize_deprecated_mappings(mapping: StringFieldMapping) -> CurrentStringF
                 warnings.warn(
                     f"{raw_source.name} is deprecated, use init_with_default() instead",
                     DeprecationWarning,
+                    stacklevel=1,
                 )
                 normalized_mapping[target_field_name] = Ignore(created_via=raw_source.name)
             else:
-                assert False, "only those two values are possible"
+                raise AssertionError("only those two values are possible")
 
         else:
             normalized_mapping[target_field_name] = raw_source
@@ -75,7 +76,7 @@ def convert_sqlalchemy_fields(
     mapping: StringSqlAlchemyFieldMapping, source_cls_meta: ClassMeta, target_cls_meta: ClassMeta
 ) -> StringFieldMapping:
     """Replace the SqlAlchemy custom field types with their field names."""
-    new_mapping: StringFieldMapping = dict()
+    new_mapping: StringFieldMapping = {}
 
     for target_field_name, raw_source in mapping.items():
         new_target_field_name: str

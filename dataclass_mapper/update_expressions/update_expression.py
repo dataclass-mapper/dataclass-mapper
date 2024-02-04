@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Type
+from typing import ClassVar, List, Type
 
 from dataclass_mapper.code_generator import Expression
 from dataclass_mapper.exceptions import UpdatingNotPossibleError
@@ -7,7 +7,7 @@ from dataclass_mapper.fieldtypes import FieldType
 
 
 class UpdateExpression(ABC):
-    all_update_expressions: List[Type["UpdateExpression"]] = []
+    all_update_expressions: ClassVar[List[Type["UpdateExpression"]]] = []
 
     def __init_subclass__(cls: Type["UpdateExpression"]):
         cls.all_update_expressions.append(cls)

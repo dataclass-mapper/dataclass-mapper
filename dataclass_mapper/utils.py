@@ -37,13 +37,13 @@ def get_map_to_func_name(cls: Any) -> str:
     try:
         identifier = f"{cls.__name__}_{id(cls)}"
         return f"_map_to_{identifier}"
-    except AttributeError:
-        raise TypeError("Bad Type")
+    except AttributeError as exc:
+        raise TypeError("Bad Type") from exc
 
 
 def get_mapupdate_to_func_name(cls: Any) -> str:
     try:
         identifier = f"{cls.__name__}_{id(cls)}"
         return f"_mapupdate_to_{identifier}"
-    except AttributeError:
-        raise TypeError("Bad Type")
+    except AttributeError as exc:
+        raise TypeError("Bad Type") from exc

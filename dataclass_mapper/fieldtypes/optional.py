@@ -26,7 +26,7 @@ class OptionalFieldType(FieldType):
             ts = ", ".join(str(t) for t in self.inner_type.inner_types)
             return f"Union[{ts}, None]"
         else:
-            return f"Optional[{str(self.inner_type)}]"
+            return f"Optional[{self.inner_type}]"
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):

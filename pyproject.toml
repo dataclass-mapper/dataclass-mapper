@@ -61,14 +61,28 @@ build-backend = "poetry.core.masonry.api"
 select = [
   # Pyflakes
   "F",
-  # Pycodestyle
+  # pycodestyle Error
   "E",
+  # pycodestyle Warning
   "W",
   # flake8-pie
   "PIE",
   # isort
   "I001",
+  # flake8-simplify
+  "SIM",
+  # flake8-bugbear
+  "B",
+  # Ruff-specific rules
+  "RUF",
+  # flake8-bandit
+  "S",
+  # flake8-comprehensions
+  "C4",
+  # flake8-commas
+  "COM818",
 ]
+ignore = ["S101"]
 line-length = 120
 
 [tool.mypy]

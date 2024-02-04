@@ -17,7 +17,7 @@ class ListFieldType(FieldType):
         return cls(value_type)
 
     def __str__(self) -> str:
-        return f"List[{str(self.value_type)}]"
+        return f"List[{self.value_type}]"
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):

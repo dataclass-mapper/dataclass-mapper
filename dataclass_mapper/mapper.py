@@ -1,6 +1,6 @@
 import ast
 import sys
-from copy import deepcopy
+from dataclasses import replace
 from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
@@ -69,10 +69,10 @@ def _make_mapper(
                     f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
                     f"in '{source_cls.__name__}'"
                 )
-            source_field = deepcopy(actual_source_fields[source_field_name])
+            source_field = actual_source_fields[source_field_name]
             # pretend like the source field isn't optional
             if isinstance(source_field.type, OptionalFieldType):
-                source_field.type = source_field.type.inner_type
+                source_field = replace(source_field, type=source_field.type.inner_type)
             source_code.add_mapping(target=target_field, source=source_field)
         elif isinstance(raw_source, FromExtra):
             source_code.add_from_extra(target=target_field, source=raw_source)
@@ -88,10 +88,10 @@ def _make_mapper(
                     f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
                     f"in '{source_cls.__name__}'"
                 )
-            source_field = deepcopy(actual_source_fields[source_field_name])
+            source_field = actual_source_fields[source_field_name]
             # pretend like the source field isn't optional
             if isinstance(source_field.type, OptionalFieldType):
-                source_field.type = source_field.type.inner_type
+                source_field = replace(source_field, type=source_field.type.inner_type)
             source_code.add_mapping(target=target_field, source=source_field, only_if_source_is_set=True)
         elif isinstance(raw_source, Ignore):
             if source_code_type.all_required_fields_need_initialization and target_field.required:
@@ -104,7 +104,7 @@ def _make_mapper(
         elif callable(raw_source):
             source_code.add_callable(target=target_field, source=raw_source)
         else:
-            assert False, "impossible to reach"
+            raise AssertionError("impossible to reach")
 
     return source_code.get_ast(), source_code.methods, {target_cls_meta.internal_name: target_cls}
 
@@ -271,7 +271,7 @@ def add_specific_mapper_function(
     filename = f"<{source_code_type.func_name}_{SourceCls.__name__}_{TargetCls.__name__}>"
     map_code = compile(map_code_ast, filename=filename, mode="exec")
     # Support older versions of python by calling {**a, **b} rather than a|b
-    exec(map_code, {**module.__dict__, **context}, d)
+    exec(map_code, {**module.__dict__, **context}, d)  # noqa: S102
 
     if hasattr(SourceCls, map_func_name):
         raise AttributeError(

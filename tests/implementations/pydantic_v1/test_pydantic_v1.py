@@ -140,7 +140,7 @@ def test_pydantic_with_alias():
             return v
 
         class Config:
-            fields = {"y": "yyy"}
+            fields = {"y": "yyy"}  # noqa: RUF012
 
     @mapper(BarWithAlias)
     class Foo(BaseModel):

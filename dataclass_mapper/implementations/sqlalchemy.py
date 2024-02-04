@@ -19,7 +19,7 @@ def sqlalchemy_version() -> Tuple[int, int, int]:
         return (0, 0, 0)
 
 
-@dataclass(repr=False)
+@dataclass(repr=False, frozen=True)
 class SQLAlchemyFieldMeta(FieldMeta):
     @classmethod
     def from_sqlalchemy(cls, field: Any, attribute_name: str) -> "SQLAlchemyFieldMeta":
@@ -124,7 +124,6 @@ class SQLAlchemyClassMeta(ClassMeta):
             fields[name] = SQLAlchemyFieldMeta(
                 attribute_name=name,
                 type=compute_field_type(type_),
-                # allow_none=nullable,
                 required=False,  # TODO: is this always the case?
                 initializer_param_name=name,
             )
@@ -164,7 +163,7 @@ def extract_instrumented_attribute_name_and_class(attribute: InstrumentedAttribu
     try:
         sqlalchemy = __import__("sqlalchemy")
     except ModuleNotFoundError:
-        raise ValueError("Unknown field")
+        raise ValueError("Unknown field") from None
 
     if not isinstance(attribute, sqlalchemy.orm.attributes.InstrumentedAttribute):
         raise ValueError("Unknown field")

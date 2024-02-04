@@ -24,5 +24,4 @@ def remove_NoneType(type_: Any) -> Any:
         type_ = types[0]
         for t in types[1:]:
             type_ = Union[type_, t]
-        # type_ = Union[(t for t in get_args(real_type) if t is not type(None))]
     return type_

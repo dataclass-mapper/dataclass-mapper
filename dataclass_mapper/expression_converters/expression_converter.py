@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Type
+from typing import ClassVar, List, Type
 
 from dataclass_mapper.code_generator import Expression
 from dataclass_mapper.exceptions import ConvertingNotPossibleError
@@ -7,7 +7,7 @@ from dataclass_mapper.fieldtypes import FieldType
 
 
 class ExpressionConverter(ABC):
-    all_expression_converts: List[Type["ExpressionConverter"]] = []
+    all_expression_converts: ClassVar[List[Type["ExpressionConverter"]]] = []
 
     def __init_subclass__(cls: Type["ExpressionConverter"]):
         cls.all_expression_converts.append(cls)

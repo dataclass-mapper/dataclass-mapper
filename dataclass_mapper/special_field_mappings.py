@@ -10,7 +10,7 @@ class Spezial(Enum):
     IGNORE_MISSING_MAPPING = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Ignore:
     created_via: str
 
@@ -29,7 +29,7 @@ def ignore() -> Ignore:
     return Ignore(created_via="ignore()")
 
 
-@dataclass
+@dataclass(frozen=True)
 class AssumeNotNone:
     field_name: Optional[str] = None
 
@@ -42,7 +42,7 @@ def assume_not_none(field_name: Optional[str] = None) -> AssumeNotNone:
     return AssumeNotNone(field_name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class FromExtra:
     name: str
 
@@ -52,7 +52,7 @@ def from_extra(name: str) -> FromExtra:
     return FromExtra(name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class UpdateOnlyIfSet:
     field_name: Optional[str] = None
 

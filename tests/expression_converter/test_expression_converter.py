@@ -85,7 +85,7 @@ TEST_CASES: List[Scenario] = [
     Scenario(
         source=SetFieldType(ClassFieldType(Foo)),
         target=SetFieldType(ClassFieldType(Bar)),
-        expected_code=f"{{x0._map_to_Bar_{id(Bar)}(extra) for x0 in src.x}}",  # noqa: E501
+        expected_code=f"{{x0._map_to_Bar_{id(Bar)}(extra) for x0 in src.x}}",
     ),
 ]
 

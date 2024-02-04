@@ -137,7 +137,7 @@ def test_recursive_update(code: UpdateMappingMethodSourceCode):
         f"""
         def update(self, target: "Target", extra: "dict") -> None:
             self.source_x._mapupdate_to_FooTarget_{footarget_id}(target.target_x, extra)
-        """  # noqa: E501
+        """
     )
     assert_ast_equal(code.get_ast(), expected_code)
 

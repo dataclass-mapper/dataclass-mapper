@@ -17,7 +17,7 @@ class SetFieldType(FieldType):
         return cls(value_type)
 
     def __str__(self) -> str:
-        return f"Set[{str(self.value_type)}]"
+        return f"Set[{self.value_type}]"
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):

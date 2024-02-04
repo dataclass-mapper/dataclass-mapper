@@ -17,7 +17,7 @@ class DataclassType(Enum):
     SQLAlchemy = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class FieldMeta:
     """Dataclass containing meta information about fields in dataclasses or pydantic classes.
     Information like the name and type of the field, and if it is required to set it.
