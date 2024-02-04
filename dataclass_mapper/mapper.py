@@ -9,16 +9,7 @@ from .enum import EnumMapping, make_enum_mapper
 from .fieldtypes.optional import OptionalFieldType
 from .implementations.class_type import ClassType
 from .mapper_mode import MapperMode
-from .mapping_method import (
-    AssumeNotNone,
-    CreateMappingMethodSourceCode,
-    FromExtra,
-    Ignore,
-    MappingMethodSourceCode,
-    StringSqlAlchemyFieldMapping,
-    UpdateMappingMethodSourceCode,
-    UpdateOnlyIfSet,
-)
+from .mapping_method import CreateMappingMethodSourceCode, MappingMethodSourceCode, UpdateMappingMethodSourceCode
 from .mapping_preparation import (
     convert_sqlalchemy_fields,
     generate_missing_mappings,
@@ -26,6 +17,13 @@ from .mapping_preparation import (
     raise_if_mapping_doesnt_match_target,
 )
 from .namespace import Namespace, get_namespace
+from .special_field_mappings import (
+    AssumeNotNone,
+    FromExtra,
+    Ignore,
+    StringSqlAlchemyFieldMapping,
+    UpdateOnlyIfSet,
+)
 from .utils import get_map_to_func_name, get_mapupdate_to_func_name
 
 

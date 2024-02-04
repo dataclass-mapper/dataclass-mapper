@@ -5,7 +5,7 @@ import pytest
 
 from dataclass_mapper.mapper import create_mapper, map_to, mapper
 from dataclass_mapper.mapper_mode import MapperMode
-from dataclass_mapper.mapping_method import ignore, update_only_if_set
+from dataclass_mapper.special_field_mappings import ignore, update_only_if_set
 
 
 def test_simple_update():

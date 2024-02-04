@@ -2,11 +2,10 @@ import warnings
 from copy import copy
 from typing import Any, Dict
 
-from .implementations.base import ClassMeta
+from .implementations.base import ClassMeta, FieldMeta
 from .implementations.sqlalchemy import InstrumentedAttribute, extract_instrumented_attribute_name_and_class
-from .mapping_method import (
+from .special_field_mappings import (
     CurrentStringFieldMapping,
-    FieldMeta,
     Ignore,
     Origin,
     Spezial,
