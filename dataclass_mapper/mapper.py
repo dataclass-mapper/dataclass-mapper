@@ -36,7 +36,7 @@ def _make_mapper(
     namespace: Namespace,
     source_code_type: Type[MappingMethodSourceCode],
     mapper_mode: MapperMode,
-) -> Tuple[ast.mod, Dict[str, Callable], Dict[str, Any]]:
+) -> Tuple[ast.Module, Dict[str, Callable], Dict[str, Any]]:
     source_cls_meta = get_class_meta(source_cls, namespace=namespace, type_=ClassType.SOURCE)
     target_cls_meta = get_class_meta(target_cls, namespace=namespace, type_=ClassType.TARGET)
     actual_source_fields = source_cls_meta.fields
@@ -271,7 +271,7 @@ def add_specific_mapper_function(
 
     d: Dict = {}
     filename = f"<{source_code_type.func_name}_{SourceCls.__name__}_{TargetCls.__name__}>"
-    map_code = compile(cast(ast.Module, map_code_ast), filename=filename, mode="exec")
+    map_code = compile(map_code_ast, filename=filename, mode="exec")
     # Support older versions of python by calling {**a, **b} rather than a|b
     exec(map_code, {**module.__dict__, **context}, d)
 

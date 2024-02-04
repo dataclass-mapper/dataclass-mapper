@@ -356,6 +356,6 @@ class Function(Statement):
 class Module:
     stmts: List[Any]
 
-    def generate_ast(self) -> ast.mod:
+    def generate_ast(self) -> ast.Module:
         m = ast.Module(body=[stmt.generate_ast() for stmt in self.stmts], type_ignores=[])
         return ast.fix_missing_locations(m)

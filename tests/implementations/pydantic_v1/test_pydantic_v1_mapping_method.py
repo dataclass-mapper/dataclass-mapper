@@ -3,9 +3,12 @@ from textwrap import dedent
 import pytest
 
 from dataclass_mapper.implementations.dataclasses import DataclassClassMeta
-from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta
+from dataclass_mapper.implementations.pydantic_v1 import PydanticV1ClassMeta, pydantic_version
 from dataclass_mapper.mapping_method import CreateMappingMethodSourceCode
 from tests.utils import assert_ast_equal
+
+if pydantic_version()[0] != 1:
+    pytest.skip("V1 validators syntax", allow_module_level=True)
 
 
 def prepare_expected_code(code: str) -> str:

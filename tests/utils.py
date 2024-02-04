@@ -2,7 +2,7 @@ import ast
 import sys
 from typing import Union
 
-Code = Union[str, ast.expr, ast.stmt, ast.mod]
+Code = Union[str, ast.expr, ast.stmt, ast.Module]
 
 
 def assert_ast_equal(code1: Code, code2: Code) -> None:
@@ -11,8 +11,8 @@ def assert_ast_equal(code1: Code, code2: Code) -> None:
     assert ast1 == ast2
 
 
-def get_unified_ast(code: Code) -> ast.mod:
-    if isinstance(code, ast.mod):
+def get_unified_ast(code: Code) -> ast.Module:
+    if isinstance(code, ast.Module):
         return code
     elif isinstance(code, ast.stmt):
         return ast.Module(body=[code], type_ignores=[])
@@ -22,7 +22,7 @@ def get_unified_ast(code: Code) -> ast.mod:
         return ast.parse(code)
 
 
-def get_ast_dump(ast_obj: ast.mod) -> str:
+def get_ast_dump(ast_obj: ast.Module) -> str:
     if sys.version_info < (3, 9):
         return ast.dump(ast_obj)
     else:

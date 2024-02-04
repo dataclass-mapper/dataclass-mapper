@@ -177,7 +177,7 @@ class MappingMethodSourceCode(ABC):
         self.function.body.append(self._get_assignment(target=target, right_side=cg.DictLookup(extra, key)))
 
     @abstractmethod
-    def get_ast(self) -> ast.mod:
+    def get_ast(self) -> ast.Module:
         pass
 
 
@@ -200,7 +200,7 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
         lookup = cg.DictLookup(dictionary=cg.Variable("d"), key=cg.Constant(target.initializer_param_name))
         return cg.Assignment(lhs=lookup, rhs=right_side)
 
-    def get_ast(self) -> ast.mod:
+    def get_ast(self) -> ast.Module:
         self.function.body.append(self.target_cls.return_statement())
         module = cg.Module([self.function])
         return module.generate_ast()
@@ -257,5 +257,5 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         lookup = cg.AttributeLookup(obj=cg.Variable("target"), attribute=target.attribute_name)
         return cg.Assignment(lhs=lookup, rhs=right_side)
 
-    def get_ast(self) -> ast.mod:
+    def get_ast(self) -> ast.Module:
         return cg.Module([self.function]).generate_ast()
