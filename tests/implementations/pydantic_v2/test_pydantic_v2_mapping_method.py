@@ -52,7 +52,8 @@ def test_bypass_validators_option_for_pydantic() -> None:
         """
         def convert(self, extra: "dict") -> "Target":
             d = {}
-            return TargetAlias.model_construct(**d)
+            target = TargetAlias.model_construct(**d)
+            return target
         """
     )
     assert_ast_equal(code.get_ast(), expected_code)
@@ -79,7 +80,8 @@ def test_dont_bypass_validators_option_for_pydantic() -> None:
         """
         def convert(self, extra: "dict") -> "Target":
             d = {}
-            return TargetAlias(**d)
+            target = TargetAlias(**d)
+            return target
         """
     )
     assert_ast_equal(code.get_ast(), expected_code)

@@ -1,5 +1,5 @@
 from dataclass_mapper.classmeta import is_dataclass_supported
-from dataclass_mapper.code_generator import Expression
+from dataclass_mapper.code_generator import Expression, Statement
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
 from dataclass_mapper.utils import is_updatable_to
@@ -19,5 +19,5 @@ class UnsupportedDataclassesUpdateExpression(UpdateExpression):
 
     def update_expression(
         self, source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
-    ) -> Expression:
+    ) -> Statement:
         raise TypeError(f"There is no update mapper defined between '{source}' and '{target}'.")

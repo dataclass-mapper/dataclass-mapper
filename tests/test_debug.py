@@ -32,23 +32,21 @@ def test_debug_code():
         def convert(self, extra: 'dict') -> 'Target':
             d = {}
             d['x'] = self.x
-            return Target(**d)
+            target = Target(**d)
+            return target
         """
     )
     expected_update_code = prepare_expected_code(
         """
-        def convert(self, extra: 'dict') -> 'Target':
-            d = {}
-            d['x'] = self.x
-            return Target(**d)
+        def update(self, target: 'Target', extra: 'dict') -> None:
+            target.x = self.x
         """
     )
 
     generated_create_code, generated_update_code = debug_map_codes(Source, Target)
     assert generated_create_code
     assert generated_update_code
-    generated_create_code = re.sub(r"return _[a-z0-9]{32}", "return Target", generated_create_code)
-    generated_update_code = re.sub(r"return _[a-z0-9]{32}", "return Target", generated_update_code)
+    generated_create_code = re.sub(r"target = _[a-z0-9]{32}", "target = Target", generated_create_code)
 
     assert generated_create_code == expected_create_code
     assert generated_update_code == expected_update_code

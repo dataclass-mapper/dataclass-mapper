@@ -54,15 +54,14 @@ class PydanticV1ClassMeta(ClassMeta):
     def has_validators(clazz: Any) -> bool:
         return bool(clazz.__validators__) or bool(clazz.__pre_root_validators__) or bool(clazz.__post_root_validators__)
 
-    def return_statement(self) -> cg.Return:
+    def constructor_call(self) -> cg.Expression:
+        """The code for creating the object"""
         if self.use_construct:
-            return cg.Return(
-                cg.MethodCall(
-                    cg.Variable(self.internal_name), "construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
-                )
+            return cg.MethodCall(
+                cg.Variable(self.internal_name), "construct", args=[], keywords=[cg.Keyword(cg.Variable("d"))]
             )
         else:
-            return super().return_statement()
+            return super().constructor_call()
 
     @staticmethod
     def _fields(clazz: Any, namespace: Namespace, use_alias_in_initializer: bool) -> Dict[str, FieldMeta]:
@@ -104,14 +103,11 @@ class PydanticV1ClassMeta(ClassMeta):
         )
 
     @classmethod
-    def post_process(
-        cls, code: cg.Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
-    ) -> cg.Statement:
+    def skip_condition(
+        cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
+    ) -> Optional[cg.Expression]:
         if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
-            code = cg.IfElse(
-                condition=cg.Constant(source_field.attribute_name).in_(
-                    cg.AttributeLookup(cg.Variable("self"), "__fields_set__")
-                ),
-                if_block=[code],
+            return cg.Constant(source_field.attribute_name).in_(
+                cg.AttributeLookup(cg.Variable("self"), "__fields_set__")
             )
-        return code
+        return None

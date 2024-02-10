@@ -30,6 +30,7 @@ class FieldMeta:
     # The name that's used in the initializer method, via Target({initializer_param_name}=...)
     # Typically that's the same as the attribute name, however in certain cases (alias in Pydantic) it may differ.
     initializer_param_name: str
+    init_with_ctor: bool = True
 
     def __repr__(self) -> str:
         return f"'{self.attribute_name}' of type '{self.type}'"
@@ -48,11 +49,9 @@ class ClassMeta(ABC):
         self.internal_name = internal_name or f"_{uuid4().hex}"
         self.clazz = clazz
 
-    def return_statement(self) -> cg.Return:
-        """The code for creating the object and returning it"""
-        return cg.Return(
-            cg.FunctionCall(cg.Variable(self.internal_name), args=[], keywords=[cg.Keyword(cg.Variable("d"))])
-        )
+    def constructor_call(self) -> cg.Expression:
+        """The code for creating the object"""
+        return cg.FunctionCall(cg.Variable(self.internal_name), args=[], keywords=[cg.Keyword(cg.Variable("d"))])
 
     @staticmethod
     @abstractmethod
@@ -65,8 +64,7 @@ class ClassMeta(ABC):
         """Parse the given class"""
 
     @classmethod
-    def post_process(
-        cls, code: cg.Statement, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
-    ) -> cg.Statement:
-        """Modifies the generated code for one field mapping if needed"""
-        return code
+    def skip_condition(
+        cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
+    ) -> Optional[cg.Expression]:
+        return None

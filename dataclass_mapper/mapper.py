@@ -102,11 +102,11 @@ def _make_mapper(
                     "as it has no default"
                 )
         elif callable(raw_source):
-            source_code.add_callable(target=target_field, source=raw_source)
+            source_code.add_factory(target=target_field, source=raw_source)
         else:
             raise AssertionError("impossible to reach")
 
-    return source_code.get_ast(), source_code.methods, {target_cls_meta.internal_name: target_cls}
+    return source_code.get_ast(), source_code.factories, {target_cls_meta.internal_name: target_cls}
 
 
 def create_mapper(
@@ -413,7 +413,7 @@ def debug_map_codes(source: Type, target: Type) -> Tuple[Optional[str], Optional
     if hasattr(source, create_func_name):
         map_create_code = getattr(source, create_func_name).__doc__
 
-    update_func_name = get_map_to_func_name(target)
+    update_func_name = get_mapupdate_to_func_name(target)
     map_update_code: Optional[str] = None
     if hasattr(source, update_func_name):
         map_update_code = getattr(source, update_func_name).__doc__

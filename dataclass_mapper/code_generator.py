@@ -3,7 +3,7 @@ import sys
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 
 class Expression(ABC):
@@ -40,9 +40,13 @@ class Expression(ABC):
 @dataclass
 class Variable(Expression):
     name: str
+    type_: Optional[Expression] = None
 
     def generate_ast(self) -> ast.expr:
         return ast.Name(id=self.name, ctx=self.get_ctx())
+
+    def as_arg(self) -> "Arg":
+        return Arg(name=self.name, type_=self.type_)
 
 
 @dataclass
@@ -313,14 +317,14 @@ class Arg:
 @dataclass
 class Function(Statement):
     name: str
-    args: List[Arg]
+    args: List[Union[Arg, Variable]]
     return_type: Expression
     body: List[Any]
 
     def generate_ast(self) -> ast.stmt:
         name = self.name
         args = ast.arguments(
-            args=[arg.generate_ast() for arg in self.args],
+            args=[(arg if isinstance(arg, Arg) else arg.as_arg()).generate_ast() for arg in self.args],
             posonlyargs=[],
             vararg=None,
             kwonlyargs=[],

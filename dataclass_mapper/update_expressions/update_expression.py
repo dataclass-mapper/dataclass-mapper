@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, List, Type
 
-from dataclass_mapper.code_generator import Expression
+from dataclass_mapper.code_generator import Expression, Statement
 from dataclass_mapper.exceptions import UpdatingNotPossibleError
 from dataclass_mapper.fieldtypes import FieldType
 
@@ -19,13 +19,13 @@ class UpdateExpression(ABC):
     @abstractmethod
     def update_expression(
         self, source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
-    ) -> Expression:
-        """Creates the expression (that updates from source type to target type)."""
+    ) -> Statement:
+        """Creates the statement (that updates from source type to target type)."""
 
 
 def map_update_expression(
     source: FieldType, target: FieldType, source_exp: Expression, target_exp: Expression, recursion_depth: int
-) -> Expression:
+) -> Statement:
     for update_expression_creator in UpdateExpression.all_update_expressions:
         if update_expression_creator().is_applicable_to_outer(source, target):
             return update_expression_creator().update_expression(

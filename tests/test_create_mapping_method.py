@@ -46,7 +46,8 @@ def test_code_gen_add_normal_assignment(code: CreateMappingMethodSourceCode) -> 
         def convert(self, extra: "dict") -> "Target":
             d = {}
             d["target_x"] = self.source_x
-            return TargetAlias(**d)
+            target = TargetAlias(**d)
+            return target
         """
     )
     assert_ast_equal(code.get_ast(), expected_code)
@@ -66,7 +67,8 @@ def test_code_gen_alias(code: CreateMappingMethodSourceCode) -> None:
         def convert(self, extra: "dict") -> "Target":
             d = {}
             d["TARGET_X"] = self.source_x
-            return TargetAlias(**d)
+            target = TargetAlias(**d)
+            return target
         """
     )
     assert_ast_equal(code.get_ast(), expected_code)
@@ -91,7 +93,8 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
         """
         def convert(self, extra: "dict") -> "Target":
             d = {}
-            return TargetAlias(**d)
+            target = TargetAlias(**d)
+            return target
         """
     )
     assert_ast_equal(code.get_ast(), expected_code)
@@ -111,7 +114,8 @@ def test_provide_with_extra_code_check(code: CreateMappingMethodSourceCode):
             if "external_x" not in extra:
                 raise TypeError("When mapping an object of 'Source' to 'Target' the item 'external_x' needs to be provided in the `extra` dictionary")
             d["target_x"] = extra["external_x"]
-            return TargetAlias(**d)
+            target = TargetAlias(**d)
+            return target
         """  # noqa: E501
     )
     assert_ast_equal(code.get_ast(), expected_code)
