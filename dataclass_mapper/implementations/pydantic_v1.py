@@ -94,20 +94,17 @@ class PydanticV1ClassMeta(ClassMeta):
         )
 
     @classmethod
-    def only_if_set(cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta) -> bool:
+    def only_if_set(cls, target_field: FieldMeta, source_field: FieldMeta) -> bool:
         # maintain Pydantic's unset property
         return (
             isinstance(source_field.type, OptionalFieldType)
             and isinstance(target_field.type, OptionalFieldType)
             and not target_field.required
-            and source_cls._type == DataclassType.PYDANTIC
         )
 
     @classmethod
-    def skip_condition(
-        cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
-    ) -> Optional[cg.Expression]:
-        if cls.only_if_set(source_cls=source_cls, source_field=source_field, target_field=target_field):
+    def skip_condition(cls, target_field: FieldMeta, source_field: FieldMeta) -> Optional[cg.Expression]:
+        if cls.only_if_set(source_field=source_field, target_field=target_field):
             return cg.Constant(source_field.attribute_name).in_(
                 cg.AttributeLookup(cg.Variable("self"), "__fields_set__")
             )

@@ -1,4 +1,5 @@
 # mypy: disable-error-code="attr-defined"
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import pytest
@@ -128,6 +129,24 @@ def test_maintain_unset_field_infos():
     }
     assert mapped.x1 and mapped.x1.model_fields_set == {"x1"}
     assert mapped.l1 and mapped.l1[0].model_fields_set == {"x1"}
+
+
+def test_useset_fields_for_updates():
+    @dataclass
+    class Customer:
+        name: Optional[str]
+        age: Optional[int]
+        discount_amount: Optional[float]
+
+    @mapper(Customer)
+    class CustomerUpdate(BaseModel):
+        name: Optional[str] = None
+        age: Optional[int] = None
+        discount_amount: Optional[float] = None
+
+    customer = Customer(name="John Doe", age=41, discount_amount=10.0)
+    map_to(CustomerUpdate(age=42, discount_amount=None), customer)
+    assert customer == Customer(name="John Doe", age=42, discount_amount=None)
 
 
 def test_pydantic_with_alias():

@@ -55,9 +55,7 @@ class MappingMethodSourceCode(ABC):
 
         # Some classes (e.g. Pydantic) track if a field was set to None or was uninitialized.
         # By skipping the assignment, we can continue tracking the field over mappings.
-        if skip_condition := self.target_cls.skip_condition(
-            source_cls=self.source_cls, source_field=source, target_field=target
-        ):
+        if skip_condition := self.source_cls.skip_condition(source_field=source, target_field=target):
             statement = cg.IfElse(skip_condition, [statement])
 
         # During updates it's possible to skip the assignment if the source field is None.

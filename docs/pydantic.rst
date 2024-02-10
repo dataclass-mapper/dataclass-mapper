@@ -74,4 +74,26 @@ This library will remember which fields are set, and are unset.
    >>> sorted(foo.model_fields_set)
    ['x', 'z']
 
+This is also used for updates, even with other dataclasses.
+It will only update the set fields, however it's only possible if both fields are optional.
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Customer:
+   ...    name: Optional[str]
+   ...    age: Optional[int]
+   ...    discount_amount: Optional[float]
+   ...
+   >>> @mapper(Customer)
+   ... class CustomerUpdate(BaseModel):
+   ...    name: Optional[str] = None
+   ...    age: Optional[int] = None
+   ...    discount_amount: Optional[float] = None
+   ...
+   >>> customer = Customer(name="John Doe", age=41, discount_amount=10.0)
+   >>> map_to(CustomerUpdate(age=42, discount_amount=None), customer)
+   >>> customer
+   Customer(name='John Doe', age=42, discount_amount=None)
+
 .. include:: pydantic_v1.rst

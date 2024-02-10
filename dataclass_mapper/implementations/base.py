@@ -64,7 +64,5 @@ class ClassMeta(ABC):
         """Parse the given class"""
 
     @classmethod
-    def skip_condition(
-        cls, source_cls: Any, target_field: FieldMeta, source_field: FieldMeta
-    ) -> Optional[cg.Expression]:
+    def skip_condition(cls, target_field: FieldMeta, source_field: FieldMeta) -> Optional[cg.Expression]:
         return None
