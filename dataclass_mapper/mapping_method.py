@@ -251,15 +251,6 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         assignment = cg.Assignment(lhs=lookup, rhs=right_side)
         return self._post_process(source, target, assignment, only_if_source_is_set)
 
-    def _get_update_assignement(
-        self,
-        source: Optional[FieldMeta],
-        target: FieldMeta,
-        update_expression: cg.Statement,
-        only_if_source_is_set: bool,
-    ) -> cg.Statement:
-        return self._post_process(source, target, update_expression, only_if_source_is_set)
-
     def _add(self, is_ctor_code: bool, statement: cg.Statement) -> None:
         # Updates are always attribute assignements
         self.attribute_assignments.append(statement)
