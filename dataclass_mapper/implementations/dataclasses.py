@@ -1,4 +1,4 @@
-from dataclasses import MISSING, fields, is_dataclass
+from dataclasses import MISSING, fields, is_dataclass, replace
 from dataclasses import Field as DataclassField
 from inspect import getsource
 from typing import Any, Dict, cast, get_type_hints
@@ -14,12 +14,16 @@ class DataclassesFieldMeta(FieldMeta):
     @classmethod
     def from_dataclass(cls, field: DataclassField, real_type: Any) -> "DataclassesFieldMeta":
         has_default = field.default is not MISSING or field.default_factory is not MISSING
-        return cls(
+        field_meta = cls(
             attribute_name=field.name,
             type=compute_field_type(real_type),
             required=not has_default,
             initializer_param_name=field.name,
+            init_with_ctor=True,
         )
+        if not field.init:
+            field_meta = replace(field_meta, required=False, init_with_ctor=False)
+        return field_meta
 
 
 class DataclassClassMeta(ClassMeta):
@@ -31,7 +35,6 @@ class DataclassClassMeta(ClassMeta):
         return {
             field.name: DataclassesFieldMeta.from_dataclass(field, real_type=real_types[field.name])
             for field in fields(clazz)
-            if field.init
         }
 
     @staticmethod

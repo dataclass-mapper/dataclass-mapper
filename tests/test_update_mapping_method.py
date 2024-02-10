@@ -37,10 +37,18 @@ def code() -> UpdateMappingMethodSourceCode:
 def test_code_gen_add_normal_assignment(code: UpdateMappingMethodSourceCode) -> None:
     code.add_mapping(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="target_x",
+            init_with_ctor=True,
         ),
         source=FieldMeta(
-            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+            attribute_name="source_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
         ),
     )
     expected_code = prepare_expected_code(
@@ -55,10 +63,18 @@ def test_code_gen_add_normal_assignment(code: UpdateMappingMethodSourceCode) -> 
 def test_code_gen_alias_not_used_for_update(code: UpdateMappingMethodSourceCode) -> None:
     code.add_mapping(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="TARGET_X"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="TARGET_X",
+            init_with_ctor=True,
         ),
         source=FieldMeta(
-            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+            attribute_name="source_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
         ),
     )
     expected_code = prepare_expected_code(
@@ -73,10 +89,18 @@ def test_code_gen_alias_not_used_for_update(code: UpdateMappingMethodSourceCode)
 def test_code_gen_add_assignment_only_if_not_None(code: UpdateMappingMethodSourceCode) -> None:
     code.add_mapping(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=False, initializer_param_name="target_x"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=False,
+            initializer_param_name="target_x",
+            init_with_ctor=True,
         ),
         source=FieldMeta(
-            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+            attribute_name="source_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
         ),
         only_if_source_is_set=True,
     )
@@ -126,10 +150,18 @@ def test_recursive_update(code: UpdateMappingMethodSourceCode):
 
     code.add_mapping(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(FooTarget), required=True, initializer_param_name="target_x"
+            attribute_name="target_x",
+            type=ClassFieldType(FooTarget),
+            required=True,
+            initializer_param_name="target_x",
+            init_with_ctor=True,
         ),
         source=FieldMeta(
-            attribute_name="source_x", type=ClassFieldType(FooSource), required=True, initializer_param_name="source_x"
+            attribute_name="source_x",
+            type=ClassFieldType(FooSource),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
         ),
     )
     footarget_id = id(FooTarget)
@@ -145,7 +177,11 @@ def test_recursive_update(code: UpdateMappingMethodSourceCode):
 def test_provide_with_extra_code_check(code: UpdateMappingMethodSourceCode):
     code.add_from_extra(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="target_x",
+            init_with_ctor=True,
         ),
         source=FromExtra("external_x"),
     )

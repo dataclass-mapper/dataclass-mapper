@@ -29,6 +29,7 @@ class PydanticV2FieldMeta(FieldMeta):
             type=compute_field_type(field.annotation),
             required=field.is_required(),
             initializer_param_name=initializer_param_name,
+            init_with_ctor=True,
         )
 
 

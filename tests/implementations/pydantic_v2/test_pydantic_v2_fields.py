@@ -26,13 +26,17 @@ def test_pydantic_normal_field() -> None:
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
         "x": PydanticV2FieldMeta(
-            attribute_name="x", type=ClassFieldType(int), required=True, initializer_param_name="x"
+            attribute_name="x", type=ClassFieldType(int), required=True, initializer_param_name="x", init_with_ctor=True
         ),
         "y": PydanticV2FieldMeta(
-            attribute_name="y", type=ClassFieldType(str), required=True, initializer_param_name="y"
+            attribute_name="y", type=ClassFieldType(str), required=True, initializer_param_name="y", init_with_ctor=True
         ),
         "z": PydanticV2FieldMeta(
-            attribute_name="z", type=ListFieldType(ClassFieldType(int)), required=True, initializer_param_name="z"
+            attribute_name="z",
+            type=ListFieldType(ClassFieldType(int)),
+            required=True,
+            initializer_param_name="z",
+            init_with_ctor=True,
         ),
     }
 

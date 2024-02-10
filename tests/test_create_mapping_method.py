@@ -35,10 +35,18 @@ def code() -> CreateMappingMethodSourceCode:
 def test_code_gen_add_normal_assignment(code: CreateMappingMethodSourceCode) -> None:
     code.add_mapping(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="target_x",
+            init_with_ctor=True,
         ),
         source=FieldMeta(
-            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+            attribute_name="source_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
         ),
     )
     expected_code = prepare_expected_code(
@@ -56,10 +64,18 @@ def test_code_gen_add_normal_assignment(code: CreateMappingMethodSourceCode) -> 
 def test_code_gen_alias(code: CreateMappingMethodSourceCode) -> None:
     code.add_mapping(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="TARGET_X"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="TARGET_X",
+            init_with_ctor=True,
         ),
         source=FieldMeta(
-            attribute_name="source_x", type=ClassFieldType(int), required=True, initializer_param_name="source_x"
+            attribute_name="source_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
         ),
     )
     expected_code = prepare_expected_code(
@@ -76,18 +92,8 @@ def test_code_gen_alias(code: CreateMappingMethodSourceCode) -> None:
 
 def test_bypass_validators_option_disabled_for_dataclasses() -> None:
     code = CreateMappingMethodSourceCode(
-        source_cls=DataclassClassMeta(
-            name="Source",
-            fields={},
-            clazz=None,
-            internal_name="Source",
-        ),
-        target_cls=DataclassClassMeta(
-            name="Target",
-            fields={},
-            clazz=None,
-            internal_name="TargetAlias",
-        ),
+        source_cls=DataclassClassMeta(name="Source", fields={}, clazz=None, internal_name="Source"),
+        target_cls=DataclassClassMeta(name="Target", fields={}, clazz=None, internal_name="TargetAlias"),
     )
     expected_code = prepare_expected_code(
         """
@@ -103,7 +109,11 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
 def test_provide_with_extra_code_check(code: CreateMappingMethodSourceCode):
     code.add_from_extra(
         target=FieldMeta(
-            attribute_name="target_x", type=ClassFieldType(int), required=True, initializer_param_name="target_x"
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="target_x",
+            init_with_ctor=True,
         ),
         source=FromExtra("external_x"),
     )
@@ -117,5 +127,34 @@ def test_provide_with_extra_code_check(code: CreateMappingMethodSourceCode):
             target = TargetAlias(**d)
             return target
         """  # noqa: E501
+    )
+    assert_ast_equal(code.get_ast(), expected_code)
+
+
+def test_init_false_fields(code: CreateMappingMethodSourceCode):
+    code.add_mapping(
+        target=FieldMeta(
+            attribute_name="target_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="TARGET_X",
+            init_with_ctor=False,
+        ),
+        source=FieldMeta(
+            attribute_name="source_x",
+            type=ClassFieldType(int),
+            required=True,
+            initializer_param_name="source_x",
+            init_with_ctor=True,
+        ),
+    )
+    expected_code = prepare_expected_code(
+        """
+        def convert(self, extra: "dict") -> "Target":
+            d = {}
+            target = TargetAlias(**d)
+            target.target_x = self.source_x
+            return target
+        """
     )
     assert_ast_equal(code.get_ast(), expected_code)

@@ -32,6 +32,7 @@ class SQLAlchemyFieldMeta(FieldMeta):
             type=compute_field_type(type_),
             required=cls._is_required(field),
             initializer_param_name=attribute_name,
+            init_with_ctor=True,
         )
 
     @classmethod
@@ -126,6 +127,7 @@ class SQLAlchemyClassMeta(ClassMeta):
                 type=compute_field_type(type_),
                 required=False,  # TODO: is this always the case?
                 initializer_param_name=name,
+                init_with_ctor=True,
             )
             # todo: what if `relationship(viewonly=True)` is set?
         return fields

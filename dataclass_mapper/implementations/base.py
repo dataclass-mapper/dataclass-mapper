@@ -30,7 +30,7 @@ class FieldMeta:
     # The name that's used in the initializer method, via Target({initializer_param_name}=...)
     # Typically that's the same as the attribute name, however in certain cases (alias in Pydantic) it may differ.
     initializer_param_name: str
-    init_with_ctor: bool = True
+    init_with_ctor: bool
 
     def __repr__(self) -> str:
         return f"'{self.attribute_name}' of type '{self.type}'"

@@ -33,6 +33,7 @@ class PydanticV1FieldMeta(FieldMeta):
             type=compute_field_type(type_),
             required=field.required,
             initializer_param_name=initializer_param_name,
+            init_with_ctor=True,
         )
 
 

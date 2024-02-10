@@ -2,10 +2,27 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from dataclass_mapper import create_mapper, map_to, mapper
+from dataclass_mapper import create_mapper, ignore, map_to, mapper
 
 
 def test_dataclass_field_init_False():
+    @dataclass
+    class Target:
+        x: int
+        y: int = field(init=False)
+
+        def __post_init__(self):
+            self.y = self.x + 1
+
+    @mapper(Target, {"y": ignore()})
+    @dataclass
+    class Source:
+        x: int
+
+    assert map_to(Source(5), Target).y == 6
+
+
+def test_dataclass_field_init_False_with_mapping():
     @dataclass
     class Target:
         x: int
@@ -18,8 +35,27 @@ def test_dataclass_field_init_False():
     @dataclass
     class Source:
         x: int
+        y: int
 
-    assert map_to(Source(5), Target).y == 6
+    assert map_to(Source(x=5, y=4), Target).y == 4
+
+
+def test_dataclass_field_init_False_with_ignore_mapping():
+    @dataclass
+    class Target:
+        x: int
+        y: int = field(init=False)
+
+        def __post_init__(self):
+            self.y = self.x + 1
+
+    @mapper(Target, {"y": ignore()})
+    @dataclass
+    class Source:
+        x: int
+        y: int
+
+    assert map_to(Source(x=5, y=4), Target).y == 6
 
 
 def test_dataclass_custom_init():
