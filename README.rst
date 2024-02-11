@@ -133,6 +133,11 @@ The current version has support for:
 * SQLAlchemy ORM models:  see `SQLAlchemy ORM models <https://dataclass-mapper.readthedocs.io/en/latest/sqlalchemy.html>`_
 * Type/Value checks:  see `Type safety <https://dataclass-mapper.readthedocs.io/en/latest/type_safety.html>`_
 
+Demo project
+------------
+
+We maintain a small demo project, whichs shows some of the interworkings of the library together with a FastAPI API and SQLAlchemy ORM: `todo-app <https://github.com/dataclass-mapper/todo-app-demo>`_.
+
 Contributing
 ------------
 
