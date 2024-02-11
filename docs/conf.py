@@ -40,6 +40,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.autosectionlabel",
+    "enum_tools.autoenum",
     # "sphinxcontrib.plantuml",
 ]
 

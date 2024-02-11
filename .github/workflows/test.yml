@@ -23,11 +23,11 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up python ${{ matrix.python.version }}
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python.version }}
           allow-prereleases: true
@@ -48,14 +48,23 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+          - version: "3.8"
+            toxenv: py38
+          - version: "3.12"
+            toxenv: py312
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up python 3.10
-        uses: actions/setup-python@v4
+      - name: Set up python ${{ matrix.python.version }}
+        id: setup-python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python.version }}
+          allow-prereleases: true
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -65,7 +74,7 @@ jobs:
           installer-parallel: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root --extras "pydantic"
+        run: poetry install --no-interaction --no-root --all-extras
 
       - name: Run tests and collect coverage
         run: |
@@ -73,9 +82,11 @@ jobs:
           pytest --cov dataclass_mapper --cov-report xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Install old pydantic version
         run: |
@@ -88,6 +99,25 @@ jobs:
           pytest --cov dataclass_mapper --cov-report xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Uninstall pydantic and sqlalchemy
+        run: |
+          source .venv/bin/activate
+          pip uninstall --yes pydantic SQLAlchemy
+
+      - name: Run tests and collect coverage
+        run: |
+          source .venv/bin/activate
+          pytest --cov dataclass_mapper --cov-report xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

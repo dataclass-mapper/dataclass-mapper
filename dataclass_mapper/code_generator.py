@@ -1,87 +1,365 @@
+import ast
+import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import List, Optional, Union
+from copy import deepcopy
+from dataclasses import dataclass, field
+from typing import Any, List, Optional, Union
 
 
 class Expression(ABC):
+    store: bool = False
+
+    def as_store(self) -> "Expression":
+        new_ = deepcopy(self)
+        new_.store = True
+        return new_
+
+    def get_ctx(self):
+        if self.store:
+            return ast.Store()
+        else:
+            return ast.Load()
+
     @abstractmethod
-    def __str__(self) -> str:
+    def generate_ast(self) -> ast.expr:
         ...
+
+    def is_(self, other: "Expression") -> "Expression":
+        return Compare(self, other, ast.Is())
+
+    def is_not(self, other: "Expression") -> "Expression":
+        return Compare(self, other, ast.IsNot())
+
+    def in_(self, other: "Expression") -> "Expression":
+        return Compare(self, other, ast.In())
+
+    def not_in_(self, other: "Expression") -> "Expression":
+        return Compare(self, other, ast.NotIn())
+
+
+@dataclass
+class Variable(Expression):
+    name: str
+    type_: Optional[Expression] = None
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Name(id=self.name, ctx=self.get_ctx())
+
+    def as_arg(self) -> "Arg":
+        return Arg(name=self.name, type_=self.type_)
+
+
+@dataclass
+class Constant(Expression):
+    value: Any
+
+    def generate_ast(self) -> ast.expr:
+        if sys.version_info < (3, 9):
+            return ast.Constant(value=self.value, kind=None)
+        else:
+            return ast.Constant(value=self.value)
+
+
+NONE = Constant(None)
+
+
+@dataclass
+class EmptyDict(Expression):
+    def generate_ast(self) -> ast.expr:
+        return ast.Dict(keys=[], values=[])
+
+
+@dataclass
+class Compare(Expression):
+    left: Expression
+    right: Expression
+    operation: ast.cmpop
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Compare(left=self.left.generate_ast(), ops=[self.operation], comparators=[self.right.generate_ast()])
 
 
 @dataclass
 class DictLookup(Expression):
-    dict_name: Union[str, Expression]
-    key: Union[str, Expression]
+    dictionary: Expression
+    key: Expression
 
-    def __str__(self) -> str:
-        return f'{self.dict_name}["{self.key}"]'
+    def generate_ast(self) -> ast.expr:
+        value = self.dictionary.generate_ast()
+        if sys.version_info < (3, 9):
+            slice = ast.Index(value=self.key.generate_ast())
+        else:
+            slice = self.key.generate_ast()
+
+        return ast.Subscript(value=value, slice=slice, ctx=self.get_ctx())
+
+
+@dataclass
+class AttributeLookup(Expression):
+    obj: Expression
+    attribute: str
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Attribute(value=self.obj.generate_ast(), attr=self.attribute, ctx=self.get_ctx())
+
+
+@dataclass
+class TernaryOperator(Expression):
+    condition: Expression
+    true_case: Expression
+    false_case: Expression
+
+    def generate_ast(self) -> ast.expr:
+        return ast.IfExp(
+            test=self.condition.generate_ast(),
+            body=self.true_case.generate_ast(),
+            orelse=self.false_case.generate_ast(),
+        )
+
+
+@dataclass
+class ListComprehension(Expression):
+    expr: Expression
+    iter_var: Variable
+    container: Expression
+
+    def generate_ast(self) -> ast.expr:
+        return ast.ListComp(
+            elt=self.expr.generate_ast(),
+            generators=[
+                ast.comprehension(
+                    target=self.iter_var.as_store().generate_ast(),
+                    iter=self.container.generate_ast(),
+                    ifs=[],
+                    is_async=0,
+                )
+            ],
+        )
+
+
+@dataclass
+class Tuple(Expression):
+    expressions: List[Expression]
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Tuple(elts=[expr.generate_ast() for expr in self.expressions], ctx=ast.Load())
+
+
+@dataclass
+class SetComprehension(Expression):
+    expr: Expression
+    iter_var: Variable
+    container: Expression
+
+    def generate_ast(self) -> ast.expr:
+        return ast.SetComp(
+            elt=self.expr.generate_ast(),
+            generators=[
+                ast.comprehension(
+                    target=self.iter_var.as_store().generate_ast(),
+                    iter=self.container.generate_ast(),
+                    ifs=[],
+                    is_async=0,
+                )
+            ],
+        )
+
+
+@dataclass
+class DictComprehension(Expression):
+    key_expr: Expression
+    value_expr: Expression
+    key_var: Variable
+    value_var: Variable
+    container: Expression
+
+    def generate_ast(self) -> ast.expr:
+        return ast.DictComp(
+            key=self.key_expr.generate_ast(),
+            value=self.value_expr.generate_ast(),
+            generators=[
+                ast.comprehension(
+                    target=ast.Tuple(
+                        elts=[self.key_var.as_store().generate_ast(), self.value_var.as_store().generate_ast()],
+                        ctx=ast.Store(),
+                    ),
+                    iter=MethodCall(self.container, "items", []).generate_ast(),
+                    ifs=[],
+                    is_async=0,
+                )
+            ],
+        )
+
+
+@dataclass
+class Keyword:
+    value: Expression
+    arg: Optional[str] = None
+
+    def generate_ast(self) -> ast.keyword:
+        return ast.keyword(value=self.value.generate_ast(), arg=self.arg)
+
+
+@dataclass
+class MethodCall(Expression):
+    obj: Expression
+    method_name: str
+    args: List[Expression]
+    keywords: List[Keyword] = field(default_factory=list)
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Call(
+            func=AttributeLookup(self.obj, self.method_name).generate_ast(),
+            args=[arg.generate_ast() for arg in self.args],
+            keywords=[keyword.generate_ast() for keyword in self.keywords],
+        )
+
+
+@dataclass
+class FunctionCall(Expression):
+    function: Expression
+    args: List[Expression]
+    keywords: List[Keyword] = field(default_factory=list)
+
+    def generate_ast(self) -> ast.expr:
+        return ast.Call(
+            func=self.function.generate_ast(),
+            args=[arg.generate_ast() for arg in self.args],
+            keywords=[keyword.generate_ast() for keyword in self.keywords],
+        )
 
 
 class Statement(ABC):
     @abstractmethod
-    def to_string(self, indent: int) -> str:
+    def generate_ast(self) -> ast.stmt:  # TODO
         ...
 
 
 @dataclass
+class ExpressionStatement(Statement):
+    expression: Expression
+
+    def generate_ast(self) -> ast.stmt:
+        return ast.Expr(value=self.expression.generate_ast())
+
+
+class Pass(Statement):
+    def generate_ast(self) -> ast.stmt:
+        return ast.Pass()
+
+
+@dataclass
 class Assignment(Statement):
-    name: Union[str, Expression]
-    rhs: Union[str, Expression]
+    lhs: Expression
+    rhs: Expression
 
-    def to_string(self, indent: int) -> str:
-        return f"{' '*indent}{self.name} = {self.rhs}"
-
-
-class Block(Statement):
-    def __init__(self, *statements: Statement):
-        self.statements = list(statements)
-
-    def append(self, statement: Statement) -> None:
-        self.statements.append(statement)
-
-    def to_string(self, indent: int) -> str:
-        return "\n".join(statement.to_string(indent) for statement in self.statements)
+    def generate_ast(self) -> ast.stmt:
+        targets = [self.lhs.as_store().generate_ast()]
+        value = self.rhs.generate_ast()
+        if sys.version_info < (3, 9):
+            return ast.Assign(targets=targets, value=value, type_comment=None)
+        else:
+            return ast.Assign(targets=targets, value=value)
 
 
 @dataclass
 class Raise(Statement):
     exception: str
+    message: str
 
-    def to_string(self, indent: int) -> str:
-        return f"{' '*indent}raise {self.exception}"
+    def generate_ast(self) -> ast.stmt:
+        exc = ast.Call(
+            func=ast.Name(id=self.exception, ctx=ast.Load()), args=[Constant(self.message).generate_ast()], keywords=[]
+        )
+
+        if sys.version_info < (3, 9):
+            return ast.Raise(exc=exc, cause=None)
+        else:
+            return ast.Raise(exc=exc)
 
 
 @dataclass
 class IfElse(Statement):
-    condition: Union[str, Expression]
-    if_block: Statement
-    else_block: Optional[Statement] = None
+    condition: Expression
+    if_block: List[Statement]
+    else_block: List[Statement] = field(default_factory=list)
 
-    def to_string(self, indent: int) -> str:
-        lines: List[str] = []
-        lines.append(f"{' '*indent}if {self.condition}:")
-        lines.append(self.if_block.to_string(indent + 4))
-        if self.else_block:
-            lines.append(f"{' '*indent}else:")
-            lines.append(self.else_block.to_string(indent + 4))
-        return "\n".join(lines)
+    def generate_ast(self) -> ast.stmt:
+        return ast.If(
+            test=self.condition.generate_ast(),
+            body=[stmt.generate_ast() for stmt in self.if_block],
+            orelse=[stmt.generate_ast() for stmt in self.else_block],
+        )
 
 
 @dataclass
-class Return(Statement):
-    rhs: Union[str, Expression]
+class Return:
+    expression: Expression
 
-    def to_string(self, indent: int) -> str:
-        return f"{' '*indent}return {self.rhs}"
+    def generate_ast(self) -> ast.stmt:
+        return ast.Return(value=self.expression.generate_ast())
+
+
+@dataclass
+class Arg:
+    name: str
+    type_: Optional[Expression] = None
+
+    def generate_ast(self):
+        annotation = None if self.type_ is None else self.type_.generate_ast()
+
+        if sys.version_info < (3, 9):
+            return ast.arg(arg=self.name, annotation=annotation, type_comment=None)
+        else:
+            return ast.arg(arg=self.name, annotation=annotation)
 
 
 @dataclass
 class Function(Statement):
     name: str
-    args: str
-    return_type: str
-    body: Block
+    args: List[Union[Arg, Variable]]
+    return_type: Expression
+    body: List[Any]
 
-    def to_string(self, indent: int) -> str:
-        return f'{" "*indent}def convert({self.args}) -> "{self.return_type}":\n{self.body.to_string(indent+4)}'
+    def generate_ast(self) -> ast.stmt:
+        name = self.name
+        args = ast.arguments(
+            args=[(arg if isinstance(arg, Arg) else arg.as_arg()).generate_ast() for arg in self.args],
+            posonlyargs=[],
+            vararg=None,
+            kwonlyargs=[],
+            kw_defaults=[],
+            kwarg=None,
+            defaults=[],
+        )
+        body = [stmt.generate_ast() for stmt in self.body] or [Pass().generate_ast()]
+        returns = self.return_type.generate_ast()
+
+        if sys.version_info < (3, 9):
+            return ast.FunctionDef(
+                name=name,
+                args=args,
+                body=body,
+                decorator_list=[],
+                returns=returns,
+                type_comment=None,
+            )
+        elif sys.version_info < (3, 12):
+            return ast.FunctionDef(
+                name=name,
+                args=args,
+                body=body,
+                decorator_list=[],
+                returns=returns,
+            )
+        else:
+            return ast.FunctionDef(name=name, args=args, body=body, decorator_list=[], returns=returns, type_params=[])
+
+
+@dataclass
+class Module:
+    stmts: List[Any]
+
+    def generate_ast(self) -> ast.Module:
+        m = ast.Module(body=[stmt.generate_ast() for stmt in self.stmts], type_ignores=[])
+        return ast.fix_missing_locations(m)

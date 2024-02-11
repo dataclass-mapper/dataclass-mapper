@@ -1,16 +1,17 @@
 # mypy: disable-error-code="attr-defined"
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel, Field
 
 from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper
+from dataclass_mapper.mapper_mode import MapperMode
 
-if pydantic_version() < (2, 0, 0):
+if pydantic_version()[0] != 2:
     pytest.skip("V2 validators syntax", allow_module_level=True)
 
-from pydantic import ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Bar(BaseModel):
@@ -130,6 +131,24 @@ def test_maintain_unset_field_infos():
     assert mapped.l1 and mapped.l1[0].model_fields_set == {"x1"}
 
 
+def test_useset_fields_for_updates():
+    @dataclass
+    class Customer:
+        name: Optional[str]
+        age: Optional[int]
+        discount_amount: Optional[float]
+
+    @mapper(Customer)
+    class CustomerUpdate(BaseModel):
+        name: Optional[str] = None
+        age: Optional[int] = None
+        discount_amount: Optional[float] = None
+
+    customer = Customer(name="John Doe", age=41, discount_amount=10.0)
+    map_to(CustomerUpdate(age=42, discount_amount=None), customer)
+    assert customer == Customer(name="John Doe", age=42, discount_amount=None)
+
+
 def test_pydantic_with_alias():
     class BarWithAlias(BaseModel):
         x: int = Field(alias="xxx")
@@ -164,3 +183,33 @@ def test_pydantic_with_alias_allow_population_with_fields():
     foo = Foo(x=42)
     bar = BarWithAliasAllowFieldPopulation(x=42)  # type: ignore[call-arg]
     assert map_to(foo, BarWithAliasAllowFieldPopulation) == bar
+
+
+def test_pydantic_update_with_explicit_None():
+    class Foo(BaseModel):
+        x: Optional[int]
+
+    @mapper(Foo, mapper_mode=MapperMode.UPDATE)
+    class FooUpdate(BaseModel):
+        x: Optional[int] = None
+
+    foo = Foo(x=5)
+    map_to(FooUpdate(), foo)
+    assert foo.x == 5
+
+    map_to(FooUpdate(x=None), foo)
+    assert foo.x is None
+
+
+def test_pydantic_update_with_alias():
+    class BarWithAlias(BaseModel):
+        x: int = Field(alias="y")
+
+    @mapper(BarWithAlias)
+    class Foo(BaseModel):
+        x: int
+
+    bar = BarWithAlias(y=5)
+    assert bar.x == 5
+    map_to(Foo(x=42), bar)
+    assert bar.x == 42

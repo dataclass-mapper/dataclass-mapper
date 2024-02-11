@@ -101,7 +101,7 @@ you can write:
 
 .. doctest::
 
-   >>> from dataclass_mapper import map_to, mapper, enum_mapper, provide_with_extra
+   >>> from dataclass_mapper import map_to, mapper, enum_mapper, from_extra
    >>>
    >>> @mapper(Person, {
    ...   "second_name": "surname",
@@ -120,7 +120,7 @@ you can write:
    ...     FREELANCER = "FREELANCER"
    ...     SUBCOMPANY = "SUBCOMPANY"
    >>>       
-   >>> @mapper(WorkContract, {"signable": lambda: True, "employment": "contract_type", "location": provide_with_extra()})
+   >>> @mapper(WorkContract, {"signable": lambda: True, "employment": "contract_type", "location": from_extra("location")})
    ... @dataclass
    ... class SoftwareDeveloperContract:
    ...     worker: ContactInfo

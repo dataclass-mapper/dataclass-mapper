@@ -4,13 +4,15 @@ import sys
 from typing import List, Optional
 
 import pytest
-from pydantic import BaseModel, Field
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
+from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType, compute_field_type
 from dataclass_mapper.implementations.pydantic_v1 import PydanticV1FieldMeta, pydantic_version
 
-if pydantic_version() >= (2, 0, 0):
+if pydantic_version()[0] != 1:
     pytest.skip("V1 validators syntax", allow_module_level=True)
+
+from pydantic import BaseModel, Field
 
 empty_namespace = Namespace(locals={}, globals={})
 
@@ -23,9 +25,27 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
-        "x": PydanticV1FieldMeta(name="x", type=int, allow_none=False, required=True, alias="x"),
-        "y": PydanticV1FieldMeta(name="y", type=str, allow_none=False, required=True, alias="y"),
-        "z": PydanticV1FieldMeta(name="z", type=List[int], allow_none=False, required=True, alias="z"),
+        "x": PydanticV1FieldMeta(
+            attribute_name="x",
+            type=compute_field_type(int),
+            required=True,
+            initializer_param_name="x",
+            init_with_ctor=True,
+        ),
+        "y": PydanticV1FieldMeta(
+            attribute_name="y",
+            type=compute_field_type(str),
+            required=True,
+            initializer_param_name="y",
+            init_with_ctor=True,
+        ),
+        "z": PydanticV1FieldMeta(
+            attribute_name="z",
+            type=compute_field_type(List[int]),
+            required=True,
+            initializer_param_name="z",
+            init_with_ctor=True,
+        ),
     }
 
 
@@ -35,11 +55,8 @@ def test_pydantic_optional_fields() -> None:
         y: Optional[List[int]]
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "typing.List[int]"
-    assert fields["y"].allow_none
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
+    assert fields["y"].type == OptionalFieldType(ListFieldType(ClassFieldType(int)))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
@@ -48,9 +65,7 @@ def test_pydantic_optional_fields_with_union():
         x: int | None
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
 
 
 def test_pydantic_defaults_field() -> None:
@@ -83,11 +98,11 @@ def test_pydantic_alias() -> None:
         c: int
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "b"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "b"
 
-    assert fields["c"].name == "c"
-    assert fields["c"].alias == "c"
+    assert fields["c"].attribute_name == "c"
+    assert fields["c"].initializer_param_name == "c"
 
     class Bar(BaseModel):
         a: int
@@ -97,15 +112,25 @@ def test_pydantic_alias() -> None:
                 return x.upper()
 
     fields = get_class_meta(Bar, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "A"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "A"
 
     class Baz(BaseModel):
         a: int
 
         class Config:
-            fields = {"a": "aaa"}
+            fields = {"a": "aaa"}  # noqa: RUF012
 
     fields = get_class_meta(Baz, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "aaa"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "aaa"
+
+    class FooBar(BaseModel):
+        a: int = Field(alias="b")
+
+        class Config:
+            allow_population_by_field_name = True
+
+    fields = get_class_meta(FooBar, namespace=empty_namespace).fields
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "a"

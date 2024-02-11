@@ -4,15 +4,15 @@ import sys
 from typing import List, Optional
 
 import pytest
-from pydantic import BaseModel, Field
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
+from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType
 from dataclass_mapper.implementations.pydantic_v2 import PydanticV2FieldMeta, pydantic_version
 
-if pydantic_version() < (2, 0, 0):
+if pydantic_version()[0] != 2:
     pytest.skip("V2 validators syntax", allow_module_level=True)
 
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 empty_namespace = Namespace(locals={}, globals={})
 
@@ -25,9 +25,19 @@ def test_pydantic_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
     assert fields == {
-        "x": PydanticV2FieldMeta(name="x", type=int, allow_none=False, required=True, alias=None),
-        "y": PydanticV2FieldMeta(name="y", type=str, allow_none=False, required=True, alias=None),
-        "z": PydanticV2FieldMeta(name="z", type=List[int], allow_none=False, required=True, alias=None),
+        "x": PydanticV2FieldMeta(
+            attribute_name="x", type=ClassFieldType(int), required=True, initializer_param_name="x", init_with_ctor=True
+        ),
+        "y": PydanticV2FieldMeta(
+            attribute_name="y", type=ClassFieldType(str), required=True, initializer_param_name="y", init_with_ctor=True
+        ),
+        "z": PydanticV2FieldMeta(
+            attribute_name="z",
+            type=ListFieldType(ClassFieldType(int)),
+            required=True,
+            initializer_param_name="z",
+            init_with_ctor=True,
+        ),
     }
 
 
@@ -37,11 +47,8 @@ def test_pydantic_optional_fields() -> None:
         y: Optional[List[int]]
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "typing.List[int]"
-    assert fields["y"].allow_none
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
+    assert fields["y"].type == OptionalFieldType(ListFieldType(ClassFieldType(int)))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
@@ -50,9 +57,7 @@ def test_pydantic_optional_fields_with_union():
         x: int | None
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
 
 
 def test_pydantic_defaults_field() -> None:
@@ -85,11 +90,11 @@ def test_pydantic_alias() -> None:
         c: int
 
     fields = get_class_meta(Foo, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "b"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "b"
 
-    assert fields["c"].name == "c"
-    assert fields["c"].alias is None
+    assert fields["c"].attribute_name == "c"
+    assert fields["c"].initializer_param_name == "c"
 
     class Bar(BaseModel):
         a: int
@@ -97,5 +102,14 @@ def test_pydantic_alias() -> None:
         model_config = ConfigDict(alias_generator=lambda x: x.upper())
 
     fields = get_class_meta(Bar, namespace=empty_namespace).fields
-    assert fields["a"].name == "a"
-    assert fields["a"].alias == "A"
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "A"
+
+    class Baz(BaseModel):
+        a: int = Field(alias="b")
+
+        model_config = ConfigDict(populate_by_name=True)
+
+    fields = get_class_meta(Baz, namespace=empty_namespace).fields
+    assert fields["a"].attribute_name == "a"
+    assert fields["a"].initializer_param_name == "a"

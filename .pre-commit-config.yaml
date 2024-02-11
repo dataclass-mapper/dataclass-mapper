@@ -1,16 +1,8 @@
 repos:
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.0.292'
+    rev: 'v0.2.1'
     hooks:
       - id: ruff
--   repo: https://github.com/psf/black
-    rev: 23.9.1
-    hooks:
-      - id: black
--   repo: https://github.com/floatingpurr/sync_with_poetry
-    rev: 1.1.0
-    hooks:
-      - id: sync_with_poetry
-        args: ["--db", ".pre-commit-sync-repos.json"]
+      - id: ruff-format
 ci:
     autoupdate_schedule: quarterly

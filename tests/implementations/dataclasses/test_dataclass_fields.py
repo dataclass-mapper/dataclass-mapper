@@ -5,6 +5,7 @@ from typing import List, Optional
 import pytest
 
 from dataclass_mapper.classmeta import Namespace, get_class_meta
+from dataclass_mapper.fieldtypes import ClassFieldType, ListFieldType, OptionalFieldType
 from dataclass_mapper.implementations.dataclasses import DataclassesFieldMeta
 
 
@@ -17,9 +18,19 @@ def test_dataclass_normal_field() -> None:
 
     fields = get_class_meta(Foo, namespace=Namespace(locals={}, globals={})).fields
     assert fields == {
-        "x": DataclassesFieldMeta(name="x", type=int, allow_none=False, required=True),
-        "y": DataclassesFieldMeta(name="y", type=str, allow_none=False, required=True),
-        "z": DataclassesFieldMeta(name="z", type=List[int], allow_none=False, required=True),
+        "x": DataclassesFieldMeta(
+            attribute_name="x", type=ClassFieldType(int), required=True, initializer_param_name="x", init_with_ctor=True
+        ),
+        "y": DataclassesFieldMeta(
+            attribute_name="y", type=ClassFieldType(str), required=True, initializer_param_name="y", init_with_ctor=True
+        ),
+        "z": DataclassesFieldMeta(
+            attribute_name="z",
+            type=ListFieldType(ClassFieldType(int)),
+            required=True,
+            initializer_param_name="z",
+            init_with_ctor=True,
+        ),
     }
 
 
@@ -30,11 +41,8 @@ def test_dataclass_optional_fields() -> None:
         y: Optional[List[int]]
 
     fields = get_class_meta(Foo, namespace=Namespace(locals={}, globals={})).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
-    assert str(fields["y"].type) == "typing.List[int]"
-    assert fields["y"].allow_none
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
+    assert fields["y"].type == OptionalFieldType(ListFieldType(ClassFieldType(int)))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Union types are introduced for Python 3.10")
@@ -44,9 +52,7 @@ def test_dataclass_optional_fields_with_union():
         x: int | None  # type: ignore[syntax]
 
     fields = get_class_meta(Foo, namespace=Namespace(locals={}, globals={})).fields
-    assert fields["x"].type is int
-    assert fields["x"].allow_none
-    assert not fields["x"].disallow_none
+    assert fields["x"].type == OptionalFieldType(ClassFieldType(int))
 
 
 def test_dataclass_defaults_field() -> None:

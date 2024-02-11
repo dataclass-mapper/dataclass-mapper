@@ -21,11 +21,11 @@ Additionally it can work with ``alias`` fields, and also with the ``populate_by_
    >>> from enum import Enum, auto
    >>> from typing import Optional
    >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, assume_not_none
-   >>> from pydantic import BaseModel, Field
    >>> import pytest
    >>> from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
-   >>> if pydantic_version() < (2, 0, 0):
+   >>> if pydantic_version()[0] != 2:
    ...     pytest.skip("V2 validators syntax", allow_module_level=True)
+   >>> from pydantic import BaseModel, Field
    >>> from pydantic import field_validator
 
 .. doctest::
@@ -70,8 +70,30 @@ This library will remember which fields are set, and are unset.
    ['x', 'z']
    >>> foo = map_to(bar, Foo)
    >>> foo
-   Foo(x=1.23, z=None, y=None)
+   Foo(x=1.23, y=None, z=None)
    >>> sorted(foo.model_fields_set)
    ['x', 'z']
+
+This is also used for updates, even with other dataclasses.
+It will only update the set fields, however it's only possible if both fields are optional.
+
+.. doctest::
+
+   >>> @dataclass
+   ... class Customer:
+   ...    name: Optional[str]
+   ...    age: Optional[int]
+   ...    discount_amount: Optional[float]
+   ...
+   >>> @mapper(Customer)
+   ... class CustomerUpdate(BaseModel):
+   ...    name: Optional[str] = None
+   ...    age: Optional[int] = None
+   ...    discount_amount: Optional[float] = None
+   ...
+   >>> customer = Customer(name="John Doe", age=41, discount_amount=10.0)
+   >>> map_to(CustomerUpdate(age=42, discount_amount=None), customer)
+   >>> customer
+   Customer(name='John Doe', age=42, discount_amount=None)
 
 .. include:: pydantic_v1.rst

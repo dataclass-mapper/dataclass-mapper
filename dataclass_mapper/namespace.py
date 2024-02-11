@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 
-@dataclass
+@dataclass(frozen=True)
 class Namespace:
     locals: Dict[str, Any]
     globals: Dict[str, Any]

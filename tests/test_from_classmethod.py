@@ -1,8 +1,14 @@
 from typing import List
 
-from pydantic import BaseModel
+import pytest
 
+from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper_from
+
+if pydantic_version()[0] == 0:
+    pytest.skip("Pydantic tests", allow_module_level=True)
+
+from pydantic import BaseModel
 
 
 def test_pydantic_from():

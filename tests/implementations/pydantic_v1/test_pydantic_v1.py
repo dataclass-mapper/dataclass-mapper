@@ -1,15 +1,14 @@
 from typing import Dict, List, Optional
 
 import pytest
-from pydantic import BaseModel, Field
 
 from dataclass_mapper.implementations.pydantic_v1 import pydantic_version
 from dataclass_mapper.mapper import map_to, mapper
 
-if pydantic_version() >= (2, 0, 0):
+if pydantic_version()[0] != 1:
     pytest.skip("V1 validators syntax", allow_module_level=True)
 
-from pydantic import validator
+from pydantic import BaseModel, Field, validator
 
 
 class Bar(BaseModel):
@@ -141,7 +140,7 @@ def test_pydantic_with_alias():
             return v
 
         class Config:
-            fields = {"y": "yyy"}
+            fields = {"y": "yyy"}  # noqa: RUF012
 
     @mapper(BarWithAlias)
     class Foo(BaseModel):

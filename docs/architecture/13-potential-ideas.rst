@@ -10,7 +10,9 @@ Extra with keys
 ===============
 
 C#'s Automapper library has a feature, where you can use a key to fill certain fields.
-I.e. you mark a field with ``provide_with_extra("age")``, and then pass the value with ``map_to(contact, Person, extra={"age": 42})``.
+I.e. you mark a field with ``from_extra("age")``, and then pass the value with ``map_to(contact, Person, extra={"age": 42})``.
+
+Actually, it's not a feature from Automapper. It was a custom Automapper extension.
 
 Check ``Any`` support
 =====================

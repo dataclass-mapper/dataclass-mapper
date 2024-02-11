@@ -11,7 +11,7 @@ Business Context
 ..    actor User
 
 ..    package "Controller" {
-..       [Controller] as C
+..       Controller] as C
 ..       [Controller Model] as CM
 ..       C --> CM : uses
 ..    }
