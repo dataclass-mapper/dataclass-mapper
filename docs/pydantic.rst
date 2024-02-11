@@ -70,7 +70,7 @@ This library will remember which fields are set, and are unset.
    ['x', 'z']
    >>> foo = map_to(bar, Foo)
    >>> foo
-   Foo(x=1.23, z=None, y=None)
+   Foo(x=1.23, y=None, z=None)
    >>> sorted(foo.model_fields_set)
    ['x', 'z']
 
