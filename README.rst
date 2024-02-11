@@ -23,9 +23,9 @@ dataclass-mapper
     :target: https://pypi.org/project/dataclass-mapper/
     :alt: licence
 
-.. |readthedocs| image:: https://img.shields.io/readthedocs/dataclass-mapper/latest.svg?style=flat-square&label=Read%20the%20Docs
-   :alt: Read the documentation at https://dataclass-mapper.readthedocs.io/en/latest/
-   :target: https://dataclass-mapper.readthedocs.io/en/stable/
+.. |readthedocs| image:: https://img.shields.io/readthedocs/dataclass-mapper/v1.9.x.svg?style=flat-square&label=Read%20the%20Docs
+   :alt: Read the documentation at https://dataclass-mapper.readthedocs.io/en/v1.9.x/
+   :target: https://dataclass-mapper.readthedocs.io/en/v1.9.x/
 
 Writing mapper methods between two similar dataclasses is boring, need to be actively maintained and are error-prone.
 Much better to let this library auto-generate them for you.
@@ -125,10 +125,10 @@ Features
 
 The current version has support for:
 
-* Python's ``dataclass`` (with recursive models, custom initializers, optional types, extra-context, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/latest/features.html>`_ for the full list and examples
-* Mappings between Enum classes:  see `Enum mappings <https://dataclass-mapper.readthedocs.io/en/latest/enums.html>`_
-* Pydantic models:  see `Pydantic support <https://dataclass-mapper.readthedocs.io/en/latest/pydantic.html>`_
-* Type/Value checks:  see `Type safety <https://dataclass-mapper.readthedocs.io/en/latest/type_safety.html>`_
+* Python's ``dataclass`` (with recursive models, custom initializers, optional types, extra-context, ...): see `Supported features <https://dataclass-mapper.readthedocs.io/en/v1.9.x/features.html>`_ for the full list and examples
+* Mappings between Enum classes:  see `Enum mappings <https://dataclass-mapper.readthedocs.io/en/v1.9.x/enums.html>`_
+* Pydantic models:  see `Pydantic support <https://dataclass-mapper.readthedocs.io/en/v1.9.x/pydantic.html>`_
+* Type/Value checks:  see `Type safety <https://dataclass-mapper.readthedocs.io/en/v1.9.x/type_safety.html>`_
 
 Contributing
 ------------
