@@ -85,8 +85,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Install old pydantic version
         run: |
@@ -102,8 +101,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Uninstall pydantic and sqlalchemy
         run: |
@@ -119,5 +117,4 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
