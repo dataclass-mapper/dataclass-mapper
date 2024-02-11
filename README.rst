@@ -15,8 +15,8 @@ dataclass-mapper
     :target: https://github.com/dataclass-mapper/dataclass-mapper/actions
     :alt: build status
 
-.. |coverage| image:: https://codecov.io/gh/dataclass-mapper/dataclass-mapper/branch/main/graphs/badge.svg?branch=main
-    :target: https://codecov.io/gh/dataclass-mapper/dataclass-mapper?branch=main
+.. |coverage| image:: https://codecov.io/gh/dataclass-mapper/dataclass-mapper/branch/develop/graphs/badge.svg?branch=develop
+    :target: https://codecov.io/gh/dataclass-mapper/dataclass-mapper?branch=develop
     :alt: Code coverage
 
 .. |licence| image:: https://img.shields.io/pypi/l/dataclass-mapper.svg?style=flat-square
@@ -136,9 +136,9 @@ The current version has support for:
 Contributing
 ------------
 
-See `CONTRIBUTING.rst <https://github.com/dataclass-mapper/dataclass-mapper/blob/main/CONTRIBUTING.rst>`_.
+See `CONTRIBUTING.rst <https://github.com/dataclass-mapper/dataclass-mapper/blob/develop/CONTRIBUTING.rst>`_.
 
 License
 -------
 
-The project is released under the `MIT license <https://github.com/dataclass-mapper/dataclass-mapper/blob/main/LICENSE.md>`_.
+The project is released under the `MIT license <https://github.com/dataclass-mapper/dataclass-mapper/blob/develop/LICENSE.md>`_.
