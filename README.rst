@@ -25,7 +25,7 @@ dataclass-mapper
 
 .. |readthedocs| image:: https://img.shields.io/readthedocs/dataclass-mapper/latest.svg?style=flat-square&label=Read%20the%20Docs
    :alt: Read the documentation at https://dataclass-mapper.readthedocs.io/en/latest/
-   :target: https://dataclass-mapper.readthedocs.io/en/latest/
+   :target: https://dataclass-mapper.readthedocs.io/en/stable/
 
 Writing mapper methods between two similar dataclasses is boring, need to be actively maintained and are error-prone.
 Much better to let this library auto-generate them for you.
