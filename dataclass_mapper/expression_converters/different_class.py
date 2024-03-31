@@ -1,7 +1,7 @@
-from dataclass_mapper.code_generator import Expression, MethodCall, Variable
+from dataclass_mapper.code_generator import Constant, DictLookup, Expression, FunctionCall, Variable
+from dataclass_mapper.collection import COLLECTION
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
-from dataclass_mapper.utils import get_map_to_func_name, is_mappable_to
 
 from .expression_converter import ExpressionConverter
 
@@ -12,12 +12,15 @@ class DifferentClassExpressionConverter(ExpressionConverter):
             isinstance(source, ClassFieldType)
             and isinstance(target, ClassFieldType)
             and source.cls_type is not target.cls_type
-            and is_mappable_to(source.cls_type, target.cls_type)
+            and COLLECTION.contains_create(source.cls_type, target.cls_type)
         )
 
     def map_expression(
         self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
     ) -> Expression:
+        assert isinstance(source, ClassFieldType)
         assert isinstance(target, ClassFieldType)
         extra_variable = Variable("extra")
-        return MethodCall(source_exp, get_map_to_func_name(target.cls_type), [extra_variable])
+        func_name = COLLECTION.create_func_name(source.cls_type, target.cls_type)
+        function = DictLookup(Variable("COLLECTION"), Constant(func_name))
+        return FunctionCall(function, [source_exp, extra_variable])

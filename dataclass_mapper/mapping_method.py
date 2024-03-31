@@ -92,7 +92,8 @@ class MappingMethodSourceCode(ABC):
         else:
             self.factories[factory_name] = source
 
-        factory_call = cg.MethodCall(SELF_VAR, factory_name, [])
+        factory = cg.DictLookup(cg.Variable("COLLECTION"), cg.Constant(factory_name))
+        factory_call = cg.FunctionCall(factory, [] if parameter_cnt == 0 else [SELF_VAR])
         assignment = self._get_assignment(None, target, factory_call, only_if_source_is_set=False)
         self._add(target.init_with_ctor, assignment)
 

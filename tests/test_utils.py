@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 import pytest
 
+from dataclass_mapper.collection import COLLECTION
 from dataclass_mapper.mapper import create_mapper
-from dataclass_mapper.utils import get_map_to_func_name, get_mapupdate_to_func_name, is_mappable_to, is_updatable_to
 
 
 def test_is_mappable_to():
@@ -17,12 +17,12 @@ def test_is_mappable_to():
 
     create_mapper(Foo, Bar)
 
-    assert is_mappable_to(Foo, Bar)
-    assert not is_mappable_to(Bar, Foo)
-    assert not is_mappable_to(1, 2)
+    assert COLLECTION.contains_create(Foo, Bar)
+    assert not COLLECTION.contains_create(Bar, Foo)
+    assert not COLLECTION.contains_create(int, int)
 
 
-def test_is_updabtable_to():
+def test_is_updatable_to():
     @dataclass
     class Foo:
         pass
@@ -33,14 +33,14 @@ def test_is_updabtable_to():
 
     create_mapper(Foo, Bar)
 
-    assert is_updatable_to(Foo, Bar)
-    assert not is_updatable_to(Bar, Foo)
-    assert not is_updatable_to(1, 2)
+    assert COLLECTION.contains_update(Foo, Bar)
+    assert not COLLECTION.contains_update(Bar, Foo)
+    assert not COLLECTION.contains_update(int, int)
 
 
 def test_naming_for_object_fails():
     with pytest.raises(TypeError):
-        assert get_map_to_func_name(5)
+        assert COLLECTION.get_create_code(5, 5)  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        assert get_mapupdate_to_func_name(5)
+        assert COLLECTION.get_update_code(5, 5)  # type: ignore[arg-type]

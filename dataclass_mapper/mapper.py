@@ -5,6 +5,7 @@ from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
 from .classmeta import get_class_meta
+from .collection import COLLECTION
 from .enum import EnumMapping, make_enum_mapper
 from .fieldtypes.optional import OptionalFieldType
 from .implementations.class_type import ClassType
@@ -24,7 +25,6 @@ from .special_field_mappings import (
     StringSqlAlchemyFieldMapping,
     UpdateOnlyIfSet,
 )
-from .utils import get_map_to_func_name, get_mapupdate_to_func_name
 
 
 def _make_mapper(
@@ -106,7 +106,11 @@ def _make_mapper(
         else:
             raise AssertionError("impossible to reach")
 
-    return source_code.get_ast(), source_code.factories, {target_cls_meta.internal_name: target_cls}
+    return (
+        source_code.get_ast(),
+        source_code.factories,
+        {target_cls_meta.internal_name: target_cls, "COLLECTION": COLLECTION},
+    )
 
 
 def create_mapper(
@@ -223,7 +227,6 @@ def add_mapper_function(
     field_mapping = mapping or cast(StringSqlAlchemyFieldMapping, {})
 
     if mapper_mode in (MapperMode.CREATE, MapperMode.CREATE_AND_UPDATE):
-        create_map_func_name = get_map_to_func_name(TargetCls)
         add_specific_mapper_function(
             SourceCls=SourceCls,
             TargetCls=TargetCls,
@@ -231,11 +234,9 @@ def add_mapper_function(
             source_code_type=CreateMappingMethodSourceCode,
             mapper_mode=mapper_mode,
             namespace=namespace,
-            map_func_name=create_map_func_name,
         )
 
     if mapper_mode in (MapperMode.UPDATE, MapperMode.CREATE_AND_UPDATE):
-        update_map_func_name = get_mapupdate_to_func_name(TargetCls)
         add_specific_mapper_function(
             SourceCls=SourceCls,
             TargetCls=TargetCls,
@@ -243,7 +244,6 @@ def add_mapper_function(
             source_code_type=UpdateMappingMethodSourceCode,
             mapper_mode=mapper_mode,
             namespace=namespace,
-            map_func_name=update_map_func_name,
         )
 
 
@@ -254,7 +254,6 @@ def add_specific_mapper_function(
     namespace: Namespace,
     source_code_type: Type[MappingMethodSourceCode],
     mapper_mode: MapperMode,
-    map_func_name: str,
 ) -> None:
     map_code_ast, factories, context = _make_mapper(
         field_mapping,
@@ -273,18 +272,17 @@ def add_specific_mapper_function(
     # Support older versions of python by calling {**a, **b} rather than a|b
     exec(map_code, {**module.__dict__, **context}, d)  # noqa: S102
 
-    if hasattr(SourceCls, map_func_name):
-        raise AttributeError(
-            f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
-        )
     map_func = d[source_code_type.func_name]
+
     if sys.version_info < (3, 9):
-        map_func.__doc__ = ast.dump(map_code_ast)
+        map_code_str = ast.dump(map_code_ast)
     else:
-        map_func.__doc__ = ast.unparse(map_code_ast)
-    setattr(SourceCls, map_func_name, map_func)
-    for name, factory in factories.items():
-        setattr(SourceCls, name, factory)
+        map_code_str = ast.unparse(map_code_ast)
+
+    if source_code_type is CreateMappingMethodSourceCode:
+        COLLECTION.store_create_func(SourceCls, TargetCls, map_func, map_code_str, factories)
+    else:
+        COLLECTION.store_update_func(SourceCls, TargetCls, map_func, map_code_str, factories)
 
 
 def create_enum_mapper(SourceCls: Any, TargetCls: Any, mapping: Optional[EnumMapping] = None) -> None:
@@ -359,12 +357,7 @@ def add_enum_mapper_function(SourceCls: Any, TargetCls: Any, mapping: Optional[E
         target_cls=TargetCls,
         mapping=mapping or cast(EnumMapping, {}),
     )
-    map_func_name = get_map_to_func_name(TargetCls)
-    if hasattr(SourceCls, map_func_name):
-        raise AttributeError(
-            f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
-        )
-    setattr(SourceCls, map_func_name, convert_function)
+    COLLECTION.store_create_func(SourceCls, TargetCls, convert_function, "", {})
 
 
 @overload
@@ -392,30 +385,20 @@ def map_to(obj, target: Union[Type[T], T], extra: Optional[Dict[str, Any]] = Non
         extra = {}
 
     if isinstance(target, type):
-        TargetCls = target
-        func_name = get_map_to_func_name(target)
-
-        if hasattr(obj, func_name):
-            return cast(T, getattr(obj, func_name)(extra))
+        func = COLLECTION.get_create_func(obj.__class__, target)
+        return cast(T, func(obj, extra))
     else:
-        TargetCls = target.__class__
-        func_name = get_mapupdate_to_func_name(TargetCls)
-
-        if hasattr(obj, func_name):
-            return cast(T, getattr(obj, func_name)(target, extra))
-
-    raise NotImplementedError(f"Object of type '{type(obj).__name__}' cannot be mapped to '{TargetCls.__name__}'")
+        func = COLLECTION.get_update_func(obj.__class__, target.__class__)
+        return cast(T, func(obj, target, extra))
 
 
-def debug_map_codes(source: Type, target: Type) -> Tuple[Optional[str], Optional[str]]:
-    create_func_name = get_map_to_func_name(target)
+def debug_map_codes(SourceCls: Type, TargetCls: Type) -> Tuple[Optional[str], Optional[str]]:
     map_create_code: Optional[str] = None
-    if hasattr(source, create_func_name):
-        map_create_code = getattr(source, create_func_name).__doc__
+    if COLLECTION.contains_create(SourceCls, TargetCls):
+        map_create_code = COLLECTION.get_create_code(SourceCls, TargetCls)
 
-    update_func_name = get_mapupdate_to_func_name(target)
     map_update_code: Optional[str] = None
-    if hasattr(source, update_func_name):
-        map_update_code = getattr(source, update_func_name).__doc__
+    if COLLECTION.contains_update(SourceCls, TargetCls):
+        map_update_code = COLLECTION.get_update_code(SourceCls, TargetCls)
 
     return (map_create_code, map_update_code)
