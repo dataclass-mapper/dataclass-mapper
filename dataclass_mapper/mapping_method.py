@@ -2,7 +2,7 @@ import ast
 from abc import ABC, abstractmethod
 from dataclasses import replace
 from inspect import signature
-from typing import Callable, Dict, List, Optional, cast
+from typing import Callable, Dict, List, Optional
 from uuid import uuid4
 
 from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotPossibleError
@@ -87,10 +87,7 @@ class MappingMethodSourceCode(ABC):
             )
 
         factory_name = f"_{uuid4().hex}"
-        if parameter_cnt == 0:
-            self.factories[factory_name] = cast(Callable, staticmethod(source))
-        else:
-            self.factories[factory_name] = source
+        self.factories[factory_name] = source
 
         factory = cg.DictLookup(cg.Variable("COLLECTION"), cg.Constant(factory_name))
         factory_call = cg.FunctionCall(factory, [] if parameter_cnt == 0 else [SELF_VAR])

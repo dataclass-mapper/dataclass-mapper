@@ -3,8 +3,8 @@ from typing import Callable, Dict, Type
 
 class MappingCollection:
     def __init__(self):
-        self.storage: dict[str, Callable] = {}
-        self.code: dict[str, str] = {}
+        self.storage: Dict[str, Callable] = {}
+        self.code: Dict[str, str] = {}
 
     def __getitem__(self, key: str) -> Callable:
         return self.storage[key]
