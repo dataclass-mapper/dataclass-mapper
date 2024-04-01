@@ -157,8 +157,7 @@ class InstrumentedAttribute(Protocol):
     class_: Any
 
     @property
-    def property(self) -> Any:
-        ...
+    def property(self) -> Any: ...
 
 
 def extract_instrumented_attribute_name_and_class(attribute: InstrumentedAttribute) -> Tuple[str, Any]:

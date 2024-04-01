@@ -21,8 +21,7 @@ class Expression(ABC):
             return ast.Load()
 
     @abstractmethod
-    def generate_ast(self) -> ast.expr:
-        ...
+    def generate_ast(self) -> ast.expr: ...
 
     def is_(self, other: "Expression") -> "Expression":
         return Compare(self, other, ast.Is())
