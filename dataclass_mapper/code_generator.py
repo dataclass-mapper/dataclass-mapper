@@ -99,7 +99,19 @@ class AttributeLookup(Expression):
     obj: Expression
     attribute: str
 
+    def as_store(self) -> "Expression":
+        """Empty attribute means, that there is no attribute lookup at all.
+        So the as_store() hint needs to be handed over to the nested obj.
+        """
+        if self.attribute:
+            return super().as_store()
+        else:
+            self.obj = self.obj.as_store()
+            return self
+
     def generate_ast(self) -> ast.expr:
+        if not self.attribute:
+            return self.obj.generate_ast()
         return ast.Attribute(value=self.obj.generate_ast(), attr=self.attribute, ctx=self.get_ctx())
 
 

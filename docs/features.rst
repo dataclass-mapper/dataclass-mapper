@@ -11,5 +11,6 @@ Supported features
    ./features/update_models.rst
    ./features/defaults.rst
    ./features/optional_source_fields.rst
+   ./features/simple_type.rst
    ./features/extra_context.rst
 

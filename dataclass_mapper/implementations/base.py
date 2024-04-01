@@ -14,7 +14,8 @@ from .class_type import ClassType
 class DataclassType(Enum):
     DATACLASSES = auto()
     PYDANTIC = auto()
-    SQLAlchemy = auto()
+    SQLALCHEMY = auto()
+    SIMPLETYPE = auto()
 
 
 @dataclass(frozen=True)

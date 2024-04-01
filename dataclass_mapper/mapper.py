@@ -1,8 +1,11 @@
 import ast
 import sys
 from dataclasses import replace
+from enum import Enum
 from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
+
+from dataclass_mapper.implementations.simple_type import SimpleType
 
 from .classmeta import get_class_meta
 from .collection import COLLECTION
@@ -39,6 +42,13 @@ def _make_mapper(
     target_cls_meta = get_class_meta(target_cls, namespace=namespace, type_=ClassType.TARGET)
     actual_source_fields = source_cls_meta.fields
     actual_target_fields = target_cls_meta.fields
+
+    if (isinstance(source_cls_meta, SimpleType) and "" not in mapping.values()) or (
+        isinstance(target_cls_meta, SimpleType) and "" not in mapping
+    ):
+        if issubclass(source_cls, Enum) and issubclass(target_cls, Enum):
+            raise ValueError("`mapper` does not support enum classes, use `enum_mapper` instead")
+        raise NotImplementedError("only dataclasses, pydantic and sqlalchemy classes are supported")
 
     string_field_mapping = convert_sqlalchemy_fields(
         mapping, source_cls_meta=source_cls_meta, target_cls_meta=target_cls_meta
