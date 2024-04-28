@@ -136,7 +136,7 @@ The current version has support for:
 Demo project
 ------------
 
-We maintain a small demo project, whichs shows some of the interworkings of the library together with a FastAPI API and SQLAlchemy ORM: `todo-app <https://github.com/dataclass-mapper/todo-app-demo>`_.
+We maintain a small demo project, whichs shows some of the interworkings of the library together with a FastAPI API and SQLAlchemy ORM: `todo-app-demo <https://github.com/dataclass-mapper/todo-app-demo>`_.
 
 Contributing
 ------------

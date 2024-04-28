@@ -1,6 +1,16 @@
 Large Example
 =============
 
+SQLAlchemy example
+------------------
+
+A example API project that uses the library including it's SQLAlchemy support, can be found here: `todo-app-demo <https://github.com/dataclass-mapper/todo-app-demo>`_
+
+Recursive dataclasses example
+-----------------------------
+
+A larger one-page example between two recursive dataclasses can be found on this page.
+
 Given a target data structure, a class ``WorkContract`` that contains an attribute of type ``Person``.
 
 .. doctest::
