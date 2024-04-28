@@ -40,7 +40,7 @@ For extracting a single value, only the ``CREATE`` mode is possible.
 Contructing from Value
 ^^^^^^^^^^^^^^^^^^^^^^
 
-For extracting a single value, only the ``CREATE`` mode is possible.
+For constructing from a single value, both the `CREATE` and `UPDATE` mode are possible.
 
 .. doctest::
 
