@@ -1,6 +1,7 @@
 from .any import AnyFieldType
-from .base import FieldType, compute_field_type
+from .base import FieldType
 from .class_fieldtype import ClassFieldType
+from .compute import compute_field_type
 from .dict import DictFieldType
 from .list import ListFieldType
 from .optional import OptionalFieldType

@@ -1,6 +1,7 @@
 from typing import Any, List, get_args, get_origin
 
-from .base import FieldType, compute_field_type
+from .base import FieldType
+from .compute import compute_field_type
 
 
 class TupleFieldType(FieldType):

@@ -22,11 +22,3 @@ class FieldType(ABC):
     @abstractmethod
     def __str__(self) -> str:
         pass
-
-
-def compute_field_type(type_: Any) -> FieldType:
-    for field_type in FieldType.all_field_types:
-        if field_type.is_applicable(type_):
-            return field_type.from_type(type_)
-
-    raise TypeError(f"Field type '{type_}' is not supported.")

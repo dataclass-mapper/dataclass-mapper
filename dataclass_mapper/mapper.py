@@ -11,6 +11,7 @@ from .classmeta import get_class_meta
 from .collection import COLLECTION
 from .enum import EnumMapping, make_enum_mapper
 from .fieldtypes.optional import OptionalFieldType
+from .implementations.base import FieldMeta
 from .implementations.class_type import ClassType
 from .mapper_mode import MapperMode
 from .mapping_method import CreateMappingMethodSourceCode, MappingMethodSourceCode, UpdateMappingMethodSourceCode
@@ -66,20 +67,11 @@ def _make_mapper(
         target_field = actual_target_fields[target_field_name]
         if isinstance(raw_source, str):
             source_field_name = raw_source
-            if source_field_name not in actual_source_fields:
-                raise ValueError(
-                    f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
-                    f"in '{source_cls.__name__}'"
-                )
-            source_code.add_mapping(target=target_field, source=actual_source_fields[source_field_name])
+            source_field = get_source_field(source_field_name, actual_source_fields, source_cls)
+            source_code.add_mapping(target=target_field, source=source_field)
         elif isinstance(raw_source, AssumeNotNone):
             source_field_name = raw_source.field_name or target_field.attribute_name
-            if source_field_name not in actual_source_fields:
-                raise ValueError(
-                    f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
-                    f"in '{source_cls.__name__}'"
-                )
-            source_field = actual_source_fields[source_field_name]
+            source_field = get_source_field(source_field_name, actual_source_fields, source_cls)
             # pretend like the source field isn't optional
             if isinstance(source_field.type, OptionalFieldType):
                 source_field = replace(source_field, type=source_field.type.inner_type)
@@ -93,12 +85,7 @@ def _make_mapper(
                     f"if the mapper mode is not set to {MapperMode.UPDATE}."
                 )
             source_field_name = raw_source.field_name or target_field.attribute_name
-            if source_field_name not in actual_source_fields:
-                raise ValueError(
-                    f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist "
-                    f"in '{source_cls.__name__}'"
-                )
-            source_field = actual_source_fields[source_field_name]
+            source_field = get_source_field(source_field_name, actual_source_fields, source_cls)
             # pretend like the source field isn't optional
             if isinstance(source_field.type, OptionalFieldType):
                 source_field = replace(source_field, type=source_field.type.inner_type)
@@ -121,6 +108,14 @@ def _make_mapper(
         source_code.factories,
         {target_cls_meta.internal_name: target_cls, "COLLECTION": COLLECTION},
     )
+
+
+def get_source_field(source_field_name: str, source_fields: Dict[str, FieldMeta], source_cls: Any):
+    if source_field_name not in source_fields:
+        raise ValueError(
+            f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist " f"in '{source_cls.__name__}'"
+        )
+    return source_fields[source_field_name]
 
 
 def create_mapper(

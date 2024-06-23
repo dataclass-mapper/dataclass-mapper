@@ -3,7 +3,7 @@ from dataclasses import Field as DataclassField
 from inspect import getsource
 from typing import Any, Dict, cast, get_type_hints
 
-from dataclass_mapper.fieldtypes.base import compute_field_type
+from dataclass_mapper.fieldtypes.compute import compute_field_type
 from dataclass_mapper.namespace import Namespace
 
 from .base import ClassMeta, DataclassType, FieldMeta

@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotPossibleError
 from dataclass_mapper.expression_converters import map_expression
+from dataclass_mapper.fieldtypes.not_supported import NotSupportedFieldType
 from dataclass_mapper.mapper_mode import MapperMode
 from dataclass_mapper.update_expressions import map_update_expression
 
@@ -186,6 +187,10 @@ class CreateMappingMethodSourceCode(MappingMethodSourceCode):
         if not self._try_add_convert_statement(
             source=source, target=target, only_if_source_is_set=only_if_source_is_set
         ):
+            if isinstance(source.type, NotSupportedFieldType):
+                raise TypeError(f"Field type '{source.type}' is not supported.")
+            if isinstance(target.type, NotSupportedFieldType):
+                raise TypeError(f"Field type '{target.type}' is not supported.")
             raise TypeError(
                 f"{source} of '{self.source_cls.name}' cannot be converted to {target} of '{self.target_cls.name}'"
             ) from None
@@ -235,6 +240,10 @@ class UpdateMappingMethodSourceCode(MappingMethodSourceCode):
         if self._try_add_convert_statement(source=source, target=target, only_if_source_is_set=only_if_source_is_set):
             return None
 
+        if isinstance(source.type, NotSupportedFieldType):
+            raise TypeError(f"Field type '{source.type}' is not supported.")
+        if isinstance(target.type, NotSupportedFieldType):
+            raise TypeError(f"Field type '{target.type}' is not supported.")
         raise TypeError(
             f"{source} of '{self.source_cls.name}' cannot be converted "
             f"to {target} of '{self.target_cls.name}'. "
