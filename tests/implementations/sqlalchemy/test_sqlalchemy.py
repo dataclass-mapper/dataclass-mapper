@@ -658,3 +658,27 @@ def test_sqlalchemy_enum(db: InMemoryDatabase):
 
     assert db.session.query(FooDb).count() == 1
     assert map_to(db.session.query(FooDb).one(), Foo) == Foo(MyEnum.ONE)
+
+
+def test_sqlalchemy_UUID(db: InMemoryDatabase):
+    class FooDb(db.Base):
+        __tablename__ = "foo_table"
+        id: Mapped[UUID] = mapped_column(primary_key=True)
+
+    db.create_all()
+
+    @mapper(FooDb)
+    @mapper_from(FooDb)
+    @dataclass
+    class Foo:
+        id: UUID
+
+    foo = Foo(id=uuid4())
+    foo_db = map_to(foo, FooDb)
+
+    db.session.add(foo_db)
+    db.session.commit()
+
+    first = db.session.query(FooDb).first()
+    assert first
+    assert map_to(first, Foo).id == foo.id

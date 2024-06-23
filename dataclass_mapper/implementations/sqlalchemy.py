@@ -62,7 +62,7 @@ class SQLAlchemyFieldMeta(FieldMeta):
             sqlalchemy.Time: time,
             sqlalchemy.Unicode: str,
             sqlalchemy.UnicodeText: str,
-            psql.UUID: UUID,
+            sqlalchemy.Uuid: UUID,
         }
 
         for sqlalchemy_cls, mapped_type in type_mapping.items():
