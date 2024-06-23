@@ -4,44 +4,55 @@ from typing import Generic, TypeVar
 import pytest
 
 from dataclass_mapper import create_mapper, map_to
+from dataclass_mapper.mapper_mode import MapperMode
 
 
-def test_dataclass_used_unsupported_source_fieldtype_raises_typeerror():
+def test_dataclass_used_unsupported_fieldtype_raises_typeerror():
     T = TypeVar("T")
 
     class SomeGeneric(Generic[T]):
         pass
 
     @dataclass
-    class Source:
+    class ClassWithUnsupportedType:
         value: SomeGeneric[int]  # unsupported type
 
     @dataclass
-    class Target:
+    class ClassWithSupportedType:
         value: int
 
     with pytest.raises(TypeError) as excinfo:
-        create_mapper(Source, Target)
+        create_mapper(ClassWithUnsupportedType, ClassWithSupportedType)
+
+    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(ClassWithSupportedType, ClassWithUnsupportedType)
 
     assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
 
 
-def test_dataclass_used_unsupported_target_fieldtype_raises_typeerror():
+def test_dataclass_used_unsupported_fieldtype_updates_raises_typeerror():
     T = TypeVar("T")
 
     class SomeGeneric(Generic[T]):
         pass
 
     @dataclass
-    class Source:
-        value: int
-
-    @dataclass
-    class Target:
+    class ClassWithUnsupportedType:
         value: SomeGeneric[int]  # unsupported type
 
+    @dataclass
+    class ClassWithSupportedType:
+        value: int
+
     with pytest.raises(TypeError) as excinfo:
-        create_mapper(Source, Target)
+        create_mapper(ClassWithUnsupportedType, ClassWithSupportedType, mapper_mode=MapperMode.UPDATE)
+
+    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(ClassWithSupportedType, ClassWithUnsupportedType, mapper_mode=MapperMode.UPDATE)
 
     assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
 
