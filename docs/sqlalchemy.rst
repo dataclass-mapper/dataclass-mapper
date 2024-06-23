@@ -11,11 +11,12 @@ At the moment it has support for:
 
 * Default SQLAlchemy Types (``BigInteger``, ``Boolean``, ``Date``, ``DateTime``, ``Float``,
   ``Integer``, ``Interval``, ``LargeBinary``, ``SmallInteger``,
-  ``String``, ``Text``, ``Time``, ``Unicode``, ``UnicodeText``)
+  ``String``, ``Text``, ``Time``, ``Unicode``, ``UnicodeText``, ``UUID``)
 * Enums (``Enum(MyEnumType)``)
-* Some PostgreSQL specific types: (``UUID``, ``ARRAY``)
+* Some PostgreSQL specific types: (``ARRAY``)
 * Relationships (1:n, n:1, 1:1, n:n)
 * Association Objects
+* ``MappedAsDataclass``
 
 Mapping from ORM models
 -----------------------

@@ -8,10 +8,12 @@ from .simple_type import SimpleType
 from .sqlalchemy import SQLAlchemyClassMeta
 
 class_meta_types: List[Type[ClassMeta]] = [
-    DataclassClassMeta,
     PydanticV1ClassMeta,
     PydanticV2ClassMeta,
     SQLAlchemyClassMeta,
+    # SQLAlchemy has a dataclass mode (MappedAsDataclass), those would wrongly detected by the DataclassClassMeta.
+    # So we need to run the SQLAlchemyClassMeta detection ahead of the SQLAlchemyClassMeta.
+    DataclassClassMeta,
     SimpleType,
 ]
 

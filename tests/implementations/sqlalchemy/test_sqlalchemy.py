@@ -7,16 +7,15 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from dataclass_mapper import init_with_default
+from dataclass_mapper import create_mapper, ignore, init_with_default, map_to, mapper, mapper_from
 from dataclass_mapper.implementations.sqlalchemy import sqlalchemy_version
-from dataclass_mapper.mapper import create_mapper, map_to, mapper, mapper_from
 
 if sqlalchemy_version() < (2, 0, 0):
     pytest.skip("Wrong SQLAlchemy Version installed", allow_module_level=True)
 
 from sqlalchemy import Column, Enum, ForeignKey, String, Table, create_engine
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, joinedload, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, Session, joinedload, mapped_column, relationship
 
 
 class InMemoryDatabase:
@@ -682,3 +681,59 @@ def test_sqlalchemy_UUID(db: InMemoryDatabase):
     first = db.session.query(FooDb).first()
     assert first
     assert map_to(first, Foo).id == foo.id
+
+
+class InMemoryMappedAsDataclassDatabase(InMemoryDatabase):
+    def __init__(self):
+        super().__init__()
+
+        class Base(DeclarativeBase, MappedAsDataclass):
+            pass
+
+        self.Base = Base  # type: ignore[assignment]
+
+
+@pytest.fixture()
+def mapped_as_dataclass_db() -> InMemoryDatabase:
+    return InMemoryMappedAsDataclassDatabase()
+
+
+def test_map_sqlalchemy_mapped_as_dataclass_relation_to_dataclass(
+    mapped_as_dataclass_db: InMemoryMappedAsDataclassDatabase,
+):
+    db = mapped_as_dataclass_db
+
+    class Parent(db.Base):
+        __tablename__ = "parent"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    class Child(db.Base):
+        __tablename__ = "child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("parent.id"), init=False)
+        parent: Mapped[Parent] = relationship()
+
+    @mapper_from(Parent)
+    @mapper(Parent)
+    @dataclass
+    class ParentDC:
+        id: int
+
+    @mapper_from(Child)
+    @mapper(Child, {Child.parent_id: ignore()})
+    @dataclass
+    class ChildDC:
+        id: int
+        parent: ParentDC
+
+    db.create_all()
+
+    child_dc = ChildDC(id=1, parent=ParentDC(id=2))
+
+    child_db = map_to(child_dc, Child)
+    db.session.add(child_db)
+    db.session.commit()
+
+    first = db.session.query(Child).first()
+    assert first
+    assert map_to(first, ChildDC) == child_dc

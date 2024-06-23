@@ -14,7 +14,7 @@ if sqlalchemy_version() < (2, 0, 0):
 
 from sqlalchemy import ForeignKey, Identity, Integer, String, text
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 from sqlalchemy.schema import Sequence
 
 empty_namespace = Namespace(locals={}, globals={})
@@ -143,4 +143,24 @@ def test_sqlalchemy_relationship_field() -> None:
             initializer_param_name="children",
             init_with_ctor=True,
         ),
+    }
+
+
+def test_sqlalchemy_dataclass_mapped_fields() -> None:
+    class MappedAsDataclassBase(DeclarativeBase, MappedAsDataclass):
+        pass
+
+    class Foo(MappedAsDataclassBase):
+        __tablename__ = "a"
+        id: Mapped[str] = mapped_column(primary_key=True)
+
+    child_fields = get_class_meta(Foo, namespace=empty_namespace).fields
+    assert child_fields == {
+        "id": SQLAlchemyFieldMeta(
+            attribute_name="id",
+            type=ClassFieldType(str),
+            required=False,
+            initializer_param_name="id",
+            init_with_ctor=True,
+        )
     }
