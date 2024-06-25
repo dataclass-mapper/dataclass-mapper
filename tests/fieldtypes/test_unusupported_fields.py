@@ -24,12 +24,12 @@ def test_dataclass_used_unsupported_fieldtype_raises_typeerror():
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithUnsupportedType, ClassWithSupportedType)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == "Field type 'SomeGeneric' is not supported."
 
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithSupportedType, ClassWithUnsupportedType)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == "Field type 'SomeGeneric' is not supported."
 
 
 def test_dataclass_used_unsupported_fieldtype_updates_raises_typeerror():
@@ -49,12 +49,12 @@ def test_dataclass_used_unsupported_fieldtype_updates_raises_typeerror():
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithUnsupportedType, ClassWithSupportedType, mapper_mode=MapperMode.UPDATE)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == "Field type 'SomeGeneric' is not supported."
 
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithSupportedType, ClassWithUnsupportedType, mapper_mode=MapperMode.UPDATE)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == "Field type 'SomeGeneric' is not supported."
 
 
 def test_dataclass_unused_source_fields_are_ignored():

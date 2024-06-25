@@ -12,7 +12,7 @@ from dataclass_mapper.fieldtypes.not_supported import NotSupportedFieldType
 from dataclass_mapper.mapper_mode import MapperMode
 from dataclass_mapper.namespace import Namespace
 from dataclass_mapper.update_expressions import map_update_expression
-from dataclass_mapper.utils import extract_function_types
+from dataclass_mapper.utils import extract_function_types, get_class_name
 
 from . import code_generator as cg
 from .implementations.base import ClassMeta, FieldMeta
@@ -96,7 +96,7 @@ class MappingMethodSourceCode(ABC):
             raise TypeError(
                 f"The first parameter of the custom conversion function for field '{target.attribute_name}' "
                 f"of '{self.target_cls.name}' needs to be of type '{self.source_cls.name}' or a super type of it, "
-                f"but is of type '{annotations.first_param_type.__name__}'."
+                f"but is of type '{get_class_name(annotations.first_param_type)}'."
             )
 
         if annotations.return_type:
@@ -105,7 +105,7 @@ class MappingMethodSourceCode(ABC):
                 raise TypeError(
                     f"The return value of the custom conversion function for field '{target.attribute_name}' "
                     f"of '{self.target_cls.name}' needs to be of type '{target.type}', "
-                    f"but is of type '{annotations.return_type.__name__}'."
+                    f"but is of type '{get_class_name(annotations.return_type)}'."
                 )
 
         factory_name = f"_{uuid4().hex}"

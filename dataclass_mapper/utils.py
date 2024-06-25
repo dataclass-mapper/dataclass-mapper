@@ -1,7 +1,7 @@
 import sys
 from dataclasses import dataclass
 from inspect import isfunction, signature
-from typing import Any, Callable, Optional, Type, Union, get_args, get_origin, get_type_hints
+from typing import Any, Callable, Optional, Type, Union, cast, get_args, get_origin, get_type_hints
 
 from dataclass_mapper.namespace import Namespace
 
@@ -51,3 +51,10 @@ def extract_function_types(
     return_type: Optional[Type] = type_hints.get("return")
 
     return TypeAnnotation(first_param_type=first_param_type, return_type=return_type)
+
+
+def get_class_name(cls: Any) -> str:
+    try:
+        return cast(str, cls.__name__)
+    except AttributeError:
+        return str(cls)

@@ -2,6 +2,8 @@ import warnings
 from copy import copy
 from typing import Any, Dict
 
+from dataclass_mapper.utils import get_class_name
+
 from .implementations.base import ClassMeta, FieldMeta
 from .implementations.sqlalchemy import InstrumentedAttribute, extract_instrumented_attribute_name_and_class
 from .special_field_mappings import (
@@ -40,13 +42,15 @@ def raise_if_mapping_doesnt_match_target(
     for target_field_name in actual_target_fields:
         if target_field_name not in mapping:
             raise ValueError(
-                f"'{target_field_name}' of '{target_cls.__name__}' has no mapping in '{source_cls.__name__}'"
+                f"'{target_field_name}' of '{get_class_name(target_cls)}' has no mapping "
+                f"in '{get_class_name(source_cls)}'"
             )
 
     for target_field_name in mapping:
         if target_field_name not in actual_target_fields:
             raise ValueError(
-                f"'{target_field_name}' of mapping in '{source_cls.__name__}' doesn't exist in '{target_cls.__name__}'"
+                f"'{target_field_name}' of mapping in '{get_class_name(source_cls)}' doesn't "
+                f"exist in '{get_class_name(target_cls)}'"
             )
 
 
