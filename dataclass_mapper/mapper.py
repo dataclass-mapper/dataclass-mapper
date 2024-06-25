@@ -99,7 +99,7 @@ def _make_mapper(
                     "as it has no default"
                 )
         elif callable(raw_source):
-            source_code.add_factory(target=target_field, source=raw_source)
+            source_code.add_factory(target=target_field, source=raw_source, namespace=namespace)
         else:
             raise AssertionError("impossible to reach")
 

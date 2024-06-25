@@ -1,5 +1,10 @@
 import sys
-from typing import Any, Union, get_args, get_origin
+from inspect import isfunction, signature
+from typing import Any, Callable, Optional, Type, Union, get_args, get_origin, get_type_hints
+
+from dataclass_mapper.namespace import Namespace
+
+CallableWithMax1Parameter = Union[Callable[[], Any], Callable[[Any], Any]]
 
 
 def is_union_type(type_: Any) -> bool:
@@ -15,3 +20,27 @@ def is_union_type(type_: Any) -> bool:
 def is_optional(type_: Any) -> bool:
     # requires Python 3.8
     return is_union_type(type_) and type(None) in get_args(type_)
+
+
+def extract_function_types(
+    callable: CallableWithMax1Parameter, namespace: Optional[Namespace] = None
+) -> tuple[Optional[Type], Optional[Type]]:
+    """extracts the type of the only parameter (if there is one at all), and the type of the return value"""
+
+    if not isfunction(callable):
+        callable = callable.__call__
+
+    params = list(signature(callable).parameters.values())
+    type_hints = (
+        get_type_hints(callable, globalns=namespace.globals, localns=namespace.locals)
+        if namespace
+        else get_type_hints(callable)
+    )
+
+    return_type: Optional[Type] = type_hints.get("return")
+    first_param_type: Optional[Type] = None
+    if params:
+        first_param = params[0]
+        first_param_type = type_hints.get(first_param.name)
+
+    return first_param_type, return_type
