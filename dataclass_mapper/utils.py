@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from inspect import isfunction, signature
 from typing import Any, Callable, Optional, Type, Union, get_args, get_origin, get_type_hints
 
@@ -22,13 +23,19 @@ def is_optional(type_: Any) -> bool:
     return is_union_type(type_) and type(None) in get_args(type_)
 
 
+@dataclass
+class TypeAnnotation:
+    first_param_type: Optional[Type]
+    return_type: Optional[Type]
+
+
 def extract_function_types(
     callable: CallableWithMax1Parameter, namespace: Optional[Namespace] = None
-) -> tuple[Optional[Type], Optional[Type]]:
+) -> TypeAnnotation:
     """extracts the type of the only parameter (if there is one at all), and the type of the return value"""
 
     if not isfunction(callable):
-        callable = callable.__call__
+        callable = callable.__call__  # type: ignore[operator]
 
     params = list(signature(callable).parameters.values())
     type_hints = (
@@ -37,10 +44,10 @@ def extract_function_types(
         else get_type_hints(callable)
     )
 
-    return_type: Optional[Type] = type_hints.get("return")
     first_param_type: Optional[Type] = None
     if params:
         first_param = params[0]
         first_param_type = type_hints.get(first_param.name)
+    return_type: Optional[Type] = type_hints.get("return")
 
-    return first_param_type, return_type
+    return TypeAnnotation(first_param_type=first_param_type, return_type=return_type)

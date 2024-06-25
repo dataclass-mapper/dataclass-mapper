@@ -91,21 +91,21 @@ class MappingMethodSourceCode(ABC):
             )
 
         # if types from signature can be extracted, type check them
-        first_param_type, return_type = extract_function_types(source, namespace=namespace)
-        if first_param_type and not issubclass(self.source_cls.clazz, first_param_type):
+        annotations = extract_function_types(source, namespace=namespace)
+        if annotations.first_param_type and not issubclass(self.source_cls.clazz, annotations.first_param_type):
             raise TypeError(
                 f"The first parameter of the custom conversion function for field '{target.attribute_name}' "
                 f"of '{self.target_cls.name}' needs to be of type '{self.source_cls.name}' or a super type of it, "
-                f"but is of type '{first_param_type.__name__}'."
+                f"but is of type '{annotations.first_param_type.__name__}'."
             )
 
-        if return_type:
-            return_field_type = compute_field_type(return_type)
+        if annotations.return_type:
+            return_field_type = compute_field_type(annotations.return_type)
             if return_field_type != target.type:
                 raise TypeError(
                     f"The return value of the custom conversion function for field '{target.attribute_name}' "
                     f"of '{self.target_cls.name}' needs to be of type '{target.type}', "
-                    f"but is of type '{return_type.__name__}'."
+                    f"but is of type '{annotations.return_type.__name__}'."
                 )
 
         factory_name = f"_{uuid4().hex}"
