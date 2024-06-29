@@ -24,3 +24,6 @@ class DifferentClassExpressionConverter(ExpressionConverter):
         func_name = COLLECTION.create_func_name(source.cls_type, target.cls_type)
         function = DictLookup(Variable("COLLECTION"), Constant(func_name))
         return FunctionCall(function, [source_exp, extra_variable])
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return False

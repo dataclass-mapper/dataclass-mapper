@@ -1,7 +1,7 @@
 from dataclass_mapper.code_generator import NONE, Expression, TernaryOperator
 from dataclass_mapper.fieldtypes import FieldType, OptionalFieldType
 
-from .expression_converter import ExpressionConverter, map_expression
+from .expression_converter import ExpressionConverter, is_assignable, map_expression
 
 
 class OptionalToOptionalExpressionConverter(ExpressionConverter):
@@ -14,3 +14,10 @@ class OptionalToOptionalExpressionConverter(ExpressionConverter):
         assert isinstance(source, OptionalFieldType) and isinstance(target, OptionalFieldType)
         recursive = map_expression(source.inner_type, target.inner_type, source_exp, recusion_depth + 1)
         return TernaryOperator(source_exp.is_(NONE), NONE, recursive)
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return (
+            isinstance(source, OptionalFieldType)
+            and isinstance(target, OptionalFieldType)
+            and is_assignable(source.inner_type, target.inner_type)
+        )

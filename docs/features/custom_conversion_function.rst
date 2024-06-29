@@ -41,6 +41,8 @@ In case the function has one parameter, the source object will be passed and you
 In the second function ``compute_full_name`` takes one parameter ``contact: Contact``, and combines the ``first_name`` and ``surname`` into a string and initialize the field ``name`` with it.
 
 In case the function or callable object is annotated with types, the types will be checked.
+Teh first parameter (if specified) needs to be compatible with the type of the source class (could also be a super class, or an optional type).
+The return type needs to be compatible with the target field.
 E.g. if the function ``compute_full_name`` returns an ``int`` or takes the a parameter of type ``Person``, it will produce an ``TypeError`` during the creation of the mapper.
 
 .. warning::

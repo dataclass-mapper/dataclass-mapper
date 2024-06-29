@@ -24,6 +24,14 @@ class ExpressionConverter(ABC):
     ) -> Expression:
         """Creates the expression (that converts from source type to target type)."""
 
+    @abstractmethod
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        """Essentially can you write ``target = source``.
+        The types can be slightly different, but should be assignable.
+        E.g. if target is of type ``Optional[FooBase]`` and ``source is of
+        type ``Foo`` (inheriting from ``FooBase``), it should return true.
+        """
+
 
 def map_expression(source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int) -> Expression:
     for expression_converter in ExpressionConverter.all_expression_converts:
@@ -31,3 +39,16 @@ def map_expression(source: FieldType, target: FieldType, source_exp: Expression,
             return expression_converter().map_expression(source, target, source_exp, recursion_depth)
 
     raise ConvertingNotPossibleError(source, target, recursion_depth)
+
+
+def is_assignable(source: FieldType, target: FieldType) -> bool:
+    """Essentially can you write ``target = source``.
+    The types can be slightly different, but should be assignable.
+    E.g. if target is of type ``Optional[FooBase]`` and ``source is of
+    type ``Foo`` (inheriting from ``FooBase``), it should return true.
+    """
+    for expression_converter in ExpressionConverter.all_expression_converts:
+        if expression_converter().is_assignable(source, target):
+            return True
+
+    return False

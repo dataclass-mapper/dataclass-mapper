@@ -75,7 +75,7 @@ def test_extract_function_types():
     def distinguish_none_type(x: None) -> None:
         pass
 
-    if sys.version_info < (3, 9):
+    if sys.version_info < (3, 10):
         NoneType = type(None)
     else:
         from types import NoneType

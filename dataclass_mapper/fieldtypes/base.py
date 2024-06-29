@@ -12,7 +12,7 @@ class FieldType(ABC):
     @staticmethod
     @abstractmethod
     def is_applicable(type_: Any) -> bool:
-        pass
+        """Can the source type be converted to the target type"""
 
     @classmethod
     @abstractmethod

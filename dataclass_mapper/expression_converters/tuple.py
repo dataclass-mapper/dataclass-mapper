@@ -2,7 +2,7 @@ from dataclass_mapper.code_generator import Constant, DictLookup, Expression, Tu
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.tuple import TupleFieldType
 
-from .expression_converter import ExpressionConverter, map_expression
+from .expression_converter import ExpressionConverter, is_assignable, map_expression
 
 
 class TupleExpressionConverter(ExpressionConverter):
@@ -22,4 +22,12 @@ class TupleExpressionConverter(ExpressionConverter):
                 map_expression(s, t, DictLookup(source_exp, Constant(i)), recursion_depth + 1)
                 for i, (s, t) in enumerate(zip(source.value_types, target.value_types))
             ]
+        )
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return (
+            isinstance(source, TupleFieldType)
+            and isinstance(target, TupleFieldType)
+            and len(source.value_types) == len(target.value_types)
+            and all(is_assignable(s, t) for s, t in zip(source.value_types, target.value_types))
         )

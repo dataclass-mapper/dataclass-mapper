@@ -11,7 +11,7 @@ class SameClassExpressionConverter(ExpressionConverter):
         return (
             isinstance(source, ClassFieldType)
             and isinstance(target, ClassFieldType)
-            and source.cls_type is target.cls_type
+            and issubclass(source.cls_type, target.cls_type)
         ) or (
             isinstance(source, NotSupportedFieldType)
             and isinstance(target, NotSupportedFieldType)
@@ -22,3 +22,14 @@ class SameClassExpressionConverter(ExpressionConverter):
         self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
     ) -> Expression:
         return source_exp
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return (
+            isinstance(source, ClassFieldType)
+            and isinstance(target, ClassFieldType)
+            and issubclass(source.cls_type, target.cls_type)
+        ) or (
+            isinstance(source, NotSupportedFieldType)
+            and isinstance(target, NotSupportedFieldType)
+            and source.type_ is target.type_
+        )

@@ -2,7 +2,7 @@ from dataclass_mapper.code_generator import Expression, ListComprehension, Varia
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.list import ListFieldType
 
-from .expression_converter import ExpressionConverter, map_expression
+from .expression_converter import ExpressionConverter, is_assignable, map_expression
 
 
 class ListExpressionConverter(ExpressionConverter):
@@ -16,3 +16,10 @@ class ListExpressionConverter(ExpressionConverter):
         iter_var = Variable(f"x{recursion_depth}")
         element_expression = map_expression(source.value_type, target.value_type, iter_var, recursion_depth + 1)
         return ListComprehension(element_expression, iter_var, source_exp)
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return (
+            isinstance(source, ListFieldType)
+            and isinstance(target, ListFieldType)
+            and is_assignable(source.value_type, source.value_type)
+        )

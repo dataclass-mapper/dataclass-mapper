@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from typing import Generic, Optional, TypeVar
 
@@ -159,13 +160,14 @@ def test_function_with_wrong_unmappable_return_type_is_rejected():
     class Source:
         pass
 
+    expected_error_msg = "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'int', but is of type 'G'."  # noqa: E501
+    if sys.version_info < (3, 10):
+        expected_error_msg = "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'int', but is of type 'tests.test_default_factories.test_function_with_wrong_unmappable_return_type_is_rejected.<locals>.G[int]'."  # noqa: E501
+
     with pytest.raises(TypeError) as excinfo:
         create_mapper(Source, Target, {"x": func})
 
-    assert (
-        str(excinfo.value)
-        == "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'int', but is of type 'G'."  # noqa: E501
-    )
+    assert str(excinfo.value) == expected_error_msg
 
 
 def test_function_with_param_supertype():
@@ -266,6 +268,21 @@ def test_function_with_optional_field():
         x: Optional[int]
 
     def func() -> int:
+        return 42
+
+    @dataclass
+    class Source:
+        pass
+
+    create_mapper(Source, Target, {"x": func})
+
+
+def test_function_with_optional_factory_param():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(source: "Optional[Source]") -> int:
         return 42
 
     @dataclass

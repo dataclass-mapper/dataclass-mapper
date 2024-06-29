@@ -17,3 +17,10 @@ class UnionToUnionExpressionConverter(ExpressionConverter):
         self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
     ) -> Expression:
         return source_exp
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return (
+            isinstance(source, UnionFieldType)
+            and isinstance(target, UnionFieldType)
+            and all(source_subtype in target.inner_types for source_subtype in source.inner_types)
+        )

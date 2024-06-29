@@ -13,3 +13,6 @@ class AnythingToAnyExpressionConverter(ExpressionConverter):
         self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
     ) -> Expression:
         return source_exp
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return isinstance(target, AnyFieldType)
