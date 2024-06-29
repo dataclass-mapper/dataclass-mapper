@@ -109,9 +109,7 @@ def test_extract_function_types():
 
     assert extract_function_types(CallableObjectWithoutParam()) == TypeAnnotation(None, str)
 
-    # TODO: check for bad annotations that are unparsable
+    def bad_annotation(x: 1 + 1) -> "abcdef":  # type: ignore # noqa: F821
+        pass
 
-    # def bad_annotation(x: 1+1) -> "abcdef":
-    #     pass
-
-    # assert extract_function_types(bad_annotation) == (None, str)
+    assert extract_function_types(bad_annotation) == TypeAnnotation(None, None)

@@ -1,7 +1,7 @@
 import sys
 from dataclasses import dataclass
 from inspect import isfunction, signature
-from typing import Any, Callable, Optional, Type, Union, cast, get_args, get_origin, get_type_hints
+from typing import Any, Callable, Dict, Optional, Type, Union, cast, get_args, get_origin, get_type_hints
 
 from dataclass_mapper.namespace import Namespace
 
@@ -38,11 +38,15 @@ def extract_function_types(
         callable = callable.__call__  # type: ignore[operator]
 
     params = list(signature(callable).parameters.values())
-    type_hints = (
-        get_type_hints(callable, globalns=namespace.globals, localns=namespace.locals)
-        if namespace
-        else get_type_hints(callable)
-    )
+    type_hints: Dict[str, Any]
+    try:
+        type_hints = (
+            get_type_hints(callable, globalns=namespace.globals, localns=namespace.locals)
+            if namespace
+            else get_type_hints(callable)
+        )
+    except NameError:
+        type_hints = {}
 
     first_param_type: Optional[Type] = None
     if params:
