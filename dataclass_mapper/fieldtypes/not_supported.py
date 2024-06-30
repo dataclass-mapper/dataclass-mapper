@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from dataclass_mapper.utils import get_class_name
+
 from .base import FieldType
 
 
@@ -17,4 +19,4 @@ class NotSupportedFieldType(FieldType):
         return NotSupportedFieldType(type_=type_)
 
     def __str__(self) -> str:
-        return str(self.type_)
+        return get_class_name(self.type_)

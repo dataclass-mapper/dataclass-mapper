@@ -1,5 +1,7 @@
 from typing import Any, cast, get_origin
 
+from dataclass_mapper.utils import get_class_name
+
 from .base import FieldType
 
 
@@ -16,10 +18,7 @@ class ClassFieldType(FieldType):
         return cls(type_)
 
     def __str__(self) -> str:
-        try:
-            return cast(str, self.cls_type.__name__)
-        except Exception:
-            return str(self.cls_type)
+        return get_class_name(self.cls_type)
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):

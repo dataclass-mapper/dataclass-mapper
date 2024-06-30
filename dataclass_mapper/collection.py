@@ -1,5 +1,7 @@
 from typing import Callable, Dict, Type
 
+from dataclass_mapper.utils import get_class_name
+
 
 class MappingCollection:
     def __init__(self):
@@ -13,7 +15,7 @@ class MappingCollection:
         func = self.storage.get(self.create_func_name(SourceCls, TargetCls))
         if not func:
             raise NotImplementedError(
-                f"Object of type '{SourceCls.__name__}' cannot be mapped to '{TargetCls.__name__}'"
+                f"Object of type '{get_class_name(SourceCls)}' cannot be mapped to '{get_class_name(TargetCls)}'"
             )
         return func
 
@@ -21,7 +23,7 @@ class MappingCollection:
         func = self.storage.get(self.update_func_name(SourceCls, TargetCls))
         if not func:
             raise NotImplementedError(
-                f"Object of type '{SourceCls.__name__}' cannot be mapped to '{TargetCls.__name__}'"
+                f"Object of type '{get_class_name(SourceCls)}' cannot be mapped to '{get_class_name(TargetCls)}'"
             )
         return func
 
@@ -29,7 +31,7 @@ class MappingCollection:
         code = self.code.get(self.create_func_name(SourceCls, TargetCls))
         if not code:
             raise NotImplementedError(
-                f"Object of type '{SourceCls.__name__}' cannot be mapped to '{TargetCls.__name__}'"
+                f"Object of type '{get_class_name(SourceCls)}' cannot be mapped to '{get_class_name(TargetCls)}'"
             )
         return code
 
@@ -37,7 +39,7 @@ class MappingCollection:
         code = self.code.get(self.update_func_name(SourceCls, TargetCls))
         if not code:
             raise NotImplementedError(
-                f"Object of type '{SourceCls.__name__}' cannot be mapped to '{TargetCls.__name__}'"
+                f"Object of type '{get_class_name(SourceCls)}' cannot be mapped to '{get_class_name(TargetCls)}'"
             )
         return code
 
@@ -52,7 +54,8 @@ class MappingCollection:
     ) -> None:
         if self.contains_create(SourceCls, TargetCls):
             raise AttributeError(
-                f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
+                f"There already exists a mapping between '{get_class_name(SourceCls)}' "
+                f"and '{get_class_name(TargetCls)}'"
             )
         self.storage[self.create_func_name(SourceCls, TargetCls)] = func
         self.code[self.create_func_name(SourceCls, TargetCls)] = code
@@ -64,7 +67,8 @@ class MappingCollection:
     ) -> None:
         if self.contains_update(SourceCls, TargetCls):
             raise AttributeError(
-                f"There already exists a mapping between '{SourceCls.__name__}' and '{TargetCls.__name__}'"
+                f"There already exists a mapping between '{get_class_name(SourceCls)}' "
+                f"and '{get_class_name(TargetCls)}'"
             )
         self.storage[self.update_func_name(SourceCls, TargetCls)] = func
         self.code[self.update_func_name(SourceCls, TargetCls)] = code

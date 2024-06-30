@@ -1,8 +1,10 @@
+import sys
 from dataclasses import dataclass
+from typing import Generic, Optional, TypeVar
 
 import pytest
 
-from dataclass_mapper import map_to, mapper, mapper_from
+from dataclass_mapper import create_mapper, map_to, mapper, mapper_from
 
 
 def test_default_values_in_mapping():
@@ -67,3 +69,224 @@ def test_refuse_factory_with_multiple_parameters():
             pass
 
     assert str(excinfo.value) == "'x' of 'Target' cannot be mapped using a factory with more than one parameter"
+
+
+def test_function_with_types_are_accepted():
+    @dataclass
+    class Target:
+        x: int
+
+    def func() -> int:
+        return 42
+
+    @dataclass
+    class Source:
+        pass
+
+    create_mapper(Source, Target, {"x": func})
+
+
+def test_function_with_types_are_accepted_2():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(x: "Source") -> int:
+        return 42
+
+    @dataclass
+    class Source:
+        pass
+
+    create_mapper(Source, Target, {"x": func})
+
+
+def test_function_with_wrong_param_type_is_rejected():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(x: "str") -> int:
+        return 42
+
+    @dataclass
+    class Source:
+        pass
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(Source, Target, {"x": func})
+
+    assert (
+        str(excinfo.value)
+        == "The first parameter of the custom conversion function for field 'x' of 'Target' needs to be of type 'Source' or a super type of it, but is of type 'str'."  # noqa: E501
+    )
+
+
+def test_function_with_wrong_return_type_is_rejected():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(x: "Source") -> None:
+        pass
+
+    @dataclass
+    class Source:
+        pass
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(Source, Target, {"x": func})
+
+    assert (
+        str(excinfo.value)
+        == "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'int', but is of type 'NoneType'."  # noqa: E501
+    )
+
+
+def test_function_with_wrong_unmappable_return_type_is_rejected():
+    @dataclass
+    class Target:
+        x: int
+
+    T = TypeVar("T")
+
+    class G(Generic[T]):
+        pass
+
+    def func(x: "Source") -> "G[int]":
+        return G[int]()
+
+    @dataclass
+    class Source:
+        pass
+
+    expected_error_msg = "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'int', but is of type 'G'."  # noqa: E501
+    if sys.version_info < (3, 10):
+        expected_error_msg = "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'int', but is of type 'tests.test_default_factories.test_function_with_wrong_unmappable_return_type_is_rejected.<locals>.G[int]'."  # noqa: E501
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(Source, Target, {"x": func})
+
+    assert str(excinfo.value) == expected_error_msg
+
+
+def test_function_with_param_supertype():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(x: "SourceBase") -> int:
+        return 42
+
+    @dataclass
+    class SourceBase:
+        pass
+
+    @dataclass
+    class Source(SourceBase):
+        pass
+
+    create_mapper(Source, Target, {"x": func})
+
+
+def test_function_with_param_subtype_is_rejected():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(x: "Source") -> int:
+        return 42
+
+    @dataclass
+    class SourceBase:
+        pass
+
+    @dataclass
+    class Source(SourceBase):
+        pass
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(SourceBase, Target, {"x": func})
+
+    assert (
+        str(excinfo.value)
+        == "The first parameter of the custom conversion function for field 'x' of 'Target' needs to be of type 'SourceBase' or a super type of it, but is of type 'Source'."  # noqa: E501
+    )
+
+
+def test_function_with_return_subtype():
+    class FooBase:
+        pass
+
+    class Foo(FooBase):
+        pass
+
+    @dataclass
+    class Target:
+        x: FooBase
+
+    def func(x: "Source") -> Foo:
+        return Foo()
+
+    @dataclass
+    class Source:
+        pass
+
+    create_mapper(Source, Target, {"x": func})
+
+
+def test_function_with_return_supertype_is_rejected():
+    class FooBase:
+        pass
+
+    class Foo(FooBase):
+        pass
+
+    @dataclass
+    class Target:
+        x: Foo
+
+    def func(x: "Source") -> FooBase:
+        return Foo()
+
+    @dataclass
+    class Source:
+        pass
+
+    with pytest.raises(TypeError) as excinfo:
+        create_mapper(Source, Target, {"x": func})
+
+    assert (
+        str(excinfo.value)
+        == "The return value of the custom conversion function for field 'x' of 'Target' needs to be of type 'Foo', but is of type 'FooBase'."  # noqa: E501
+    )
+
+
+def test_function_with_optional_field():
+    @dataclass
+    class Target:
+        x: Optional[int]
+
+    def func() -> int:
+        return 42
+
+    @dataclass
+    class Source:
+        pass
+
+    create_mapper(Source, Target, {"x": func})
+
+
+def test_function_with_optional_factory_param():
+    @dataclass
+    class Target:
+        x: int
+
+    def func(source: "Optional[Source]") -> int:
+        return 42
+
+    @dataclass
+    class Source:
+        pass
+
+    create_mapper(Source, Target, {"x": func})

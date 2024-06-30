@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
@@ -21,15 +22,19 @@ def test_dataclass_used_unsupported_fieldtype_raises_typeerror():
     class ClassWithSupportedType:
         value: int
 
+    expected_error_msg = "Field type 'SomeGeneric' is not supported."
+    if sys.version_info < (3, 10):
+        expected_error_msg = "Field type 'test_unusupported_fields.test_dataclass_used_unsupported_fieldtype_raises_typeerror.<locals>.SomeGeneric[int]' is not supported."  # noqa: E501
+
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithUnsupportedType, ClassWithSupportedType)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == expected_error_msg
 
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithSupportedType, ClassWithUnsupportedType)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == expected_error_msg
 
 
 def test_dataclass_used_unsupported_fieldtype_updates_raises_typeerror():
@@ -46,15 +51,19 @@ def test_dataclass_used_unsupported_fieldtype_updates_raises_typeerror():
     class ClassWithSupportedType:
         value: int
 
+    expected_error_msg = "Field type 'SomeGeneric' is not supported."
+    if sys.version_info < (3, 10):
+        expected_error_msg = "Field type 'test_unusupported_fields.test_dataclass_used_unsupported_fieldtype_updates_raises_typeerror.<locals>.SomeGeneric[int]' is not supported."  # noqa: E501
+
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithUnsupportedType, ClassWithSupportedType, mapper_mode=MapperMode.UPDATE)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == expected_error_msg
 
     with pytest.raises(TypeError) as excinfo:
         create_mapper(ClassWithSupportedType, ClassWithUnsupportedType, mapper_mode=MapperMode.UPDATE)
 
-    assert str(excinfo.value) == f"Field type '{SomeGeneric[int]}' is not supported."
+    assert str(excinfo.value) == expected_error_msg
 
 
 def test_dataclass_unused_source_fields_are_ignored():

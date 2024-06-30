@@ -6,7 +6,7 @@ from dataclass_mapper.code_generator import (
 from dataclass_mapper.fieldtypes import FieldType
 from dataclass_mapper.fieldtypes.dict import DictFieldType
 
-from .expression_converter import ExpressionConverter, map_expression
+from .expression_converter import ExpressionConverter, is_assignable, map_expression
 
 
 class DictExpressionConverter(ExpressionConverter):
@@ -22,3 +22,11 @@ class DictExpressionConverter(ExpressionConverter):
         key_mapping_expression = map_expression(source.key_type, target.key_type, key_var, recursion_depth + 1)
         value_mapping_expression = map_expression(source.value_type, target.value_type, value_var, recursion_depth + 1)
         return DictComprehension(key_mapping_expression, value_mapping_expression, key_var, value_var, source_exp)
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        return (
+            isinstance(source, DictFieldType)
+            and isinstance(target, DictFieldType)
+            and is_assignable(source.key_type, target.key_type)
+            and is_assignable(source.value_type, target.value_type)
+        )

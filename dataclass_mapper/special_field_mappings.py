@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 from dataclass_mapper.implementations.sqlalchemy import InstrumentedAttribute
+from dataclass_mapper.utils import CallableWithMax1Parameter
 
 
 class Spezial(Enum):
@@ -63,9 +64,6 @@ def update_only_if_set(field_name: Optional[str] = None) -> UpdateOnlyIfSet:
     If the field name is not specified, it is assumed that the source field has the same name as the target field.
     """
     return UpdateOnlyIfSet(field_name)
-
-
-CallableWithMax1Parameter = Union[Callable[[], Any], Callable[[Any], Any]]
 
 
 # the different types that can be used as origin (source) for mapping to a member

@@ -8,6 +8,7 @@ from .expression_converter import ExpressionConverter
 
 class ClassToUnionExpressionConverter(ExpressionConverter):
     def is_applicable_to_outer(self, source: FieldType, target: FieldType) -> bool:
+        # TODO: this could be better, what about ``list[int]`` to ``Union[list[int], ...]``
         return (
             isinstance(source, ClassFieldType) and isinstance(target, UnionFieldType) and source in target.inner_types
         )
@@ -16,3 +17,9 @@ class ClassToUnionExpressionConverter(ExpressionConverter):
         self, source: FieldType, target: FieldType, source_exp: Expression, recursion_depth: int
     ) -> Expression:
         return source_exp
+
+    def is_assignable(self, source: FieldType, target: FieldType) -> bool:
+        # TODO: this could be better, what about ``list[int]`` to ``Union[list[int], ...]``
+        return (
+            isinstance(source, ClassFieldType) and isinstance(target, UnionFieldType) and source in target.inner_types
+        )

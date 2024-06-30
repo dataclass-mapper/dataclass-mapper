@@ -13,7 +13,12 @@ from tests.utils import assert_ast_equal
 
 
 @dataclass(frozen=True)
-class Foo:
+class FooBar:
+    pass
+
+
+@dataclass(frozen=True)
+class Foo(FooBar):
     pass
 
 
@@ -41,6 +46,16 @@ TEST_CASES: List[Scenario] = [
     Scenario(
         source=int_class_field_type,
         target=int_class_field_type,
+        expected_code="src.x",
+    ),
+    Scenario(
+        source=ClassFieldType(Foo),
+        target=ClassFieldType(Foo),
+        expected_code="src.x",
+    ),
+    Scenario(
+        source=ClassFieldType(Foo),
+        target=ClassFieldType(FooBar),
         expected_code="src.x",
     ),
     Scenario(

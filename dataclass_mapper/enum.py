@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Any, Callable, Dict, Union, cast
 
+from dataclass_mapper.utils import get_class_name
+
 # mapping between source members and target members
 EnumMapping = Dict[Union[str, Enum], Union[str, Enum]]
 
@@ -15,7 +17,7 @@ def member_to_name_and_raise(
 
     raise ValueError(
         f"The mapping key '{member}' must be a member of the {class_description} enum "
-        f"'{enum_cls.__name__}' or a string with its name"
+        f"'{get_class_name(enum_cls)}' or a string with its name"
     )
 
 
@@ -46,7 +48,8 @@ def make_enum_mapper(
             full_mapping[source_member] = target_members[source_member_name]
         else:
             raise ValueError(
-                f"The member '{source_member_name}' of the source enum '{source_cls.__name__}' doesn't have a mapping."
+                f"The member '{source_member_name}' of the source enum "
+                f"'{get_class_name(source_cls)}' doesn't have a mapping."
             )
 
     def convert(self: Any, extra: Dict) -> Any:

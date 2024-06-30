@@ -9,7 +9,7 @@ All these checks already happen during the definition of the mapper, they are no
    >>> from dataclasses import dataclass
    >>> from enum import Enum, auto
    >>> from typing import Optional
-   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default
+   >>> from dataclass_mapper import mapper, mapper_from, map_to, enum_mapper, enum_mapper_from, init_with_default, create_mapper
 
 Missing fields check
 --------------------
@@ -122,3 +122,29 @@ The library cannot map the field ``full_time`` of type ``str`` to a ``bool``.
 
 Here the library complains about the mapping an optional field to an non-optional one.
 The other way around would be fine however.
+
+
+Type checks of custom conversion functions
+------------------------------------------
+
+   >>> @dataclass
+   ... class Contract:
+   ...     gross_salary: int
+   >>>
+   >>> @dataclass
+   ... class EmploymentAgreement:
+   ...     net_salary: int
+   >>>
+   >>> def compute_gross_salary(agreement: EmploymentAgreement) -> float:
+   ...    # returns a float instead of an expected int
+   ...    return agreement.net_salary * 1.5
+   >>>
+   >>> create_mapper(EmploymentAgreement, Contract, {"gross_salary": compute_gross_salary})
+   Traceback (most recent call last):
+       ...
+   TypeError: The return value of the custom conversion function for field 'gross_salary' of 'Contract' needs to be of type 'int', but is of type 'float'.
+
+.. warning::
+   Always use typed functions or typed callable objects.
+   Untyped functions, untyped callable objects or just lambas (which cannot be types) will not by type-checked by the library.
+   Especially a lambda can return anything, and the library will not check the type during the conversion!

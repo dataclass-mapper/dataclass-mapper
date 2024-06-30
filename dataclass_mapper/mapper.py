@@ -6,6 +6,7 @@ from importlib import import_module
 from typing import Any, Callable, Dict, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
 from dataclass_mapper.implementations.simple_type import SimpleType
+from dataclass_mapper.utils import get_class_name
 
 from .classmeta import get_class_meta
 from .collection import COLLECTION
@@ -81,7 +82,7 @@ def _make_mapper(
         elif isinstance(raw_source, UpdateOnlyIfSet):
             if mapper_mode != MapperMode.UPDATE:
                 raise ValueError(
-                    f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to update_only_if_set() "
+                    f"'{target_field_name}' of '{get_class_name(target_cls)}' cannot be set to update_only_if_set() "
                     f"if the mapper mode is not set to {MapperMode.UPDATE}."
                 )
             source_field_name = raw_source.field_name or target_field.attribute_name
@@ -95,11 +96,11 @@ def _make_mapper(
                 # leaving the target empty and using the default value/factory is not possible,
                 # as the target doesn't have a default value/factory
                 raise ValueError(
-                    f"'{target_field_name}' of '{target_cls.__name__}' cannot be set to {raw_source.created_via}, "
-                    "as it has no default"
+                    f"'{target_field_name}' of '{get_class_name(target_cls)}' cannot be set "
+                    f"to {raw_source.created_via}, as it has no default"
                 )
         elif callable(raw_source):
-            source_code.add_factory(target=target_field, source=raw_source)
+            source_code.add_factory(target=target_field, source=raw_source, namespace=namespace)
         else:
             raise AssertionError("impossible to reach")
 
@@ -113,7 +114,8 @@ def _make_mapper(
 def get_source_field(source_field_name: str, source_fields: Dict[str, FieldMeta], source_cls: Any):
     if source_field_name not in source_fields:
         raise ValueError(
-            f"'{source_field_name}' of mapping in '{source_cls.__name__}' doesn't exist " f"in '{source_cls.__name__}'"
+            f"'{source_field_name}' of mapping in '{get_class_name(source_cls)}' doesn't exist "
+            f"in '{get_class_name(source_cls)}'"
         )
     return source_fields[source_field_name]
 
@@ -272,7 +274,7 @@ def add_specific_mapper_function(
     module = import_module(SourceCls.__module__)
 
     d: Dict = {}
-    filename = f"<{source_code_type.func_name}_{SourceCls.__name__}_{TargetCls.__name__}>"
+    filename = f"<{source_code_type.func_name}_{get_class_name(SourceCls)}_{get_class_name(TargetCls)}>"
     map_code = compile(map_code_ast, filename=filename, mode="exec")
     # Support older versions of python by calling {**a, **b} rather than a|b
     exec(map_code, {**module.__dict__, **context}, d)  # noqa: S102

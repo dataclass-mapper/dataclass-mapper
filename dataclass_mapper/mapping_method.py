@@ -6,10 +6,14 @@ from typing import Callable, Dict, List, Optional
 from uuid import uuid4
 
 from dataclass_mapper.exceptions import ConvertingNotPossibleError, UpdatingNotPossibleError
-from dataclass_mapper.expression_converters import map_expression
+from dataclass_mapper.expression_converters import is_assignable, map_expression
+from dataclass_mapper.fieldtypes.class_fieldtype import ClassFieldType
+from dataclass_mapper.fieldtypes.compute import compute_field_type
 from dataclass_mapper.fieldtypes.not_supported import NotSupportedFieldType
 from dataclass_mapper.mapper_mode import MapperMode
+from dataclass_mapper.namespace import Namespace
 from dataclass_mapper.update_expressions import map_update_expression
+from dataclass_mapper.utils import extract_function_types, get_class_name
 
 from . import code_generator as cg
 from .implementations.base import ClassMeta, FieldMeta
@@ -76,7 +80,7 @@ class MappingMethodSourceCode(ABC):
     def get_ast(self) -> ast.Module:
         pass
 
-    def add_factory(self, target: FieldMeta, source: Callable) -> None:
+    def add_factory(self, target: FieldMeta, source: Callable, namespace: Namespace) -> None:
         """Generate code for a factory mapping.
         The field will be assigned to the result of the function/method call.
         """
@@ -86,6 +90,25 @@ class MappingMethodSourceCode(ABC):
                 f"'{target.attribute_name}' of '{self.target_cls.name}' cannot be mapped "
                 "using a factory with more than one parameter"
             )
+
+        # if types from signature can be extracted, type check them
+        annotations = extract_function_types(source, namespace=namespace)
+        first_param_type = compute_field_type(annotations.first_param_type)
+        if annotations.first_param_type and not is_assignable(ClassFieldType(self.source_cls.clazz), first_param_type):
+            raise TypeError(
+                f"The first parameter of the custom conversion function for field '{target.attribute_name}' "
+                f"of '{self.target_cls.name}' needs to be of type '{self.source_cls.name}' or a super type of it, "
+                f"but is of type '{get_class_name(annotations.first_param_type)}'."
+            )
+
+        if annotations.return_type:
+            return_field_type = compute_field_type(annotations.return_type)
+            if not is_assignable(return_field_type, target.type):
+                raise TypeError(
+                    f"The return value of the custom conversion function for field '{target.attribute_name}' "
+                    f"of '{self.target_cls.name}' needs to be of type '{target.type}', "
+                    f"but is of type '{get_class_name(annotations.return_type)}'."
+                )
 
         factory_name = f"_{uuid4().hex}"
         self.factories[factory_name] = source
