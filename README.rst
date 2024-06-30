@@ -27,6 +27,13 @@ dataclass-mapper
    :alt: Read the documentation at https://dataclass-mapper.readthedocs.io/en/v1.9.x/
    :target: https://dataclass-mapper.readthedocs.io/en/v1.9.x/
 
+**Note:**
+*Currently the library is undergoing a major refactoring, in order to guarantee even more type safety and more features (arbitrary nested types, SQLAlchemy models, type checked customer functions, ...).
+v1.9.x is stable and bugs will be fixed. However no new features will be added.
+v2.0.x is under active development, and a stable version will be released soonish.
+You can find the newest alpha-releases on* `pypi.org <https://pypi.org/project/dataclass-mapper/#history>`_ *and find the documentation for the newer features under* `ReadTheDocs <https://dataclass-mapper.readthedocs.io/en/latest/>`_.
+*Be careful though, as functionallity might still change while the it's still in the alpha phase.*
+
 Writing mapper methods between two similar dataclasses is boring, need to be actively maintained and are error-prone.
 Much better to let this library auto-generate them for you.
 
