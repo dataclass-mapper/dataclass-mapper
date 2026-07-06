@@ -36,14 +36,12 @@ def test_code_gen_add_normal_assignment(code: MappingMethodSourceCode) -> None:
         target=FieldMeta(name="target_x", type=int, allow_none=False, required=True),
         source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             d["target_x"] = self.source_x
             return TargetAlias(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code
 
 
@@ -52,15 +50,13 @@ def test_code_gen_add_assignment_only_if_not_None(code: MappingMethodSourceCode)
         target=FieldMeta(name="target_x", type=int, allow_none=False, required=False),
         source=FieldMeta(name="source_x", type=int, allow_none=True, required=True),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             if self.source_x is not None:
                 d["target_x"] = self.source_x
             return TargetAlias(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code
 
 
@@ -77,28 +73,24 @@ def test_bypass_validators_option_disabled_for_dataclasses() -> None:
             alias_name="TargetAlias",
         ),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             return TargetAlias(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code
 
 
 def test_provide_with_extra_code_check(code: MappingMethodSourceCode):
     code.add_fill_with_extra(target=FieldMeta(name="target_x", type=int, allow_none=False, required=True))
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             if "target_x" not in extra:
                 raise TypeError("When mapping an object of 'Source' to 'Target' the field 'target_x' needs to be provided in the `extra` dictionary")
             d["target_x"] = extra["target_x"]
             return TargetAlias(**d)
-        """  # noqa: E501
-    )
+        """)  # noqa: E501
     assert str(code) == expected_code
 
 
@@ -117,14 +109,12 @@ def test_provide_with_extra_code_list(code: MappingMethodSourceCode):
         source=FieldMeta(name="source_x", type=List[FooSource], allow_none=False, required=True),
     )
     footarget_id = id(FooTarget)
-    expected_code = prepare_expected_code(
-        f"""
+    expected_code = prepare_expected_code(f"""
         def convert(self, extra: dict) -> "Target":
             d = {{}}
             d["target_x"] = [x._map_to_FooTarget_{footarget_id}(e) for x, e in self.__zip_longest(self.source_x, extra.get("target_x", []), fillvalue=dict())]
             return TargetAlias(**d)
-        """  # noqa: E501
-    )
+        """)  # noqa: E501
     assert str(code) == expected_code
 
 
@@ -143,12 +133,10 @@ def test_provide_with_extra_code_dict(code: MappingMethodSourceCode):
         source=FieldMeta(name="source_x", type=Dict[str, FooSource], allow_none=False, required=True),
     )
     footarget_id = id(FooTarget)
-    expected_code = prepare_expected_code(
-        f"""
+    expected_code = prepare_expected_code(f"""
         def convert(self, extra: dict) -> "Target":
             d = {{}}
             d["target_x"] = {{k: v._map_to_FooTarget_{footarget_id}(extra.get("target_x", {{}}).get(k, {{}})) for k, v in self.source_x.items()}}
             return TargetAlias(**d)
-        """  # noqa: E501
-    )
+        """)  # noqa: E501
     assert str(code) == expected_code

@@ -7,8 +7,7 @@ from dataclass_mapper import map_to, mapper
 
 def test_support_dataclass_type_strings():
     @dataclass
-    class FooItem:
-        ...
+    class FooItem: ...
 
     @dataclass
     class Foo:
@@ -19,8 +18,7 @@ def test_support_dataclass_type_strings():
 
     @mapper(FooItem)
     @dataclass
-    class BarItem:
-        ...
+    class BarItem: ...
 
     @mapper(Foo)
     @dataclass
@@ -35,8 +33,7 @@ def test_support_dataclass_type_strings():
 
 
 def test_support_pydantic_type_strings():
-    class FooItem(BaseModel):
-        ...
+    class FooItem(BaseModel): ...
 
     class Foo(BaseModel):
         x: "int"
@@ -45,8 +42,7 @@ def test_support_pydantic_type_strings():
         item2: FooItem
 
     @mapper(FooItem)
-    class BarItem(BaseModel):
-        ...
+    class BarItem(BaseModel): ...
 
     @mapper(Foo)
     class Bar(BaseModel):

@@ -44,13 +44,11 @@ def test_bypass_validators_option_for_pydantic() -> None:
             alias_name="TargetAlias",
         ),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             return TargetAlias.model_construct(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code
 
 
@@ -69,13 +67,11 @@ def test_dont_bypass_validators_option_for_pydantic() -> None:
             alias_name="TargetAlias",
         ),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             return TargetAlias(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code
 
 
@@ -98,14 +94,12 @@ def test_pydantic_alias() -> None:
         target=FieldMeta(name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"),
         source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             d["TARGET_VARIABLE_X"] = self.source_x
             return TargetAlias(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code
 
 
@@ -129,12 +123,10 @@ def test_pydantic_alias_allow_population_by_fields() -> None:
         target=FieldMeta(name="target_x", type=int, allow_none=False, required=True, alias="TARGET_VARIABLE_X"),
         source=FieldMeta(name="source_x", type=int, allow_none=False, required=True),
     )
-    expected_code = prepare_expected_code(
-        """
+    expected_code = prepare_expected_code("""
         def convert(self, extra: dict) -> "Target":
             d = {}
             d["target_x"] = self.source_x
             return TargetAlias(**d)
-        """
-    )
+        """)
     assert str(code) == expected_code

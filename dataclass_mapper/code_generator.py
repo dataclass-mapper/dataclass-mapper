@@ -5,8 +5,7 @@ from typing import List, Optional, Union
 
 class Expression(ABC):
     @abstractmethod
-    def __str__(self) -> str:
-        ...
+    def __str__(self) -> str: ...
 
 
 @dataclass
@@ -20,8 +19,7 @@ class DictLookup(Expression):
 
 class Statement(ABC):
     @abstractmethod
-    def to_string(self, indent: int) -> str:
-        ...
+    def to_string(self, indent: int) -> str: ...
 
 
 @dataclass
